@@ -126,14 +126,34 @@ export class Ui {
     const busy = !!s.modal || s.phase === 'gameOver';
     const p = game.active;
     const isHuman = p.kind === 'human';
+    const F = CENTER.frames;
+    const C = CENTER.captions;
+
+    // Raised frames behind each control, as the original's bsRaised bevels.
+    for (const box of [F.rollDie, F.makeTrade, F.resign]) {
+      const bevel = el('div', 'bevel');
+      bevel.style.left = `${box.left}px`;
+      bevel.style.top = `${box.top}px`;
+      bevel.style.width = `${box.width}px`;
+      bevel.style.height = `${box.height}px`;
+      this.board.append(bevel);
+    }
+
+    const caption = (c: { left: number; top: number; width: number; height: number; text: string }) => {
+      const n = el('div', 'center-caption', c.text);
+      n.style.left = `${c.left}px`;
+      n.style.top = `${c.top}px`;
+      n.style.width = `${c.width}px`;
+      n.style.height = `${c.height}px`;
+      return n;
+    };
 
     const roll = el('button', 'center-btn');
     roll.style.left = `${CENTER.rollDie.left}px`;
     roll.style.top = `${CENTER.rollDie.top}px`;
     roll.style.width = `${CENTER.rollDie.size}px`;
     roll.style.height = `${CENTER.rollDie.size}px`;
-    const face = el('div', 'die-face', s.die ? '⚀⚁⚂⚃⚄⚅'[s.die - 1] : '🎲');
-    roll.append(face, el('div', undefined, game.canRoll() ? 'ROLL' : s.rolled ? 'ROLLED' : 'WAIT'));
+    roll.append(el('div', 'die-face', s.die ? '⚀⚁⚂⚃⚄⚅'[s.die - 1] : '🎲'));
     roll.disabled = busy || !game.canRoll() || !isHuman;
     roll.onclick = () => this.handlers.onRoll();
     roll.title = 'Roll the die (Space)';
@@ -143,7 +163,7 @@ export class Ui {
     trade.style.top = `${CENTER.makeTrade.top}px`;
     trade.style.width = `${CENTER.makeTrade.size}px`;
     trade.style.height = `${CENTER.makeTrade.size}px`;
-    trade.append(el('div', 'die-face', '🤝'), el('div', undefined, 'TRADE'));
+    trade.append(el('div', 'die-face', '🤝'));
     trade.disabled = busy || s.rolled || !isHuman;
     trade.onclick = () => this.handlers.onTrade();
     trade.title = 'Trade projects before rolling (T)';
@@ -153,13 +173,50 @@ export class Ui {
     resign.style.top = `${CENTER.resign.top}px`;
     resign.style.width = `${CENTER.resign.size}px`;
     resign.style.height = `${CENTER.resign.size}px`;
-    resign.textContent = 'RESIGN';
-    resign.style.fontSize = '9px';
+    resign.append(el('div', undefined, '📦'));
     resign.disabled = busy || s.rolled || !isHuman;
     resign.onclick = () => this.handlers.onResign();
     resign.title = 'Hand your seat to a computer player (R)';
 
-    this.board.append(roll, trade, resign);
+    this.board.append(
+      roll,
+      trade,
+      resign,
+      caption(C.rollDie),
+      caption(C.makeTrade),
+      caption(C.resign),
+      caption(C.ticker),
+    );
+
+    this.paintTicker(game);
+  }
+
+  /**
+   * The Stock Ticker: a raised frame with an inset black readout showing the most recent
+   * change to the share price. The original drew this in lime (clLime) with a default
+   * caption of '+32', so positive changes are green; negative ones read red here.
+   */
+  private paintTicker(game: Game): void {
+    const F = CENTER.frames.ticker;
+    const V = CENTER.tickerValue;
+
+    const frame = el('div', 'bevel');
+    frame.style.left = `${F.left}px`;
+    frame.style.top = `${F.top}px`;
+    frame.style.width = `${F.width}px`;
+    frame.style.height = `${F.height}px`;
+
+    const delta = game.state.lastStockDelta;
+    const readout = el('div', 'ticker');
+    readout.style.left = `${V.left}px`;
+    readout.style.top = `${V.top}px`;
+    readout.style.width = `${V.width}px`;
+    readout.style.height = `${V.height}px`;
+    readout.classList.add(delta > 0 ? 'ticker-up' : delta < 0 ? 'ticker-down' : 'ticker-flat');
+    readout.textContent = delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${delta}`;
+    readout.title = `Share price ${game.state.stock} — last change ${delta >= 0 ? '+' : ''}${delta}`;
+
+    this.board.append(frame, readout);
   }
 
   /**

@@ -120,6 +120,11 @@ export interface GameState {
   die: number | null;
   stock: number;
   stockHistory: StockPoint[];
+  /**
+   * Most recent change to the share price, for the board's Stock Ticker readout. The
+   * original showed this in a small raised panel labelled "Stock Ticker", in lime.
+   */
+  lastStockDelta: number;
   log: LogEntry[];
   /** Set when the company crashes: everybody loses. */
   crashed: boolean;

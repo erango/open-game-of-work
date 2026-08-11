@@ -96,6 +96,25 @@ export const CENTER = {
     rank: { left: 176, width: 11, height: 16 },
   },
   tokens: { left: 500, top: 106, size: 32, gapX: 32, gapY: 33, perRow: 3 },
+  /**
+   * Raised frames and captions around the centre cluster, transcribed from TMAINFORM.
+   * The original drew each control's caption in a label *below* the icon, not inside it,
+   * and framed each with a bsRaised TBevel.
+   */
+  frames: {
+    rollDie: { left: 334, top: 222, width: 86, height: 85 },
+    makeTrade: { left: 435, top: 222, width: 86, height: 85 },
+    resign: { left: 592, top: 294, width: 55, height: 55 },
+    ticker: { left: 561, top: 214, width: 106, height: 50 },
+  },
+  captions: {
+    rollDie: { left: 347, top: 312, width: 58, height: 23, text: 'Roll Die' },
+    makeTrade: { left: 430, top: 312, width: 94, height: 23, text: 'Make Trade' },
+    resign: { left: 595, top: 352, width: 48, height: 23, text: 'Resign' },
+    ticker: { left: 560, top: 192, width: 106, height: 19, text: 'Stock Ticker' },
+  },
+  /** The lime readout inside the ticker frame. */
+  tickerValue: { left: 567, top: 220, width: 93, height: 37 },
 };
 
 /** Human-readable label per square kind, for the board face. */

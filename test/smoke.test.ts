@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { autoplay } from '../src/autoplay.ts';
 import { PROJECT_PROFILES, PROJECT_COUNT, SQUARES } from '../src/board.ts';
 import { Game } from '../src/engine.ts';
+import { parseMidi } from '../src/midi.ts';
 import * as R from '../src/rules.ts';
 import type { GameLength, NewGameConfig, Personality } from '../src/types.ts';
 
@@ -86,6 +88,24 @@ test('no two squares overlap by more than a shared border', () => {
       );
     }
   }
+});
+
+test('no stylesheet rule overrides .sq absolute positioning', () => {
+  // Regression: appending `.sq-project { position: relative }` later in the stylesheet beat
+  // `.sq { position: absolute }` and scattered every project square out of the ring.
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  const offenders: string[] = [];
+  const ruleRe = /([^{}]+)\{([^}]*)\}/g;
+  let m: RegExpExecArray | null;
+  while ((m = ruleRe.exec(css))) {
+    const selector = m[1].trim();
+    const body = m[2];
+    if (!/(^|,|\s)\.sq[-\w]*(\s|,|$)/.test(selector)) continue;
+    if (selector.includes(' ') && !/^\.sq[-\w]*$/.test(selector.split(',')[0].trim())) continue;
+    const pos = /(?:^|;)\s*position\s*:\s*([a-z]+)/.exec(body);
+    if (pos && pos[1] !== 'absolute') offenders.push(`${selector} -> position: ${pos[1]}`);
+  }
+  assert.deepEqual(offenders, [], `square selectors must stay absolute:\n  ${offenders.join('\n  ')}`);
 });
 
 console.log('\nrules tables');
@@ -173,6 +193,7 @@ test('different seeds diverge', () => {
 test('save/load round-trips', () => {
   const g = new Game(config('medium', 3, 424242));
   g.roll();
+  g.finishMoveInstantly();
   const json = g.serialize();
   const h = Game.deserialize(json);
   assert.equal(h.state.turn, g.state.turn);
@@ -182,6 +203,127 @@ test('save/load round-trips', () => {
     h.state.players.map((p) => p.square),
     g.state.players.map((p) => p.square),
   );
+});
+
+console.log('\nMIDI parser');
+
+{
+  // party.mid is the original's music, third-party copyrighted and gitignored, so these
+  // checks only run when a local copy is present.
+  const midiPath = new URL('../public/assets/sounds/party.mid', import.meta.url);
+  let bytes: Buffer | null = null;
+  try {
+    bytes = readFileSync(midiPath);
+  } catch {
+    console.log('  skip   party.mid not present (see README for the symlink)');
+  }
+
+  if (bytes) {
+    test('parses a real format-1 MIDI file', () => {
+      const m = parseMidi(bytes!);
+      assert.equal(m.format, 1);
+      assert.ok(m.ticksPerQuarter > 0);
+      assert.ok(m.notes.length > 100, `expected a substantial note list, got ${m.notes.length}`);
+      assert.ok(m.duration > 10, `expected a real duration, got ${m.duration}`);
+    });
+
+    test('notes are time-ordered with positive durations', () => {
+      const m = parseMidi(bytes!);
+      let last = -1;
+      for (const n of m.notes) {
+        assert.ok(n.time >= last, 'notes must be sorted by time');
+        last = n.time;
+        assert.ok(n.duration > 0, `note ${n.note} has non-positive duration`);
+        assert.ok(n.note >= 0 && n.note <= 127, 'note number in range');
+        assert.ok(n.velocity > 0 && n.velocity <= 127, 'velocity in range');
+        assert.ok(n.channel >= 0 && n.channel <= 15, 'channel in range');
+      }
+    });
+
+    test('parsing is deterministic', () => {
+      const a = parseMidi(bytes!);
+      const b = parseMidi(bytes!);
+      assert.equal(a.notes.length, b.notes.length);
+      assert.equal(a.duration.toFixed(6), b.duration.toFixed(6));
+    });
+  }
+}
+
+test('rejects data that is not a MIDI file', () => {
+  assert.throws(() => parseMidi(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])), /not a MIDI file/);
+});
+
+console.log('\nstepwise movement');
+
+test('roll enters the movement phase without moving or resolving', () => {
+  const g = new Game(config('medium', 3, 5150));
+  const before = g.active.square;
+  const die = g.roll();
+  assert.ok(die >= 1 && die <= 6);
+  assert.equal(g.state.phase, 'moving');
+  assert.equal(g.state.pendingSteps, die, 'pendingSteps must equal the roll');
+  assert.equal(g.active.square, before, 'roll() must not move the token');
+  assert.equal(g.state.modal, null, 'roll() must not reveal a result');
+});
+
+test('stepMove advances exactly one square and drains pendingSteps', () => {
+  const g = new Game(config('medium', 3, 991));
+  const die = g.roll();
+  for (let i = 0; i < die; i++) {
+    const at = g.active.square;
+    g.stepMove();
+    assert.equal(g.active.square, (at + 1) % R.RING, 'each step is one square');
+    assert.equal(g.state.pendingSteps, die - i - 1);
+  }
+  assert.equal(g.moving, false, 'movement finished');
+});
+
+test('resolveLanding is a no-op until the token stops', () => {
+  const g = new Game(config('medium', 3, 4242));
+  g.roll();
+  if (g.state.pendingSteps < 2) g.stepMove(); // ensure at least one step remains
+  const steps = g.state.pendingSteps;
+  if (steps > 0) {
+    g.resolveLanding();
+    assert.equal(g.state.modal, null, 'must not resolve mid-movement');
+    assert.equal(g.state.pendingSteps, steps, 'resolveLanding must not consume steps');
+  }
+});
+
+test('crossing Home awards Boss Rating once per lap, not once per step', () => {
+  const g = new Game(config('long', 2, 31337));
+  const p = g.active;
+  // Park the token two squares short of Home, then roll past it.
+  p.square = R.RING - 2;
+  const before = p.bossRating;
+  g.roll();
+  const die = g.state.die!;
+  g.finishMoveInstantly();
+  const laps = Math.floor((R.RING - 2 + die) / R.RING);
+  assert.equal(laps, 1, 'a single die roll cannot lap twice on a 26-square ring');
+  // Home may also award via a Business Trip landing, so assert at least the Home award.
+  assert.ok(
+    p.bossRating >= before + R.HOME_BOSS_RATING,
+    `expected at least +${R.HOME_BOSS_RATING} for crossing Home, got ${p.bossRating - before}`,
+  );
+});
+
+test('promotions are queued as notices, never shown mid-movement', () => {
+  const g = new Game(config('long', 2, 777));
+  const p = g.active;
+  // Sit one square before Home with enough Boss Rating to earn a promotion on the pass.
+  p.square = R.RING - 1;
+  p.bossRating = R.RANK_FLOOR[p.rank + 1] + 5;
+  const rank = p.rank;
+  g.roll();
+  while (g.moving) {
+    g.stepMove();
+    assert.notEqual(g.state.modal?.kind, 'rankChange', 'rank change must not surface mid-move');
+  }
+  assert.equal(p.rank, rank + 1, 'promotion applied on crossing Home');
+  const notices = g.drainNotices();
+  assert.equal(notices.length, 1, 'promotion should be queued as exactly one notice');
+  assert.equal(notices[0].kind, 'rankChange');
 });
 
 console.log('\nfull-game simulation');
@@ -245,6 +387,7 @@ test('projects never end up owned by a nonexistent player', () => {
         continue;
       }
       g.roll();
+      g.finishMoveInstantly();
       for (const proj of g.state.projects) {
         assert.ok(
           proj.owner === null || (proj.owner >= 0 && proj.owner < g.state.players.length),

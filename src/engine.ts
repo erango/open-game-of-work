@@ -4,11 +4,13 @@ import { DEFAULT_NAMES, projectName } from './names';
 import { Rng } from './rng';
 import * as R from './rules';
 import {
+  PERSONALITIES,
   RANKS,
   type GameLength,
   type GameState,
   type Modal,
   type Personality,
+  type PersonalityChoice,
   type Player,
   type Profile,
   type Project,
@@ -18,7 +20,8 @@ import {
 export interface SeatConfig {
   kind: SeatKind;
   name: string;
-  personality: Personality;
+  /** 'random' is resolved from the seeded RNG when the game is created. */
+  personality: PersonalityChoice;
 }
 
 export interface NewGameConfig {
@@ -50,7 +53,7 @@ export class Game {
         id,
         name: seat.name || DEFAULT_NAMES[i] || `Player ${i + 1}`,
         kind: seat.kind,
-        personality: seat.kind === 'computer' ? seat.personality : null,
+        personality: seat.kind === 'computer' ? this.resolvePersonality(seat.personality) : null,
         color: R.PLAYER_COLORS[i % R.PLAYER_COLORS.length],
         square: 0,
         bossRating: start.bossRating,
@@ -99,7 +102,15 @@ export class Game {
       modal: null,
       rngSeed: seed,
       stockCostCarry: 0,
+      pendingSteps: 0,
+      pendingNotices: [],
+      soundCues: [],
     };
+  }
+
+  /** Resolves a setup seat's personality, drawing from the seeded RNG for 'random'. */
+  private resolvePersonality(choice: PersonalityChoice): Personality {
+    return choice === 'random' ? this.rng.pick(PERSONALITIES) : choice;
   }
 
   // ---------------------------------------------------------------- helpers
@@ -140,6 +151,19 @@ export class Game {
     return (this.state.phase as string) === 'gameOver';
   }
 
+  /** Raises an audio cue. Purely advisory — headless play never reads these. */
+  private cue(name: string): void {
+    this.state.soundCues.push(name);
+    if (this.state.soundCues.length > 16) this.state.soundCues.shift();
+  }
+
+  /** Drains and returns pending audio cues. */
+  drainCues(): string[] {
+    const out = this.state.soundCues;
+    this.state.soundCues = [];
+    return out;
+  }
+
   private log(text: string, playerId: number | null = null): void {
     this.state.log.push({ turn: this.state.turn, playerId, text });
     if (this.state.log.length > 400) this.state.log.shift();
@@ -165,6 +189,7 @@ export class Game {
     if (this.state.stock <= R.STOCK_MIN && !this.state.crashed) {
       this.state.crashed = true;
       this.state.phase = 'gameOver';
+      this.cue('crash');
       this.log(`The stock hit zero. The company is disbanded — everybody loses. (${why})`);
       this.state.modal = {
         kind: 'gameOver',
@@ -193,30 +218,66 @@ export class Game {
     return this.state.phase === 'idle' && !this.state.rolled && !this.state.modal;
   }
 
-  /** Rolls, moves, and resolves the landing square. Returns the die value. */
+  /**
+   * Rolls the die and enters the movement phase. Does NOT move or resolve — call stepMove()
+   * until pendingSteps reaches zero, then resolveLanding(). This mirrors the original, where
+   * the token walks the board a square at a time and the result appears only once it stops.
+   * Headless callers can use finishMoveInstantly() instead.
+   */
   roll(): number {
     if (!this.canRoll()) return 0;
     const die = this.rng.die();
     this.state.die = die;
     this.state.rolled = true;
+    this.state.pendingSteps = die;
+    this.state.phase = 'moving';
     this.log(`${this.active.name} rolls ${die}.`, this.active.id);
-    this.move(die);
+    this.cue('roll');
     return die;
   }
 
-  private move(steps: number): void {
+  /** True while the token still has squares to walk. */
+  get moving(): boolean {
+    return (this.state.phase as string) === 'moving' && this.state.pendingSteps > 0;
+  }
+
+  /**
+   * Advances the token exactly one square.
+   *
+   * Stepping one at a time makes the Home award fall out naturally: crossing or landing on
+   * Home simply means arriving at square 0, so no modular arithmetic is needed to detect a
+   * pass. Any promotion is queued rather than shown, so it surfaces after movement ends.
+   */
+  stepMove(): void {
+    if (!this.moving) return;
     const p = this.active;
-    const from = p.square;
-    const to = (from + steps) % R.RING;
+    p.square = (p.square + 1) % R.RING;
+    this.state.pendingSteps -= 1;
+    this.cue('move');
+    if (p.square === 0) {
+      this.arriveHome(p, this.state.pendingSteps === 0 ? 'landing' : 'passing');
+    }
+  }
 
-    // Passing or landing on Home. Starting on Home and leaving does not re-award.
-    const passedHome = from + steps >= R.RING || to === 0;
-    p.square = to;
-
-    if (passedHome) this.arriveHome(p, 'passing');
-
-    if (this.state.phase === 'gameOver') return;
+  /** Applies the landing square once movement has finished. */
+  resolveLanding(): void {
+    if ((this.state.phase as string) === 'gameOver') return;
+    if (this.state.pendingSteps > 0) return;
     this.resolveSquare();
+  }
+
+  /** Walks out the entire roll with no animation, for headless play and tests. */
+  finishMoveInstantly(): void {
+    while (this.moving) this.stepMove();
+    this.state.pendingNotices = [];
+    this.resolveLanding();
+  }
+
+  /** Drains queued mid-movement results (promotions and demotions). */
+  drainNotices(): Modal[] {
+    const out = this.state.pendingNotices;
+    this.state.pendingNotices = [];
+    return out;
   }
 
   /** Home award plus a one-step promotion or demotion check. */
@@ -234,6 +295,7 @@ export class Game {
     const from = p.rank;
     p.rank = next;
     const up = next > from;
+    this.cue(up ? `promotion:${from}` : 'demotion');
     this.log(
       `${p.name} is ${up ? 'promoted' : 'demoted'} to ${RANKS[next]}.`,
       p.id,
@@ -241,6 +303,7 @@ export class Game {
 
     if (next === RANKS.length - 1) {
       p.president = true;
+      this.cue('win');
       this.state.winner = p.id;
       this.state.phase = 'gameOver';
       this.state.modal = {
@@ -250,7 +313,7 @@ export class Game {
       return;
     }
 
-    this.state.modal = { kind: 'rankChange', playerId: p.id, from, to: next };
+    this.state.pendingNotices.push({ kind: 'rankChange', playerId: p.id, from, to: next });
   }
 
   /** Applies the landing square's effect. May open a modal. */
@@ -288,6 +351,7 @@ export class Game {
       }
 
       case 'businessTrip':
+        this.cue('businessTrip');
         this.log(`${p.name} is sent on a business trip.`, p.id);
         p.square = 0;
         this.arriveHome(p, 'landing');
@@ -373,6 +437,7 @@ export class Game {
     const owner = this.player(ownerId);
     const wasShoddy = proj.shoddy;
 
+    this.cue('projectComplete');
     const br = R.COMPLETION_BOSS_RATING[proj.profile];
     this.adjustBossRating(ownerId, br);
     this.log(
@@ -418,6 +483,7 @@ export class Game {
     proj.owner = playerId;
     proj.progress = 0;
     proj.shoddy = false;
+    this.cue('projectTaken');
     this.log(`${this.player(playerId).name} takes on ${proj.name}.`, playerId);
     this.noteSets(playerId);
   }
@@ -658,6 +724,7 @@ export class Game {
       `${this.player(fromId).name} trades ${giveNames} to ${this.player(toId).name} for ${wantNames}.`,
       fromId,
     );
+    this.cue('trade');
     this.adjustFriendliness(fromId, 2);
     this.noteSets(fromId);
     this.noteSets(toId);
@@ -672,6 +739,7 @@ export class Game {
   private maybeStockBonus(): void {
     if (this.state.turn % R.STOCK_BONUS_EVERY !== 0) return;
     if (this.state.stock < R.STOCK_BONUS_THRESHOLD) return;
+    this.cue('stockMarket');
     this.log(`The stock is at ${this.state.stock}. The boss hands out rank-scaled rewards.`);
     for (const p of this.state.players) {
       const bonus = p.rank * R.STOCK_BONUS_PER_RANK;
@@ -687,10 +755,10 @@ export class Game {
   resign(playerId: number): void {
     const p = this.player(playerId);
     if (p.kind !== 'human') return;
-    const personalities: Personality[] = ['evil', 'ambitious', 'goodytwoshoes', 'average'];
     p.kind = 'computer';
-    p.personality = this.rng.pick(personalities);
+    p.personality = this.resolvePersonality('random');
     for (const q of this.state.players) if (q.id !== p.id) p.friendliness[q.id] = 0;
+    this.cue('resign');
     this.log(`${p.name} resigns. A ${p.personality} computer player takes over the seat.`, p.id);
   }
 

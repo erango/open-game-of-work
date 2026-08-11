@@ -48,6 +48,7 @@ export function autoplay(config: NewGameConfig, maxTurns = 400): AutoplayResult 
       }
     }
     game.roll();
+    game.finishMoveInstantly();
   }
 
   return {
@@ -110,7 +111,8 @@ function resolveHeadless(game: Game, m: NonNullable<Game['state']['modal']>): vo
       break;
     }
     case 'rankChange': {
-      // Informational only; the square that triggered it still resolves.
+      // Informational only. Promotions now arrive via drainNotices() rather than as a modal,
+      // but keep this arm so a queued notice pushed into the modal slot still clears.
       game.state.modal = null;
       break;
     }

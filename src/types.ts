@@ -12,9 +12,21 @@ export const RANKS = [
 
 export type Rank = number; // index into RANKS
 
+/**
+ * Single-letter rank badges for the stats panel, which the original sized at 11px wide.
+ * Only 'E' (Entry Level) is confirmed from the recovered DFM default caption; the rest are
+ * chosen to stay unambiguous, since Mailroom and Middle Manager would otherwise collide.
+ */
+export const RANK_LETTERS = ['R', 'E', 'J', 'M', 'S', 'V', 'P'] as const;
+
 export type GameLength = 'short' | 'medium' | 'long';
 
 export type Personality = 'evil' | 'ambitious' | 'goodytwoshoes' | 'average';
+
+export const PERSONALITIES: Personality[] = ['evil', 'ambitious', 'goodytwoshoes', 'average'];
+
+/** What a setup seat may request. 'random' is resolved once, at game creation. */
+export type PersonalityChoice = Personality | 'random';
 
 export type SeatKind = 'human' | 'computer' | 'off';
 
@@ -119,6 +131,22 @@ export interface GameState {
   rngSeed: number;
   /** Fractional carry for per-turn operating costs, so they stay exact over time. */
   stockCostCarry: number;
+  /**
+   * Squares left to step through on the current roll. The original animates movement one
+   * square at a time and only reveals the landing result afterwards, so movement is a
+   * distinct phase rather than a teleport.
+   */
+  pendingSteps: number;
+  /**
+   * Results that occurred mid-movement (promotions from crossing Home) and must be shown
+   * after the token stops, not while it is still travelling.
+   */
+  pendingNotices: Modal[];
+  /**
+   * Semantic audio cues raised since the last drain. Names match Cue in sound.ts. The
+   * engine only appends; whoever renders drains it. Headless play ignores it entirely.
+   */
+  soundCues: string[];
 }
 
 export type Modal =

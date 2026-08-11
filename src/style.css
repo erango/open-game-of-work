@@ -495,3 +495,38 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 .ticker-up { color: #2bff5a; text-shadow: 0 0 9px rgb(43 255 90 / .55); }
 .ticker-down { color: #ff4d3d; text-shadow: 0 0 9px rgb(255 77 61 / .55); }
 .ticker-flat { color: #5d6a72; }
+
+/* ---------------------------------------------------------------- original artwork */
+
+/* When the original art is installed, tiles are filled edge to edge by the bitmap and the
+   board uses the original's own background colour (TmainForm.Color). */
+.sq-art {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  image-rendering: pixelated; /* 1bpp/4bpp era art, keep it crisp rather than blurred */
+  user-select: none;
+}
+
+.sq-hasart { padding: 0; border-color: rgb(0 0 0 / .35); }
+
+.btn-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* The original board is light, so its captions and project text need dark ink. */
+.board-original .center-caption { color: #10171f; text-shadow: 0 1px 0 rgb(255 255 255 / .45); }
+.board-original .sq-label { color: rgb(0 0 0 / .7); }
+.board-original .bevel {
+  background: rgb(255 255 255 / 0.18);
+  border-top-color: rgb(255 255 255 / 0.75);
+  border-left-color: rgb(255 255 255 / 0.6);
+  border-right-color: rgb(0 0 0 / 0.28);
+  border-bottom-color: rgb(0 0 0 / 0.32);
+}
+.board-original .stat-name { text-shadow: 0 1px 1px rgb(0 0 0 / .35); }

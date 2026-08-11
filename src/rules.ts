@@ -76,13 +76,16 @@ export const STOCK_TUNING = {
    *
    * Calibrated by sweep rather than arithmetic: the naive estimate from COMPLETION_STOCK
    * over PROJECT_WORK is about +0.4 per owned project per round, but set bonuses and
-   * landing bonuses accelerate completion, so realised income is nearer +0.7. At 0.7 the
-   * company sits on the knife edge — 96% of simulated games still reach a presidency, 4%
-   * crash, and the crash rate is flat across 2..6 players.
+   * landing bonuses accelerate completion, so realised income runs higher.
+   *
+   * Retuned after the real profile distribution was recovered from the original's tile
+   * colours (2/4/4/3/2 rather than three per profile). Profiles 1 and 5 need only two
+   * squares, so set bonuses and their double-work multiplier land far more often, which
+   * lifted income enough to make the crash ending unreachable again at the previous 0.7.
    *
    * Mutable so the balance sweep in test/ can vary it.
    */
-  costPerOwnedProjectPerRound: 0.7,
+  costPerOwnedProjectPerRound: 0.76,
 };
 
 

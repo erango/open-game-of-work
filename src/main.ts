@@ -1,4 +1,5 @@
 import * as AI from './ai';
+import { loadAssets } from './assets';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
@@ -1128,11 +1129,14 @@ function bindKeys(): void {
   });
 }
 
-function boot(): void {
+async function boot(): Promise<void> {
   const root = document.getElementById('app')!;
+  // Resolve original-artwork availability before the first render so the board does not
+  // flash the SVG fallback and then swap.
+  await loadAssets();
   ui = new Ui(root, handlers());
   bindKeys();
   void newGame();
 }
 
-boot();
+void boot();

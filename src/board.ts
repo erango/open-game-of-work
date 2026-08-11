@@ -39,23 +39,31 @@ export const DESIGN_HEIGHT = 535;
 /**
  * Profile per project square, in board order.
  *
- * APPROXIMATED — see SPEC.md §14. The original stored tile colours at runtime, so the
- * true mapping is in code we did not translate. Confirmed from the rules text: the first
- * two project squares clockwise of Home are both profile 1. 15 squares over 5 profiles
- * gives 3 each; this assignment is symmetric about the board and keeps each profile's
- * three squares spread apart so set-collecting requires moving around the whole ring.
+ * RECOVERED, not guessed. Every projectShape in TMAINFORM carries an explicit Brush.Color,
+ * and the original's rules text states that tile colour encodes profile. Grouping the 15
+ * squares by colour yields exactly five groups:
+ *
+ *   #00b7b7  shapes 1, 2         -> profile 1
+ *   #94bcda  shapes 3, 4, 5, 6   -> profile 2
+ *   #8bb889  shapes 7, 8, 10, 11 -> profile 3
+ *   #debe89  shapes 12, 13, 14   -> profile 4
+ *   #d88fd6  shapes 15, 16       -> profile 5
+ *
+ * So the distribution is 2/4/4/3/2, NOT three per profile as this file previously assumed.
+ * Two independent checks agree: the rules text calls the first two squares clockwise of Home
+ * profile 1, and in-game screenshots show tier-4 project names (Bomb, Mighty T-REX) on the
+ * #debe89 squares and tier-3 names (Alligator, Parrot) on the #8bb889 squares, matching the
+ * original's per-tier word pools.
+ *
+ * Set collecting is therefore asymmetric by design: profiles 1 and 5 need only two squares,
+ * while profiles 2 and 3 need four.
  */
 export const PROJECT_PROFILES: Profile[] = [
-  1, 1, // squares 1, 2   — confirmed profile 1
-  2, 2, // squares 4, 5
-  3, 3, // squares 7, 8
-  4, 4, // squares 10, 12
-  5, 5, // squares 15, 16
-  4,    // square 18
-  3,    // square 19
-  2,    // square 21
-  5,    // square 23
-  1,    // square 25
+  1, 1, // shapes 1, 2
+  2, 2, 2, 2, // shapes 3, 4, 5, 6
+  3, 3, 3, 3, // shapes 7, 8, 10, 11
+  4, 4, 4, // shapes 12, 13, 14
+  5, 5, // shapes 15, 16
 ];
 
 export function buildSquares(): Square[] {
@@ -129,14 +137,21 @@ export const KIND_LABEL: Record<SquareKind, string> = {
   powerMonger: 'POWER\nMONGER',
 };
 
-/** Tile colour per profile — the original used one colour per profile, blue for 1. */
+/**
+ * Tile colour per profile, taken from the original's projectShape Brush.Color values
+ * (Delphi TColor is 0x00BBGGRR, so these are byte-swapped from the stored integers).
+ */
 export const PROFILE_COLORS: Record<Profile, string> = {
-  1: '#4a72b8',
-  2: '#4a9e6a',
-  3: '#c8a23c',
-  4: '#c4703c',
-  5: '#9a4a8c',
+  1: '#00b7b7',
+  2: '#94bcda',
+  3: '#8bb889',
+  4: '#debe89',
+  5: '#d88fd6',
 };
+
+/** The original board's background (TmainForm.Color = 15707751) and stats panel colour. */
+export const BOARD_COLOR = '#67aeef';
+export const STATS_PANEL_COLOR = '#5199fb';
 
 /** Center-to-center token offset so multiple players on one square don't fully overlap. */
 export function tokenOffset(slot: number): { dx: number; dy: number } {

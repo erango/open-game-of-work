@@ -1,4 +1,5 @@
-import { CENTER, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, SQUARES, tokenOffset } from './board';
+import { BOARD_COLOR, CENTER, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
+import { assetsAvailable, centerImage, squareImage } from './assets';
 import { PROJECT_WATERMARK, squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
@@ -60,6 +61,10 @@ export class Ui {
   }
 
   render(game: Game): void {
+    // With the original art installed, use the original's board colour so the opaque tile
+    // artwork sits on the background it was drawn for rather than on the fallback felt.
+    this.boardWrap.style.background = assetsAvailable() ? BOARD_COLOR : '';
+    this.boardWrap.classList.toggle('board-original', assetsAvailable());
     this.renderBoard(game);
     this.renderSide(game);
     this.scaleBoard();
@@ -82,10 +87,20 @@ export class Ui {
       if (sq.kind === 'project') {
         this.paintProject(node, s.projects[sq.project!], game);
       } else {
-        const icon = el('div', 'sq-icon');
-        icon.innerHTML = squareIcon(sq.kind, sq.size === 140 ? 48 : 34);
-        const label = el('div', 'sq-label', KIND_LABEL[sq.kind]);
-        node.append(icon, label);
+        const art = squareImage(sq.index);
+        if (art) {
+          // Original face fills the tile; the label is redundant since the art carries it.
+          const img = el('img', 'sq-art');
+          img.src = art;
+          img.alt = KIND_LABEL[sq.kind].replace('\n', ' ');
+          img.draggable = false;
+          node.append(img);
+          node.classList.add('sq-hasart');
+        } else {
+          const icon = el('div', 'sq-icon');
+          icon.innerHTML = squareIcon(sq.kind, sq.size === 140 ? 48 : 34);
+          node.append(icon, el('div', 'sq-label', KIND_LABEL[sq.kind]));
+        }
       }
       this.board.append(node);
     }
@@ -163,7 +178,16 @@ export class Ui {
     trade.style.top = `${CENTER.makeTrade.top}px`;
     trade.style.width = `${CENTER.makeTrade.size}px`;
     trade.style.height = `${CENTER.makeTrade.size}px`;
-    trade.append(el('div', 'die-face', '🤝'));
+    const tradeArt = centerImage('makeTrade');
+    if (tradeArt) {
+      const img = el('img', 'btn-art');
+      img.src = tradeArt;
+      img.alt = 'Make Trade';
+      img.draggable = false;
+      trade.append(img);
+    } else {
+      trade.append(el('div', 'die-face', '🤝'));
+    }
     trade.disabled = busy || s.rolled || !isHuman;
     trade.onclick = () => this.handlers.onTrade();
     trade.title = 'Trade projects before rolling (T)';
@@ -173,7 +197,16 @@ export class Ui {
     resign.style.top = `${CENTER.resign.top}px`;
     resign.style.width = `${CENTER.resign.size}px`;
     resign.style.height = `${CENTER.resign.size}px`;
-    resign.append(el('div', undefined, '📦'));
+    const resignArt = centerImage('resign');
+    if (resignArt) {
+      const img = el('img', 'btn-art');
+      img.src = resignArt;
+      img.alt = 'Resign';
+      img.draggable = false;
+      resign.append(img);
+    } else {
+      resign.append(el('div', undefined, '📦'));
+    }
     resign.disabled = busy || s.rolled || !isHuman;
     resign.onclick = () => this.handlers.onResign();
     resign.title = 'Hand your seat to a computer player (R)';
@@ -230,6 +263,7 @@ export class Ui {
   private paintStats(game: Game): void {
     const G = CENTER.statRows;
     const panel = el('div', 'stats-panel');
+    if (assetsAvailable()) panel.style.background = STATS_PANEL_COLOR;
     panel.style.left = `${CENTER.stats.left}px`;
     panel.style.top = `${CENTER.stats.top}px`;
     panel.style.width = `${CENTER.stats.width}px`;

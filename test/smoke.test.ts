@@ -45,10 +45,22 @@ test('15 project squares, one profile each', () => {
   assert.equal(PROJECT_PROFILES.length, 15);
 });
 
-test('each profile appears exactly 3 times', () => {
+test('profile distribution matches the recovered tile colours', () => {
+  // From TMAINFORM projectShape Brush.Color grouping: 2/4/4/3/2, not three per profile.
+  const expected: Record<number, number> = { 1: 2, 2: 4, 3: 4, 4: 3, 5: 2 };
   for (const profile of [1, 2, 3, 4, 5]) {
     const n = PROJECT_PROFILES.filter((p) => p === profile).length;
-    assert.equal(n, 3, `profile ${profile} appears ${n} times`);
+    assert.equal(n, expected[profile], `profile ${profile} should cover ${expected[profile]} squares, got ${n}`);
+  }
+  assert.equal(PROJECT_PROFILES.length, 15);
+});
+
+test('profiles are contiguous around the board, ascending', () => {
+  // The original's colour groups are runs, so difficulty rises as you travel clockwise.
+  let seen = 0;
+  for (const p of PROJECT_PROFILES) {
+    assert.ok(p >= seen, `profile ${p} appears after ${seen}; groups must be contiguous`);
+    seen = p;
   }
 });
 

@@ -30,5 +30,11 @@ export function projectName(profile: Profile, rng: Rng): string {
   return `${a} ${n}`;
 }
 
-/** Default seat names, cycled at setup. */
-export const DEFAULT_NAMES = ['Brad', 'Muriel', 'Ned', 'Jen', 'Spot', 'Andrea'];
+/**
+ * Default seat names.
+ *
+ * Recovered from the original's audio filenames — it shipped one voice clip per default
+ * player (`brad.wav`, `muriel.wav`, `ned.wav`, `jen.wav`, `spot.wav`, `george.wav`), and
+ * the in-game rules text uses the same cast in its Power Monger worked example.
+ */
+export const DEFAULT_NAMES = ['Brad', 'Muriel', 'Ned', 'Jen', 'Spot', 'George'];

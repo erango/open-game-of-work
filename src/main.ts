@@ -14,6 +14,8 @@ let ui: Ui;
 const sound = new Sound();
 /** Guards against re-entrant AI stepping. */
 let stepping = false;
+/** `${turn}:${playerId}` of the last turn announced, so it fires once per turn. */
+let announced = '';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -1013,6 +1015,15 @@ async function step(): Promise<void> {
 
       const p = game.active;
 
+      // Announce whose turn it is before anything happens, not after. The original's
+      // human.wav / computer.wav are seat-type announcements and the per-name clips say who
+      // is up, so they belong here rather than in the middle of resolving a square.
+      const key = `${game.state.turn}:${p.id}`;
+      if (!game.state.rolled && !game.state.modal && announced !== key) {
+        announced = key;
+        await sound.announceTurn(p.name, p.id, p.kind === 'computer');
+      }
+
       // The turn ends itself. Every human decision happens before or during the roll —
       // trading precedes it, and square effects resolve as modals — so once the result is
       // dismissed there is nothing left to choose. The original had no end-turn control:
@@ -1097,6 +1108,7 @@ function handlers() {
 
 async function newGame(): Promise<void> {
   sound.stopMusic();
+  announced = '';
   const config = await askNewGame();
   if (!config) return;
   game = new Game(config);

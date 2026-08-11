@@ -1,7 +1,8 @@
 import { CENTER, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, SQUARES, tokenOffset } from './board';
+import { PROJECT_WATERMARK, squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
-import { RANKS, type GameState, type Player, type Project } from './types';
+import { RANK_LETTERS, RANKS, type GameState, type Player, type Project } from './types';
 
 const el = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -15,6 +16,9 @@ const el = <K extends keyof HTMLElementTagNameMap>(
 };
 
 export interface UiHandlers {
+  onToggleSound(): void;
+  onAutoClick(): void;
+  soundOn(): boolean;
   onRoll(): void;
   onTrade(): void;
   onResign(): void;
@@ -78,7 +82,10 @@ export class Ui {
       if (sq.kind === 'project') {
         this.paintProject(node, s.projects[sq.project!], game);
       } else {
-        node.textContent = KIND_LABEL[sq.kind];
+        const icon = el('div', 'sq-icon');
+        icon.innerHTML = squareIcon(sq.kind, sq.size === 140 ? 48 : 34);
+        const label = el('div', 'sq-label', KIND_LABEL[sq.kind]);
+        node.append(icon, label);
       }
       this.board.append(node);
     }
@@ -91,6 +98,10 @@ export class Ui {
   private paintProject(node: HTMLElement, proj: Project, game: Game): void {
     const owner = proj.owner === null ? null : game.player(proj.owner);
     const color = owner ? owner.color : '#000';
+
+    const mark = el('div', 'proj-watermark');
+    mark.innerHTML = PROJECT_WATERMARK;
+    mark.style.color = PROFILE_COLORS[proj.profile];
 
     const tile = el('div', 'proj-tile');
     tile.style.background = PROFILE_COLORS[proj.profile];
@@ -106,7 +117,7 @@ export class Ui {
 
     const meta = el('div', 'proj-meta', `P${proj.profile} · ${proj.progress}/${proj.work}`);
 
-    node.append(tile, name, bar, meta);
+    node.append(mark, tile, name, bar, meta);
     if (proj.shoddy) node.append(el('div', 'proj-shoddy', 'SHODDY'));
   }
 
@@ -151,47 +162,77 @@ export class Ui {
     this.board.append(roll, trade, resign);
   }
 
+  /**
+   * Player stat rows, laid out on the original's geometry (CENTER.statRows).
+   *
+   * Each player gets ONE bordered track holding TWO meters stacked one above the other:
+   * Boss Rating on top in the player's colour, workload (stress) beneath it in red. The
+   * original used a single 136x16 shape per player, so the two meters are 8px halves inside
+   * it rather than separate side-by-side bars.
+   */
   private paintStats(game: Game): void {
+    const G = CENTER.statRows;
     const panel = el('div', 'stats-panel');
     panel.style.left = `${CENTER.stats.left}px`;
     panel.style.top = `${CENTER.stats.top}px`;
     panel.style.width = `${CENTER.stats.width}px`;
     panel.style.height = `${CENTER.stats.height}px`;
 
-    for (const p of game.state.players) {
-      const row = el('div', 'stat-row' + (p.id === game.state.current ? ' active' : ''));
-      const head = el('div', 'stat-name');
-      const left = el('span', undefined, p.name);
-      left.style.color = p.color;
-      const right = el('span', undefined, `${p.bossRating}`);
-      head.append(left, right);
+    game.state.players.forEach((p, row) => {
+      if (row >= G.barTops.length) return;
+      const barTop = G.barTops[row];
+      const active = p.id === game.state.current;
 
-      const rank = el('div', 'stat-rank', `${RANKS[p.rank]}${p.kind === 'computer' ? ` · ${p.personality}` : ''}`);
+      const name = el('div', 'stat-name' + (active ? ' active' : ''), p.name);
+      name.style.left = `${G.name.left}px`;
+      name.style.top = `${G.nameTops[row]}px`;
+      name.style.width = `${G.name.width}px`;
+      name.style.height = `${G.name.height}px`;
+      name.style.color = p.color;
 
-      const bars = el('div', 'stat-bars');
-      // Boss Rating bar, tinted the player's colour, as in the original stat box.
-      const br = el('div', 'stat-bar');
-      const brFill = el('i');
-      brFill.style.width = `${Math.max(0, Math.min(100, (p.bossRating / R.PRESIDENT_THRESHOLD) * 100))}%`;
-      brFill.style.background = p.color;
-      br.append(brFill);
-      // Stress bar.
-      const st = el('div', 'stat-bar');
-      const stFill = el('i');
+      const portrait = el('div', 'stat-portrait');
+      portrait.style.left = `${G.portrait.left}px`;
+      portrait.style.top = `${barTop}px`;
+      portrait.style.width = `${G.portrait.size}px`;
+      portrait.style.height = `${G.portrait.size}px`;
+      portrait.style.background = p.color;
+      portrait.textContent = p.name.slice(0, 1).toUpperCase();
+      portrait.title = p.kind === 'computer' ? `${p.name} — computer (${p.personality})` : `${p.name} — human`;
+
+      const track = el('div', 'stat-track');
+      track.style.left = `${G.bar.left}px`;
+      track.style.top = `${barTop}px`;
+      track.style.width = `${G.bar.width}px`;
+      track.style.height = `${G.bar.height}px`;
+
       const stress = game.stress(p.id);
-      stFill.style.width = `${Math.min(100, (stress / 25) * 100)}%`;
-      stFill.style.background = stress > R.STRESS_SHODDY_THRESHOLD ? '#e0723c' : '#6a7f8f';
-      st.append(stFill);
-      bars.append(br, st);
-      br.title = `Boss Rating ${p.bossRating} / ${R.PRESIDENT_THRESHOLD}`;
-      st.title = `Stress ${stress}`;
+      const brPct = Math.max(0, Math.min(100, (p.bossRating / R.PRESIDENT_THRESHOLD) * 100));
+      const stressPct = Math.min(100, (stress / 25) * 100);
 
-      const n = game.projectsOf(p.id).length;
-      const meta = el('div', 'stat-rank', `${n} project${n === 1 ? '' : 's'} · stress ${stress}`);
+      const brFill = el('div', 'meter meter-boss');
+      brFill.style.width = `${brPct}%`;
+      brFill.style.background = p.color;
 
-      row.append(head, rank, bars, meta);
-      panel.append(row);
-    }
+      const stFill = el('div', 'meter meter-stress');
+      stFill.style.width = `${stressPct}%`;
+      stFill.style.background = stress > R.STRESS_SHODDY_THRESHOLD ? '#e0451f' : '#c8342c';
+
+      track.append(brFill, stFill);
+      track.title =
+        `${p.name}: Boss Rating ${p.bossRating}/${R.PRESIDENT_THRESHOLD} (top), ` +
+        `workload ${stress} (bottom) — ${RANKS[p.rank]}, ` +
+        `${game.projectsOf(p.id).length} project(s)`;
+
+      const rank = el('div', 'stat-rankbadge', RANK_LETTERS[p.rank]);
+      rank.style.left = `${G.rank.left}px`;
+      rank.style.top = `${barTop - 1}px`;
+      rank.style.width = `${G.rank.width}px`;
+      rank.style.height = `${G.rank.height}px`;
+      rank.title = RANKS[p.rank];
+
+      panel.append(name, portrait, track, rank);
+    });
+
     this.board.append(panel);
   }
 
@@ -251,6 +292,16 @@ export class Ui {
     loadBtn.onclick = () => this.handlers.onLoad();
     row2.append(saveBtn, loadBtn);
     turnCard.append(row2);
+
+    const soundRow = el('div', 'sound-row');
+    const soundBtn = el('button', 'b', this.handlers.soundOn() ? 'Sound: on' : 'Sound: off');
+    soundBtn.onclick = () => this.handlers.onToggleSound();
+    soundRow.append(soundBtn);
+    const autoBtn = el('button', 'b', 'Auto Click…');
+    autoBtn.title = 'Dismiss result dialogs automatically after N seconds';
+    autoBtn.onclick = () => this.handlers.onAutoClick();
+    soundRow.append(autoBtn);
+    turnCard.append(soundRow);
     this.side.append(turnCard);
 
     // Stock card

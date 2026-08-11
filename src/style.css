@@ -177,13 +177,72 @@ html, body {
   overflow: hidden;
 }
 
-.stat-row { margin-bottom: 5px; font-size: 10px; }
-.stat-row.active { outline: 1px solid var(--accent); border-radius: 3px; padding: 2px; margin: -2px -2px 3px; }
-.stat-name { display: flex; justify-content: space-between; gap: 4px; font-weight: 600; }
+/* Stat rows are absolutely positioned on the original's geometry. Each player has ONE
+   bordered track containing TWO stacked 8px meters: Boss Rating on top in the player's
+   colour, workload beneath it in red. */
+
+.stats-panel > * { position: absolute; }
+
+.stat-name {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  text-shadow: 0 1px 2px rgb(0 0 0 / .6);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.stat-name.active::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-left: 6px;
+  flex: none;
+}
+
+.stat-portrait {
+  border-radius: 2px;
+  border: 1px solid rgb(0 0 0 / .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgb(0 0 0 / .7);
+}
+
+.stat-track {
+  background: #e9f1f8;
+  border: 1px solid rgb(0 0 0 / .5);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.meter {
+  height: 50%;
+  min-height: 0;
+  transition: width .25s ease;
+}
+
+.meter-boss { border-bottom: 1px solid rgb(0 0 0 / .12); }
+
+.stat-rankbadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  text-shadow: 0 1px 2px rgb(0 0 0 / .6);
+}
+
 .stat-rank { color: var(--ink-dim); font-size: 9px; }
-.stat-bars { display: flex; gap: 3px; margin-top: 2px; }
-.stat-bar { flex: 1; height: 5px; background: rgb(0 0 0 / .5); border-radius: 2px; overflow: hidden; }
-.stat-bar > i { display: block; height: 100%; }
 
 /* ---------------------------------------------------------------- sidebar */
 
@@ -317,3 +376,74 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 .plist label:hover { background: var(--panel-2); }
 .plist input { margin-top: 2px; }
 .empty { padding: 10px; color: var(--ink-dim); font-size: 12px; }
+
+/* ---------------------------------------------------------------- square art */
+
+.sq-icon {
+  color: rgb(255 255 255 / 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.sq-icon svg { display: block; }
+
+.sq-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  white-space: pre-line;
+  margin-top: 3px;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.sq-corner .sq-label { font-size: 11px; color: rgb(255 255 255 / 0.85); }
+
+/* Scruples squares previously rendered a huge glyph; the icon carries it now. */
+.sq-scruples { font-size: inherit; font-weight: inherit; }
+.sq-scruples .sq-label { display: none; }
+
+.proj-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: .12;
+  pointer-events: none;
+}
+
+/* NB: never set `position` on .sq-project — .sq is already absolutely positioned in the
+   776x535 design space, and overriding it here drops every project square out of the ring.
+   Absolute positioning already establishes the containing block the watermark needs. */
+.sq-project > *:not(.proj-watermark) { position: relative; z-index: 1; }
+
+/* ---------------------------------------------------------------- sound toggle */
+
+.sound-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.sound-row .hint { font-size: 11px; color: var(--ink-dim); }
+
+/* AI decisions are shown but not editable: the picked option is highlighted, the rest
+   are disabled, and only the confirm button stays live. */
+.choice:disabled { opacity: .55; cursor: default; }
+.choice-chosen {
+  opacity: 1 !important;
+  border-color: var(--accent) !important;
+  background: #33302a !important;
+}
+.choice-tag {
+  float: right;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--accent);
+  font-weight: 700;
+}
+.ai-verdict {
+  background: rgb(216 161 60 / .12);
+  border-left: 3px solid var(--accent);
+  padding: 8px 11px;
+  border-radius: 0 5px 5px 0;
+  font-weight: 600;
+}

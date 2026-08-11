@@ -81,6 +81,20 @@ export const CENTER = {
   makeTrade: { left: 437, top: 224, size: 81 },
   resign: { left: 594, top: 296, size: 50 },
   stats: { left: 96, top: 172, width: 205, height: 211 },
+  /**
+   * Per-player row geometry inside the stats panel, transcribed from the original's
+   * TMAINFORM children (Shape13..Shape18, playerNNameLabel, rankLabelN, smallPlayerImage).
+   * Coordinates are relative to the stats panel. Row spacing is 32px except row 3, which
+   * the original placed one pixel lower.
+   */
+  statRows: {
+    barTops: [26, 58, 90, 123, 155, 187],
+    nameTops: [8, 40, 72, 105, 137, 169],
+    portrait: { left: 16, size: 16 },
+    bar: { left: 32, width: 136, height: 16 },
+    name: { left: 10, width: 140, height: 17 },
+    rank: { left: 176, width: 11, height: 16 },
+  },
   tokens: { left: 500, top: 106, size: 32, gapX: 32, gapY: 33, perRow: 3 },
 };
 

@@ -2,18 +2,92 @@ import * as AI from './ai';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
-import { RANKS, type GameLength, type Modal, type Personality, type Project } from './types';
+import { PERSONALITIES, RANKS, type GameLength, type Modal, type PersonalityChoice, type Project } from './types';
+import { Sound, type Cue } from './sound';
 import { Ui, el } from './ui';
 
-const PERSONALITIES: Personality[] = ['evil', 'ambitious', 'goodytwoshoes', 'average'];
 const SAVE_KEY = 'open-game-of-work:save';
 
 let game: Game;
 let ui: Ui;
+const sound = new Sound();
 /** Guards against re-entrant AI stepping. */
 let stepping = false;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/**
+ * Auto Click settings, mirroring the original's Options -> AutoClicking dialog: separate
+ * enable flags and 0-9 second delays for human and computer players. The original defaulted
+ * its spinners to 5 seconds. Both start disabled here so decisions are read at your own
+ * pace; turn the computer side on to let AI turns flow without clicking.
+ */
+interface AutoClick {
+  human: boolean;
+  humanSeconds: number;
+  computer: boolean;
+  computerSeconds: number;
+}
+
+const autoClick: AutoClick = loadAutoClick();
+
+function loadAutoClick(): AutoClick {
+  const fallback: AutoClick = { human: false, humanSeconds: 5, computer: false, computerSeconds: 5 };
+  try {
+    const raw = localStorage.getItem('ogow:autoclick');
+    return raw ? { ...fallback, ...(JSON.parse(raw) as Partial<AutoClick>) } : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveAutoClick(): void {
+  localStorage.setItem('ogow:autoclick', JSON.stringify(autoClick));
+}
+
+/** Milliseconds to auto-dismiss a dialog for this player, or 0 to wait for a click. */
+function autoCloseMs(isComputer: boolean): number {
+  if (isComputer) return autoClick.computer ? autoClick.computerSeconds * 1000 : 0;
+  return autoClick.human ? autoClick.humanSeconds * 1000 : 0;
+}
+
+/**
+ * Wires a dialog's confirm button to fire on its own after the configured delay.
+ * Returns a cleanup function the caller runs once the dialog closes.
+ */
+function armAutoClose(button: HTMLButtonElement, isComputer: boolean, fire: () => void): () => void {
+  const ms = autoCloseMs(isComputer);
+  if (ms <= 0) return () => {};
+  const original = button.textContent ?? 'Continue';
+  let left = Math.ceil(ms / 1000);
+  button.textContent = `${original} (${left})`;
+  const tick = window.setInterval(() => {
+    left -= 1;
+    button.textContent = left > 0 ? `${original} (${left})` : original;
+  }, 1000);
+  const timer = window.setTimeout(() => {
+    window.clearInterval(tick);
+    fire();
+  }, ms);
+  return () => {
+    window.clearInterval(tick);
+    window.clearTimeout(timer);
+  };
+}
+
+/** Subtitle marking a dialog as an AI decision the player is watching, not making. */
+function aiSubtitle(name: string, what: string): string {
+  return `${name} is deciding — ${what}. You can read the choice but not change it.`;
+}
+
+/**
+ * Delay per square while the token walks the board. The original animated movement — its
+ * rules text says a game can be aborted "while a player is rolling or moving" — but the
+ * exact cadence is not recoverable, so this is chosen to read clearly without dragging.
+ */
+const STEP_MS = 165;
+/** Beat between the token stopping and the result appearing. */
+const REVEAL_MS = 260;
 
 // ------------------------------------------------------------------ setup screen
 
@@ -79,12 +153,14 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       kind.value = i === 0 ? 'human' : i < 4 ? 'computer' : 'off';
 
       const pers = el('select');
-      PERSONALITIES.forEach((p) => {
+      const choices: PersonalityChoice[] = ['random', ...PERSONALITIES];
+      choices.forEach((p) => {
         const o = el('option', undefined, p[0].toUpperCase() + p.slice(1));
         o.value = p;
         pers.append(o);
       });
-      pers.value = PERSONALITIES[i % PERSONALITIES.length];
+      // Random by default, so a fresh game is not the same four opponents every time.
+      pers.value = 'random';
 
       const sync = () => {
         const off = kind.value === 'off';
@@ -112,7 +188,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       const seats: SeatConfig[] = rows.map((r) => ({
         kind: r.kind.value as SeatConfig['kind'],
         name: r.name.value.trim(),
-        personality: r.pers.value as Personality,
+        personality: r.pers.value as PersonalityChoice,
       }));
       const active = seats.filter((s) => s.kind !== 'off').length;
       if (active < 2) {
@@ -127,8 +203,63 @@ async function askNewGame(): Promise<NewGameConfig | null> {
   });
 }
 
+/** Options -> Auto Click, mirroring the original's TAUTOCLICKFORM. */
+async function askAutoClick(): Promise<void> {
+  await ui.modal<void>((done) => {
+    const d = Ui.modalShell('Auto Click Options', 'Close popup windows automatically?');
+    const rows: Array<[string, 'human' | 'computer']> = [
+      ['Human players', 'human'],
+      ['Computer players', 'computer'],
+    ];
+    for (const [label, key] of rows) {
+      const row = el('div', 'seat');
+      row.style.gridTemplateColumns = '20px 1fr 70px';
+      const cb = el('input');
+      cb.type = 'checkbox';
+      cb.checked = autoClick[key];
+      const secs = el('input');
+      secs.type = 'number';
+      secs.min = '0';
+      secs.max = '9';
+      secs.value = String(autoClick[key === 'human' ? 'humanSeconds' : 'computerSeconds']);
+      cb.onchange = () => {
+        autoClick[key] = cb.checked;
+      };
+      secs.onchange = () => {
+        const v = Math.max(0, Math.min(9, Number(secs.value) || 0));
+        secs.value = String(v);
+        if (key === 'human') autoClick.humanSeconds = v;
+        else autoClick.computerSeconds = v;
+      };
+      row.append(cb, el('span', undefined, `${label} — seconds`), secs);
+      d.append(row);
+    }
+    d.append(
+      el(
+        'p',
+        'stat-rank',
+        'With a box ticked, that side\u2019s dialogs dismiss themselves after the given number of seconds. Leave both off to click through every result yourself.',
+      ),
+    );
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'OK');
+    ok.onclick = () => {
+      saveAutoClick();
+      done();
+    };
+    foot.append(ok);
+    d.append(foot);
+    return d;
+  });
+}
+
 function stubHandlers() {
   return {
+    onToggleSound() {},
+    onAutoClick() {},
+    soundOn() {
+      return false;
+    },
     onRoll() {},
     onTrade() {},
     onResign() {},
@@ -154,18 +285,26 @@ async function resolveModal(): Promise<void> {
       await handleTakeProject(m);
       break;
     case 'chance':
+      sound.play('chance');
       await handleChance(m);
       break;
     case 'scruples':
+      sound.play('scruples');
       await handleScruples(m);
       break;
     case 'meeting':
+      sound.play(m.delta >= 0 ? 'meetingGood' : m.delta <= -10 ? 'meetingTerrible' : 'meetingBad');
       await handleMeeting(m);
       break;
     case 'officeParty':
+      sound.play('officeParty');
+      // The original shipped a .mid for the party; play it for the duration of the modal.
+      void sound.startMusic(true);
       await handleOfficeParty(m);
+      sound.stopMusic();
       break;
     case 'powerMonger':
+      sound.play('powerMonger');
       await handlePowerMonger(m);
       break;
     case 'rankChange':
@@ -188,67 +327,94 @@ async function resolveModal(): Promise<void> {
 async function handleTakeProject(m: Extract<Modal, { kind: 'takeProject' }>): Promise<void> {
   const p = game.player(m.playerId);
   const proj = game.state.projects[m.projectId];
-  let accept: boolean;
+  const isAi = p.kind === 'computer';
+  // Decide first, so the dialog can present the AI's answer as already made.
+  const aiChoice = isAi ? AI.decideTakeProject(game, m.playerId, m.projectId) : null;
 
-  if (p.kind === 'computer') {
-    accept = AI.decideTakeProject(game, m.playerId, m.projectId);
-    await sleep(450);
-  } else {
-    accept = await ui.modal<boolean>((done) => {
-      const d = Ui.modalShell(
-        'Unclaimed project',
-        `${proj.name} — profile ${proj.profile}, ${proj.work} work to ship`,
-      );
+  const accept = await ui.modal<boolean>((done) => {
+    const d = Ui.modalShell(
+      'Unclaimed project',
+      isAi
+        ? aiSubtitle(p.name, `whether to take on ${proj.name}`)
+        : `${proj.name} — profile ${proj.profile}, ${proj.work} work to ship`,
+    );
+    d.append(
+      el(
+        'p',
+        undefined,
+        `Nobody owns ${proj.name} (profile ${proj.profile}). Taking it adds ${proj.profile} to stress and pays ${R.COMPLETION_BOSS_RATING[proj.profile]} Boss Rating when it ships.`,
+      ),
+    );
+    d.append(
+      el(
+        'p',
+        undefined,
+        `${isAi ? p.name : 'You'} currently hold ${game.projectsOf(m.playerId).length} project(s) at stress ${game.stress(m.playerId)}. Shoddy work starts above stress ${R.STRESS_SHODDY_THRESHOLD}.`,
+      ),
+    );
+    if (isAi) {
       d.append(
-        el(
-          'p',
-          undefined,
-          `Nobody owns ${proj.name}. Taking it adds ${proj.profile} to your stress and ${R.COMPLETION_BOSS_RATING[proj.profile]} Boss Rating when it ships.`,
-        ),
+        el('p', 'ai-verdict', `${p.name} decides to ${aiChoice ? 'take it on' : 'decline'}.`),
       );
-      d.append(
-        el(
-          'p',
-          undefined,
-          `You currently hold ${game.projectsOf(m.playerId).length} project(s) at stress ${game.stress(m.playerId)}. Shoddy work starts above stress ${R.STRESS_SHODDY_THRESHOLD}.`,
-        ),
-      );
-      const foot = el('div', 'foot');
-      const no = el('button', 'b', 'Decline');
-      no.onclick = () => done(false);
-      const yes = el('button', 'b primary', 'Take it on');
-      yes.onclick = () => done(true);
-      foot.append(no, yes);
-      d.append(foot);
-      return d;
-    });
-  }
+    }
+
+    const foot = el('div', 'foot');
+    const no = el('button', 'b', 'Decline');
+    const yes = el('button', 'b primary', 'Take it on');
+    // Only the button the AI picked stays live, so the choice can be read but not changed.
+    if (isAi) {
+      no.disabled = aiChoice === true;
+      yes.disabled = aiChoice === false;
+    }
+    let cancelAuto = () => {};
+    no.onclick = () => {
+      cancelAuto();
+      done(false);
+    };
+    yes.onclick = () => {
+      cancelAuto();
+      done(true);
+    };
+    foot.append(no, yes);
+    d.append(foot);
+    const chosen = aiChoice ? yes : no;
+    if (isAi) cancelAuto = armAutoClose(chosen, true, () => done(aiChoice!));
+    return d;
+  });
 
   game.state.modal = null;
   if (accept) game.takeProject(m.projectId, m.playerId);
-  else game.state.log.push({ turn: game.state.turn, playerId: m.playerId, text: `${p.name} declines ${proj.name}.` });
+  else
+    game.state.log.push({
+      turn: game.state.turn,
+      playerId: m.playerId,
+      text: `${p.name} declines ${proj.name}.`,
+    });
   game.finishWork({ landedOnOther: false, ownProject: accept ? m.projectId : null });
 }
 
 async function handleChance(m: Extract<Modal, { kind: 'chance' }>): Promise<void> {
   const text = game.chanceText(m.cardId, m.playerId);
   const p = game.player(m.playerId);
+  const isAi = p.kind === 'computer';
+  if (isAi) game.state.log.push({ turn: game.state.turn, playerId: m.playerId, text });
 
-  if (p.kind === 'human') {
-    await ui.modal<void>((done) => {
-      const d = Ui.modalShell('Chance', `${p.name} draws a chance card`);
-      d.append(el('p', undefined, text));
-      const foot = el('div', 'foot');
-      const ok = el('button', 'b primary', 'Continue');
-      ok.onclick = () => done();
-      foot.append(ok);
-      d.append(foot);
-      return d;
-    });
-  } else {
-    game.state.log.push({ turn: game.state.turn, playerId: m.playerId, text });
-    await sleep(700);
-  }
+  await ui.modal<void>((done) => {
+    const d = Ui.modalShell('Chance', `${p.name} draws a chance card`);
+    d.append(el('p', undefined, text));
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'Continue');
+    let cancelAuto = () => {};
+    ok.onclick = () => {
+      cancelAuto();
+      done();
+    };
+    foot.append(ok);
+    d.append(foot);
+    cancelAuto = armAutoClose(ok, isAi, () => done());
+    return d;
+  });
+
   game.state.modal = null;
   game.applyChance(m.cardId, m.playerId);
 }
@@ -257,22 +423,43 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
   const p = game.player(m.playerId);
   const card = game.scruplesCard(m.cardId);
   const situation = game.scruplesText(m.cardId, m.playerId);
-  let choice: number;
+  const isAi = p.kind === 'computer';
+  // Resolve the AI's answer up front so it can be shown already selected.
+  const aiChoice = isAi ? AI.decideScruples(game, m.playerId, m.cardId) : null;
+  if (isAi) game.state.log.push({ turn: game.state.turn, playerId: m.playerId, text: situation });
 
-  if (p.kind === 'computer') {
-    choice = AI.decideScruples(game, m.playerId, m.cardId);
-    game.state.log.push({ turn: game.state.turn, playerId: m.playerId, text: situation });
-    await sleep(800);
-  } else {
-    choice = await ui.modal<number>((done) => {
-      const d = Ui.modalShell('Scruples', 'Pick an answer — 1, 2 or 3');
-      d.append(el('p', undefined, situation));
-      card.choices.forEach((c, i) => {
-        const b = el('button', 'choice');
-        b.append(el('b', undefined, `${i + 1}.`), document.createTextNode(c.label));
+  const choice = await ui.modal<number>((done) => {
+    const d = Ui.modalShell(
+      'Scruples',
+      isAi ? aiSubtitle(p.name, 'which answer to give') : 'Pick an answer — 1, 2 or 3',
+    );
+    d.append(el('p', undefined, situation));
+
+    card.choices.forEach((c, i) => {
+      const b = el('button', 'choice' + (isAi && i === aiChoice ? ' choice-chosen' : ''));
+      b.append(el('b', undefined, `${i + 1}.`), document.createTextNode(c.label));
+      if (isAi) {
+        // Every option is shown, but none is clickable — the decision is already made.
+        b.disabled = true;
+        if (i === aiChoice) b.append(el('span', 'choice-tag', 'chosen'));
+      } else {
         b.onclick = () => done(i);
-        d.append(b);
-      });
+      }
+      d.append(b);
+    });
+
+    if (isAi) {
+      const foot = el('div', 'foot');
+      const ok = el('button', 'b primary', 'Continue');
+      let cancelAuto = () => {};
+      ok.onclick = () => {
+        cancelAuto();
+        done(aiChoice!);
+      };
+      foot.append(ok);
+      d.append(foot);
+      cancelAuto = armAutoClose(ok, true, () => done(aiChoice!));
+    } else {
       const onKey = (e: KeyboardEvent) => {
         if (e.key >= '1' && e.key <= '3') {
           window.removeEventListener('keydown', onKey);
@@ -280,47 +467,54 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
         }
       };
       window.addEventListener('keydown', onKey);
-      return d;
-    });
-  }
+    }
+    return d;
+  });
 
   game.state.modal = null;
   const outcome = game.applyScruples(m.cardId, m.playerId, choice);
 
-  if (p.kind === 'human') {
-    await ui.modal<void>((done) => {
-      const d = Ui.modalShell('Outcome');
-      d.append(el('p', undefined, outcome));
-      const foot = el('div', 'foot');
-      const ok = el('button', 'b primary', 'Continue');
-      ok.onclick = () => done();
-      foot.append(ok);
-      d.append(foot);
-      return d;
-    });
-  }
+  await ui.modal<void>((done) => {
+    const d = Ui.modalShell('Outcome', isAi ? `${p.name}'s decision` : undefined);
+    d.append(el('p', undefined, outcome));
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'Continue');
+    let cancelAuto = () => {};
+    ok.onclick = () => {
+      cancelAuto();
+      done();
+    };
+    foot.append(ok);
+    d.append(foot);
+    cancelAuto = armAutoClose(ok, isAi, () => done());
+    return d;
+  });
 }
 
 async function handleMeeting(m: Extract<Modal, { kind: 'meeting' }>): Promise<void> {
   const p = game.player(m.playerId);
-  if (p.kind === 'human') {
-    await ui.modal<void>((done) => {
-      const d = Ui.modalShell('Meeting', 'Time to present');
-      d.append(el('p', undefined, m.text));
-      const line = el('p');
-      line.append(document.createTextNode('Boss Rating '), Ui.delta(m.delta));
-      d.append(line);
-      const foot = el('div', 'foot');
-      const ok = el('button', 'b primary', 'Continue');
-      ok.onclick = () => done();
-      foot.append(ok);
-      d.append(foot);
-      return d;
-    });
-  } else {
-    game.state.log.push({ turn: game.state.turn, playerId: m.playerId, text: m.text });
-    await sleep(700);
-  }
+  const isAi = p.kind === 'computer';
+  if (isAi) game.state.log.push({ turn: game.state.turn, playerId: m.playerId, text: m.text });
+
+  await ui.modal<void>((done) => {
+    const d = Ui.modalShell('Meeting', `${p.name} presents`);
+    d.append(el('p', undefined, m.text));
+    const line = el('p');
+    line.append(document.createTextNode('Boss Rating '), Ui.delta(m.delta));
+    d.append(line);
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'Continue');
+    let cancelAuto = () => {};
+    ok.onclick = () => {
+      cancelAuto();
+      done();
+    };
+    foot.append(ok);
+    d.append(foot);
+    cancelAuto = armAutoClose(ok, isAi, () => done());
+    return d;
+  });
+
   game.state.modal = null;
   game.applyMeeting(m.playerId, m.delta);
 }
@@ -349,33 +543,29 @@ async function handleOfficeParty(m: Extract<Modal, { kind: 'officeParty' }>): Pr
 
 async function handleRankChange(m: Extract<Modal, { kind: 'rankChange' }>): Promise<void> {
   const p = game.player(m.playerId);
+  const isAi = p.kind === 'computer';
   const up = m.to > m.from;
-  if (p.kind === 'human') {
-    await ui.modal<void>((done) => {
-      const d = Ui.modalShell(up ? 'Promotion' : 'Demotion');
-      d.append(
-        el('p', undefined, `${p.name} moves from ${RANKS[m.from]} to ${RANKS[m.to]}.`),
-      );
-      d.append(
-        el(
-          'p',
-          undefined,
-          `Power Monger actions available at this rank: ${R.POWER_MONGER_ACTIONS[m.to]}.`,
-        ),
-      );
-      const foot = el('div', 'foot');
-      const ok = el('button', 'b primary', 'Continue');
-      ok.onclick = () => done();
-      foot.append(ok);
-      d.append(foot);
-      return d;
-    });
-  } else {
-    await sleep(500);
-  }
+
+  await ui.modal<void>((done) => {
+    const d = Ui.modalShell(up ? 'Promotion' : 'Demotion', p.name);
+    d.append(el('p', undefined, `${p.name} moves from ${RANKS[m.from]} to ${RANKS[m.to]}.`));
+    d.append(
+      el('p', undefined, `Power Monger actions at this rank: ${R.POWER_MONGER_ACTIONS[m.to]}.`),
+    );
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'Continue');
+    let cancelAuto = () => {};
+    ok.onclick = () => {
+      cancelAuto();
+      done();
+    };
+    foot.append(ok);
+    d.append(foot);
+    cancelAuto = armAutoClose(ok, isAi, () => done());
+    return d;
+  });
+
   game.state.modal = null;
-  // The square that triggered this still needs resolving; the engine handles that when
-  // the caller continues. Rank changes never terminate a turn on their own.
 }
 
 async function handlePowerMonger(m: Extract<Modal, { kind: 'powerMonger' }>): Promise<void> {
@@ -385,7 +575,8 @@ async function handlePowerMonger(m: Extract<Modal, { kind: 'powerMonger' }>): Pr
   while (left > 0) {
     if (p.kind === 'computer') {
       const action = AI.decidePowerMonger(game, m.playerId);
-      await sleep(550);
+      // Show the AI's action in the real form, filled in and locked, then apply it.
+      await powerMongerDialog(m.playerId, left, action);
       if (action.kind === 'cancel' && action.projectId !== undefined) {
         game.cancelProject(action.projectId, m.playerId);
       } else if (action.kind === 'assign' && action.projectId !== undefined) {
@@ -414,12 +605,24 @@ async function handlePowerMonger(m: Extract<Modal, { kind: 'powerMonger' }>): Pr
 
 type PmResult = 'acted' | 'stop';
 
-function powerMongerDialog(playerId: number, left: number): Promise<PmResult> {
+/**
+ * The Power Monger form. When `preset` is supplied the form is filled in with a computer
+ * player's chosen action and every control is disabled, so the decision can be read but not
+ * altered — only the confirm button stays live.
+ */
+function powerMongerDialog(
+  playerId: number,
+  left: number,
+  preset?: AI.PowerMongerAction,
+): Promise<PmResult> {
   return ui.modal<PmResult>((done) => {
     const p = game.player(playerId);
+    const locked = preset !== undefined;
     const d = Ui.modalShell(
       'Power Monger',
-      `${p.name} — ${RANKS[p.rank]} — ${left} action${left === 1 ? '' : 's'} remaining`,
+      locked
+        ? aiSubtitle(p.name, `how to use a Power Monger action (${left} left)`)
+        : `${p.name} — ${RANKS[p.rank]} — ${left} action${left === 1 ? '' : 's'} remaining`,
     );
     d.append(
       el(
@@ -505,6 +708,35 @@ function powerMongerDialog(playerId: number, left: number): Promise<PmResult> {
     tgtSel.onchange = rebuild;
     rebuild();
 
+    if (preset) {
+      actSel.value = preset.kind;
+      if (preset.targetId !== undefined) tgtSel.value = String(preset.targetId);
+      rebuild();
+      if (preset.projectId !== undefined) {
+        const radio = list.querySelector<HTMLInputElement>(
+          `input[value="${preset.projectId}"]`,
+        );
+        if (radio) {
+          radio.checked = true;
+          selected = preset.projectId;
+          radio.closest('label')?.classList.add('choice-chosen');
+        }
+      }
+      // Lock every control: the AI's choice is on display, not up for editing.
+      for (const node of d.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+        'input, select',
+      )) {
+        node.disabled = true;
+      }
+      const verdict =
+        preset.kind === 'nothing'
+          ? `${p.name} does nothing.`
+          : preset.kind === 'cancel'
+            ? `${p.name} cancels ${game.state.projects[preset.projectId!]?.name ?? 'a project'}.`
+            : `${p.name} assigns ${game.state.projects[preset.projectId!]?.name ?? 'a project'} to ${game.player(preset.targetId ?? playerId).name}.`;
+      projField.after(el('p', 'ai-verdict', verdict));
+    }
+
     const err = el('div', 'stat-rank');
     err.style.color = '#e07a6a';
     d.append(err);
@@ -512,7 +744,18 @@ function powerMongerDialog(playerId: number, left: number): Promise<PmResult> {
     const foot = el('div', 'foot');
     const skip = el('button', 'b', 'Stop using actions');
     skip.onclick = () => done('stop');
-    const go = el('button', 'b primary', 'Do it');
+    const go = el('button', 'b primary', locked ? 'Continue' : 'Do it');
+    let cancelAuto = () => {};
+    if (locked) {
+      go.onclick = () => {
+        cancelAuto();
+        done('acted');
+      };
+      cancelAuto = armAutoClose(go, true, () => done('acted'));
+      foot.append(go);
+      d.append(foot);
+      return d;
+    }
     go.onclick = () => {
       const mode = actSel.value;
       if (mode === 'nothing') {
@@ -652,28 +895,51 @@ function tradeDialog(fromId: number): Promise<Offer | null> {
   });
 }
 
-async function askAccept(fromId: number, toId: number, give: number[], want: number[]): Promise<boolean> {
+async function askAccept(
+  fromId: number,
+  toId: number,
+  give: number[],
+  want: number[],
+): Promise<boolean> {
   const to = game.player(toId);
   const from = game.player(fromId);
   const names = (ids: number[]) =>
     ids.map((i) => game.state.projects[i].name).join(', ') || 'nothing';
-
-  if (to.kind === 'computer') {
-    await sleep(600);
-    return AI.decideAcceptTrade(game, toId, fromId, give, want);
-  }
+  const isAi = to.kind === 'computer';
+  const aiChoice = isAi ? AI.decideAcceptTrade(game, toId, fromId, give, want) : null;
 
   return ui.modal<boolean>((done) => {
-    const d = Ui.modalShell('Trade offer', `${from.name} offers ${to.name} a trade`);
+    const d = Ui.modalShell(
+      'Trade offer',
+      isAi
+        ? aiSubtitle(to.name, `whether to accept ${from.name}'s offer`)
+        : `${from.name} offers ${to.name} a trade`,
+    );
     d.append(el('p', undefined, `${to.name} would receive: ${names(give)}`));
     d.append(el('p', undefined, `${to.name} would give up: ${names(want)}`));
+    if (isAi) {
+      d.append(el('p', 'ai-verdict', `${to.name} decides to ${aiChoice ? 'accept' : 'decline'}.`));
+    }
+
     const foot = el('div', 'foot');
     const no = el('button', 'b', 'Decline');
-    no.onclick = () => done(false);
     const yes = el('button', 'b primary', 'Accept');
-    yes.onclick = () => done(true);
+    if (isAi) {
+      no.disabled = aiChoice === true;
+      yes.disabled = aiChoice === false;
+    }
+    let cancelAuto = () => {};
+    no.onclick = () => {
+      cancelAuto();
+      done(false);
+    };
+    yes.onclick = () => {
+      cancelAuto();
+      done(true);
+    };
     foot.append(no, yes);
     d.append(foot);
+    if (isAi) cancelAuto = armAutoClose(aiChoice ? yes : no, true, () => done(aiChoice!));
     return d;
   });
 }
@@ -712,6 +978,7 @@ async function step(): Promise<void> {
     // Keep resolving until we are waiting on a human.
     for (let guard = 0; guard < 500; guard++) {
       ui.render(game);
+      for (const c of game.drainCues()) sound.play(c as Cue);
 
       if (game.state.phase === 'gameOver') {
         if (game.state.modal?.kind === 'gameOver') await resolveModal();
@@ -720,6 +987,25 @@ async function step(): Promise<void> {
 
       if (game.state.modal) {
         await resolveModal();
+        continue;
+      }
+
+      // Walk the token one square at a time, then reveal the result — never both at once.
+      if (game.moving) {
+        game.stepMove();
+        ui.render(game);
+        for (const c of game.drainCues()) sound.play(c as Cue);
+        await sleep(STEP_MS);
+        continue;
+      }
+      if (game.state.phase === 'moving') {
+        // Token has stopped. Show anything that happened en route (promotions), then the
+        // landing square's own result.
+        for (const notice of game.drainNotices()) {
+          if (notice.kind === 'rankChange') await handleRankChange(notice);
+        }
+        await sleep(REVEAL_MS);
+        game.resolveLanding();
         continue;
       }
 
@@ -760,6 +1046,16 @@ async function step(): Promise<void> {
 
 function handlers() {
   return {
+    onToggleSound() {
+      sound.toggle();
+      ui.render(game);
+    },
+    onAutoClick() {
+      void askAutoClick();
+    },
+    soundOn() {
+      return sound.on;
+    },
     onRoll() {
       if (!game.canRoll()) return;
       game.roll();
@@ -801,9 +1097,11 @@ function handlers() {
 }
 
 async function newGame(): Promise<void> {
+  sound.stopMusic();
   const config = await askNewGame();
   if (!config) return;
   game = new Game(config);
+  sound.play('gameStart');
   game.state.log.push({
     turn: 1,
     playerId: null,

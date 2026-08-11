@@ -23,7 +23,6 @@ export interface UiHandlers {
   onRoll(): void;
   onTrade(): void;
   onResign(): void;
-  onEndTurn(): void;
   onNewGame(): void;
   onSave(): void;
   onLoad(): void;
@@ -367,12 +366,9 @@ export class Ui {
 
     const row = el('div', 'btn-row');
     row.style.marginTop = '10px';
-    const endBtn = el('button', 'b primary', 'End turn');
-    endBtn.disabled = !game.turnComplete() || s.phase === 'gameOver';
-    endBtn.onclick = () => this.handlers.onEndTurn();
     const newBtn = el('button', 'b', 'New game');
     newBtn.onclick = () => this.handlers.onNewGame();
-    row.append(endBtn, newBtn);
+    row.append(newBtn);
     turnCard.append(row);
 
     const row2 = el('div', 'btn-row');

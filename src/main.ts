@@ -89,6 +89,8 @@ function aiSubtitle(name: string, what: string): string {
 const STEP_MS = 165;
 /** Beat between the token stopping and the result appearing. */
 const REVEAL_MS = 260;
+/** Pause after a human's turn resolves, before play passes on. */
+const END_TURN_MS = 520;
 
 // ------------------------------------------------------------------ setup screen
 
@@ -264,7 +266,6 @@ function stubHandlers() {
     onRoll() {},
     onTrade() {},
     onResign() {},
-    onEndTurn() {},
     onNewGame() {},
     onSave() {},
     onLoad() {},
@@ -1012,13 +1013,14 @@ async function step(): Promise<void> {
 
       const p = game.active;
 
+      // The turn ends itself. Every human decision happens before or during the roll —
+      // trading precedes it, and square effects resolve as modals — so once the result is
+      // dismissed there is nothing left to choose. The original had no end-turn control:
+      // TMAINFORM contains no TButton at all, only the three clickable images and the menus.
       if (game.turnComplete()) {
-        if (p.kind === 'computer') {
-          await sleep(400);
-          game.endTurn();
-          continue;
-        }
-        return; // human presses End turn
+        await sleep(p.kind === 'computer' ? 400 : END_TURN_MS);
+        game.endTurn();
+        continue;
       }
 
       if (p.kind === 'computer') {
@@ -1074,10 +1076,6 @@ function handlers() {
       game.resign(p.id);
       void step();
     },
-    onEndTurn() {
-      game.endTurn();
-      void step();
-    },
     onNewGame() {
       void newGame();
     },
@@ -1123,8 +1121,6 @@ function bindKeys(): void {
       handlers().onTrade();
     } else if (e.key === 'r' || e.key === 'R') {
       handlers().onResign();
-    } else if (e.key === 'Enter' && game.turnComplete()) {
-      handlers().onEndTurn();
     }
   });
 }

@@ -1,5 +1,5 @@
 import * as AI from './ai';
-import { applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
+import { aboutImage, applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
@@ -366,6 +366,8 @@ function stubHandlers() {
     onAutoClick() {},
     onHighScores() {},
     onHelp() {},
+    onStockChart() {},
+    onAbout() {},
     soundOn() {
       return false;
     },
@@ -1180,6 +1182,73 @@ function helpDialog(startKey = 'getStarted') {
   });
 }
 
+/** The Stock Chart window, which the original opened from its Game menu. */
+function stockChartDialog() {
+  return ui.modal<void>((done) => {
+    const s2 = game.state;
+    const d = Ui.modalShell('Stock Chart', `Now ${s2.stock} · peak ${s2.stockPeak}`);
+    const pts = s2.stockHistory;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 560 220');
+    svg.setAttribute('class', 'chart-big');
+    const max = Math.max(R.STOCK_MAX / 2, ...pts.map((p) => p.price));
+    const x = (i: number) => (pts.length < 2 ? 0 : (i / (pts.length - 1)) * 550 + 5);
+    const y = (v: number) => 210 - (v / max) * 200;
+    // Starting price, for reference against the current line.
+    for (const [v, cls] of [[R.STOCK_START, 'chart-base'], [0, 'chart-zero']] as const) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '5');
+      line.setAttribute('x2', '555');
+      line.setAttribute('y1', String(y(v)));
+      line.setAttribute('y2', String(y(v)));
+      line.setAttribute('class', cls);
+      svg.append(line);
+    }
+    if (pts.length > 1) {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.price).toFixed(1)}`).join(' '));
+      path.setAttribute('class', s2.stock >= R.STOCK_START ? 'chart-up' : 'chart-down');
+      svg.append(path);
+    }
+    d.append(svg);
+    d.append(
+      el('p', 'stat-rank', 'Shipping a project lifts the price; running the company costs a little every round. At zero the company is disbanded and everyone loses.'),
+    );
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'OK');
+    ok.onclick = () => done();
+    foot.append(ok);
+    d.append(foot);
+    return d;
+  });
+}
+
+/** About, using the original's own about-box illustration when it is installed. */
+function aboutDialog() {
+  return ui.modal<void>((done) => {
+    const d = Ui.modalShell('About', 'Open Game of Work');
+    const art = aboutImage();
+    if (art) {
+      const img = el('img', 'event-art');
+      img.src = art;
+      img.alt = 'Game of Work';
+      img.draggable = false;
+      d.append(img);
+    }
+    d.append(
+      el('p', undefined, 'Game of Work was published by Hotpot Software around 2000 for 32-bit Windows, and is no longer available anywhere.'),
+      el('p', undefined, 'This is an independent, clean-room reimplementation. Its mechanics, board geometry and colours were recovered by analysing the original program; its artwork, audio and text are loaded from your own copy when present and are never distributed with this port.'),
+      el('p', undefined, 'Not affiliated with or endorsed by the original authors.'),
+    );
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'OK');
+    ok.onclick = () => done();
+    foot.append(ok);
+    d.append(foot);
+    return d;
+  });
+}
+
 /** The High Scores window: two tables of ten, as THIGHSCORESFORM lays them out. */
 function highScoresDialog(highlight?: { fastest: number | null; richest: number | null }) {
   return ui.modal<void>((done) => {
@@ -1428,8 +1497,14 @@ function handlers() {
     onHighScores() {
       void highScoresDialog();
     },
-    onHelp() {
-      void helpDialog();
+    onHelp(topic?: string) {
+      void helpDialog(topic ?? 'getStarted');
+    },
+    onStockChart() {
+      void stockChartDialog();
+    },
+    onAbout() {
+      void aboutDialog();
     },
     soundOn() {
       return sound.on;
@@ -1470,11 +1545,35 @@ function handlers() {
   };
 }
 
+/**
+ * A throwaway game used only to paint the board behind the New Game window: six seats so
+ * all six avatars show, at the Long starting rank, which is what puts 'E' on every badge.
+ */
+function attractGame(): Game {
+  return new Game({
+    length: 'long',
+    seed: 0,
+    seats: Array.from({ length: 6 }, (_, i) => ({
+      kind: 'computer' as const,
+      name: `Player ${i + 1}`,
+      personality: 'average' as const,
+    })),
+  });
+}
+
 async function newGame(): Promise<void> {
   sound.stopMusic();
   announced = '';
+  // Paint the pre-game board first, so the dialog opens over it rather than over nothing.
+  game = attractGame();
+  ui.setAttract(true);
+  ui.render(game);
   const config = await askNewGame();
-  if (!config) return;
+  ui.setAttract(false);
+  if (!config) {
+    ui.render(game);
+    return;
+  }
   game = new Game(config);
   game.state.log.push({
     turn: 1,

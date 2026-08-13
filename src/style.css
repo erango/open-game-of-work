@@ -775,3 +775,96 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 }
 
 .help-mark:hover { background: #d94a41; }
+
+/* ---------------------------------------------------------------- menu bar */
+
+/* Mirrors TMAINFORM's TMainMenu, and keeps the sidebar from filling up with buttons. */
+.left-col {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.menubar {
+  display: flex;
+  gap: 2px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 3px;
+  position: relative;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+
+.menu { position: relative; }
+
+.menu-top {
+  background: none;
+  border: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.menu-top:hover { background: var(--panel-2); }
+.menu-open { background: var(--accent); color: #1a1408; font-weight: 700; }
+
+.menu-drop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 232px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 4px;
+  box-shadow: 0 14px 36px rgb(0 0 0 / .55);
+  z-index: 30;
+}
+
+.menu-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 8px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.menu-item:hover { background: #3f4854; }
+.menu-check { color: var(--accent); font-weight: 700; }
+.menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
+
+/* Stock Chart window */
+.chart-big {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: rgb(0 0 0 / .28);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.chart-big path { fill: none; stroke-width: 2; }
+.chart-up { stroke: #63c47a; }
+.chart-down { stroke: #e07a6a; }
+.chart-base { stroke: rgb(255 255 255 / .22); stroke-dasharray: 4 4; stroke-width: 1; }
+.chart-zero { stroke: rgb(224 122 106 / .5); stroke-width: 1; }
+
+/* Avatars parked in their pre-game grid, with no disc behind them. */
+.token-parked { transition: none; }

@@ -22,7 +22,9 @@ export interface UiHandlers {
   onToggleSound(): void;
   onAutoClick(): void;
   onHighScores(): void;
-  onHelp(): void;
+  onHelp(topic?: string): void;
+  onStockChart(): void;
+  onAbout(): void;
   soundOn(): boolean;
   onRoll(): void;
   onTrade(): void;
@@ -50,6 +52,22 @@ export class Ui {
    */
   private snapScale = localStorage.getItem('ogow:snap') === 'on';
   private cursorsApplied = false;
+  private menubar!: HTMLElement;
+  private openMenu: string | null = null;
+  private lastGame: Game | null = null;
+  /**
+   * Pre-game board, shown behind the New Game window.
+   *
+   * The original sat on this state at launch, waiting for you to pick New. Its design-time
+   * captions are exactly what it showed: every project reads 'project Name', the ticker
+   * reads '+32', each rank badge reads 'E', and the six avatars are parked in the 3x2 grid
+   * above the ticker rather than standing on Home.
+   */
+  private attract = false;
+
+  setAttract(on: boolean): void {
+    this.attract = on;
+  }
 
   constructor(root: HTMLElement, handlers: UiHandlers) {
     this.root = root;
@@ -59,17 +77,24 @@ export class Ui {
       new ResizeObserver(() => this.scaleBoard()).observe(this.boardCol);
     }
     window.addEventListener('resize', () => this.scaleBoard());
+    document.addEventListener('click', () => this.closeMenus());
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.closeMenus();
+    });
   }
 
   private buildShell(): void {
     this.root.textContent = '';
     this.boardCol = el('div', 'board-col');
+    this.menubar = el('div', 'menubar');
     this.boardWrap = el('div', 'board-wrap');
     this.board = el('div', 'board');
     this.boardWrap.append(this.board);
     this.boardCol.append(this.boardWrap);
     this.side = el('div', 'side');
-    this.root.append(this.boardCol, this.side);
+    const left = el('div', 'left-col');
+    left.append(this.menubar, this.boardCol);
+    this.root.append(left, this.side);
     this.scaleBoard();
   }
 
@@ -122,7 +147,99 @@ export class Ui {
     document.head.append(style);
   }
 
+  /**
+   * The menu bar, mirroring TMAINFORM's TMainMenu: Game, Options, How to Play, About.
+   * Two extra Options entries carry this port's own display settings. Register is omitted
+   * deliberately (it drove a nag screen) and so is Exit, which means nothing in a browser tab.
+   */
+  private renderMenu(game: Game): void {
+    type Item = { label: string; run?: () => void; check?: boolean; sep?: boolean };
+    const menus: Array<{ name: string; items: Item[] }> = [
+      {
+        name: 'Game',
+        items: [
+          { label: 'New\u2026', run: () => this.handlers.onNewGame() },
+          { label: 'Save\u2026', run: () => this.handlers.onSave() },
+          { label: 'Load\u2026', run: () => this.handlers.onLoad() },
+          { label: '', sep: true },
+          { label: 'Stock Chart\u2026', run: () => this.handlers.onStockChart() },
+          { label: '', sep: true },
+          { label: 'High Scores\u2026', run: () => this.handlers.onHighScores() },
+        ],
+      },
+      {
+        name: 'Options',
+        items: [
+          { label: 'Sound', check: this.handlers.soundOn(), run: () => this.handlers.onToggleSound() },
+          { label: 'AutoClicking\u2026', run: () => this.handlers.onAutoClick() },
+          { label: '', sep: true },
+          {
+            label: 'Snap board to whole pixels',
+            check: this.snapScale,
+            run: () => {
+              this.toggleSnap();
+              this.render(game);
+            },
+          },
+          { label: 'Smooth artwork', check: this.handlers.smoothOn(), run: () => this.handlers.onToggleSmooth() },
+        ],
+      },
+      {
+        name: 'How to Play',
+        items: [
+          { label: 'Getting Started', run: () => this.handlers.onHelp('getStarted') },
+          { label: 'Rules of the Game', run: () => this.handlers.onHelp('rules') },
+          { label: '', sep: true },
+          { label: 'All topics\u2026', run: () => this.handlers.onHelp() },
+        ],
+      },
+      { name: 'About', items: [{ label: 'About Game of Work', run: () => this.handlers.onAbout() }] },
+    ];
+
+    this.menubar.textContent = '';
+    for (const m of menus) {
+      const wrap = el('div', 'menu');
+      const top = el('button', 'menu-top' + (this.openMenu === m.name ? ' menu-open' : ''), m.name);
+      top.onclick = (e) => {
+        e.stopPropagation();
+        this.openMenu = this.openMenu === m.name ? null : m.name;
+        this.renderMenu(game);
+      };
+      wrap.append(top);
+      if (this.openMenu === m.name) {
+        const drop = el('div', 'menu-drop');
+        for (const it of m.items) {
+          if (it.sep) {
+            drop.append(el('div', 'menu-sep'));
+            continue;
+          }
+          const b = el('button', 'menu-item');
+          b.append(el('span', 'menu-check', it.check === undefined ? '' : it.check ? '\u2713' : ''));
+          b.append(el('span', undefined, it.label));
+          b.onclick = (e) => {
+            e.stopPropagation();
+            this.openMenu = null;
+            this.renderMenu(game);
+            it.run?.();
+          };
+          drop.append(b);
+        }
+        wrap.append(drop);
+      }
+      this.menubar.append(wrap);
+    }
+  }
+
+  /** Closes any open menu. */
+  private closeMenus(): void {
+    if (this.openMenu === null) return;
+    this.openMenu = null;
+    if (this.lastGame) this.renderMenu(this.lastGame);
+  }
+
   render(game: Game): void {
+    this.lastGame = game;
+    this.renderMenu(game);
     this.applyCursors();
     // With the original art installed, use the original's board colour so the opaque tile
     // artwork sits on the background it was drawn for rather than on the fallback felt.
@@ -204,7 +321,7 @@ export class Ui {
     // Unowned projects draw name and bar in black, per the original's rules text.
     fill.style.background = owner ? owner.color : '#000';
 
-    const name = el('div', 'proj-name', proj.name);
+    const name = el('div', 'proj-name', this.attract ? 'project Name' : proj.name);
     name.style.left = `${T.name.left}px`;
     name.style.top = `${T.name.top}px`;
     name.style.width = `${T.name.width}px`;
@@ -340,7 +457,7 @@ export class Ui {
     frame.style.width = `${F.width}px`;
     frame.style.height = `${F.height}px`;
 
-    const delta = game.state.lastStockDelta;
+    const delta = this.attract ? 32 : game.state.lastStockDelta;
     const readout = el('div', 'ticker');
     readout.style.left = `${V.left}px`;
     readout.style.top = `${V.top}px`;
@@ -439,6 +556,33 @@ export class Ui {
   }
 
   private paintTokens(s: GameState): void {
+    if (this.attract) {
+      // Parked in the 3x2 grid the original leaves them in before a game starts.
+      const G = CENTER.tokens;
+      s.players.forEach((p, i) => {
+        const art = playerToken(p.id);
+        const col = i % G.perRow;
+        const row = Math.floor(i / G.perRow);
+        const t = el('div', art ? 'token token-art token-parked' : 'token token-parked');
+        t.style.width = `${G.size}px`;
+        t.style.height = `${G.size}px`;
+        t.style.left = `${G.left + col * G.gapX}px`;
+        t.style.top = `${G.top + row * G.gapY}px`;
+        if (art) {
+          const img = el('img');
+          img.src = art;
+          img.alt = p.name;
+          img.draggable = false;
+          t.append(img);
+        } else {
+          t.style.background = p.color;
+          t.textContent = String(p.id + 1);
+        }
+        t.title = p.name;
+        this.board.append(t);
+      });
+      return;
+    }
     const perSquare = new Map<number, number>();
     for (const p of s.players) {
       const slot = perSquare.get(p.square) ?? 0;
@@ -493,46 +637,7 @@ export class Ui {
     row.append(newBtn);
     turnCard.append(row);
 
-    const row2 = el('div', 'btn-row');
-    row2.style.marginTop = '6px';
-    const saveBtn = el('button', 'b', 'Save');
-    saveBtn.onclick = () => this.handlers.onSave();
-    const loadBtn = el('button', 'b', 'Load');
-    loadBtn.onclick = () => this.handlers.onLoad();
-    row2.append(saveBtn, loadBtn);
-    turnCard.append(row2);
 
-    const soundRow = el('div', 'sound-row');
-    const soundBtn = el('button', 'b', this.handlers.soundOn() ? 'Sound: on' : 'Sound: off');
-    soundBtn.onclick = () => this.handlers.onToggleSound();
-    soundRow.append(soundBtn);
-    const snapBtn = el('button', 'b', this.snapScale ? 'Pixels: snapped' : 'Pixels: fit');
-    snapBtn.title =
-      'Snap the board to a whole-number scale so upscaled original art keeps even pixels';
-    snapBtn.onclick = () => {
-      this.toggleSnap();
-      this.render(game);
-    };
-    soundRow.append(snapBtn);
-
-    const smoothBtn = el('button', 'b', this.handlers.smoothOn() ? 'Art: smooth' : 'Art: crisp');
-    smoothBtn.title = 'Switch between nearest-neighbour and smoothed scaling for the original art';
-    smoothBtn.onclick = () => this.handlers.onToggleSmooth();
-    soundRow.append(smoothBtn);
-
-    const helpBtn = el('button', 'b', 'How to Play');
-    helpBtn.onclick = () => this.handlers.onHelp();
-    soundRow.append(helpBtn);
-
-    const hsBtn = el('button', 'b', 'High Scores');
-    hsBtn.onclick = () => this.handlers.onHighScores();
-    soundRow.append(hsBtn);
-
-    const autoBtn = el('button', 'b', 'Auto Click…');
-    autoBtn.title = 'Dismiss result dialogs automatically after N seconds';
-    autoBtn.onclick = () => this.handlers.onAutoClick();
-    soundRow.append(autoBtn);
-    turnCard.append(soundRow);
     this.side.append(turnCard);
 
     // Stock card

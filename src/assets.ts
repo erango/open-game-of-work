@@ -170,6 +170,11 @@ export function eventArt(name: EventArt | string): string | null {
   return url(`res/${name}.png`);
 }
 
+/** The original's about-box illustration (TABOUTFORM). */
+export function aboutImage(): string | null {
+  return url('forms/TABOUTFORM/Image1.png');
+}
+
 /** The borderless startup splash (TSPLASHFORM holds a single full-bleed TImage). */
 export function splashImage(): string | null {
   return url('forms/TSPLASHFORM/Image1.png');

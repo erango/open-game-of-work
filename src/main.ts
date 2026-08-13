@@ -12,6 +12,17 @@ const SAVE_KEY = 'open-game-of-work:save';
 let game: Game;
 let ui: Ui;
 const sound = new Sound();
+/**
+ * Nearest-neighbour vs smoothed scaling for the original art. Nearest keeps the era
+ * pixels crisp when the board is scaled up; smoothing suits very large displays where the
+ * blocks get distracting.
+ */
+let smoothArt = localStorage.getItem('ogow:smooth') === 'on';
+
+function applySmoothing(): void {
+  document.documentElement.classList.toggle('art-smooth', smoothArt);
+}
+
 /** Guards against re-entrant AI stepping. */
 let stepping = false;
 /** `${turn}:${playerId}` of the last turn announced, so it fires once per turn. */
@@ -260,6 +271,10 @@ async function askAutoClick(): Promise<void> {
 
 function stubHandlers() {
   return {
+    onToggleSmooth() {},
+    smoothOn() {
+      return false;
+    },
     onToggleSound() {},
     onAutoClick() {},
     soundOn() {
@@ -1060,6 +1075,15 @@ async function step(): Promise<void> {
 
 function handlers() {
   return {
+    onToggleSmooth() {
+      smoothArt = !smoothArt;
+      localStorage.setItem('ogow:smooth', smoothArt ? 'on' : 'off');
+      applySmoothing();
+      ui.render(game);
+    },
+    smoothOn() {
+      return smoothArt;
+    },
     onToggleSound() {
       sound.toggle();
       ui.render(game);
@@ -1142,6 +1166,7 @@ async function boot(): Promise<void> {
   // Resolve original-artwork availability before the first render so the board does not
   // flash the SVG fallback and then swap.
   await loadAssets();
+  applySmoothing();
   ui = new Ui(root, handlers());
   bindKeys();
   void newGame();

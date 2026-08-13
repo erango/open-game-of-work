@@ -1,4 +1,4 @@
-import { BOARD_COLOR, CENTER, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
+import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
 import { assetsAvailable, centerImage, squareImage } from './assets';
 import { PROJECT_WATERMARK, squareIcon } from './icons';
 import type { Game } from './engine';
@@ -17,6 +17,8 @@ const el = <K extends keyof HTMLElementTagNameMap>(
 };
 
 export interface UiHandlers {
+  onToggleSmooth(): void;
+  smoothOn(): boolean;
   onToggleSound(): void;
   onAutoClick(): void;
   soundOn(): boolean;
@@ -30,33 +32,71 @@ export interface UiHandlers {
 
 export class Ui {
   private root: HTMLElement;
+  private boardCol!: HTMLElement;
   private boardWrap!: HTMLElement;
   private board!: HTMLElement;
   private side!: HTMLElement;
   private handlers: UiHandlers;
 
+  /**
+   * Snap the board to a whole-number scale factor.
+   *
+   * The original art is small (81x81 tiles, 145x145 corners), so scaling up resamples it.
+   * At a fractional factor with pixelated rendering some source pixels land on 2 device
+   * pixels and their neighbours on 3, which makes edges look ragged. An integer factor keeps
+   * every source pixel the same size, at the cost of leaving some space unused.
+   */
+  private snapScale = localStorage.getItem('ogow:snap') === 'on';
+
   constructor(root: HTMLElement, handlers: UiHandlers) {
     this.root = root;
     this.handlers = handlers;
     this.buildShell();
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(() => this.scaleBoard()).observe(this.boardCol);
+    }
     window.addEventListener('resize', () => this.scaleBoard());
   }
 
   private buildShell(): void {
     this.root.textContent = '';
+    this.boardCol = el('div', 'board-col');
     this.boardWrap = el('div', 'board-wrap');
     this.board = el('div', 'board');
     this.boardWrap.append(this.board);
+    this.boardCol.append(this.boardWrap);
     this.side = el('div', 'side');
-    this.root.append(this.boardWrap, this.side);
+    this.root.append(this.boardCol, this.side);
     this.scaleBoard();
   }
 
-  /** The board is authored at 776x535 and scaled to fit its container. */
+  get snapping(): boolean {
+    return this.snapScale;
+  }
+
+  toggleSnap(): boolean {
+    this.snapScale = !this.snapScale;
+    localStorage.setItem('ogow:snap', this.snapScale ? 'on' : 'off');
+    this.scaleBoard();
+    return this.snapScale;
+  }
+
+  /**
+   * The board is authored in the original's 776x535 space and scaled to the largest size
+   * that fits the available area, constrained by height as well as width.
+   */
   private scaleBoard(): void {
-    const w = this.boardWrap.clientWidth;
-    if (!w) return;
-    this.board.style.transform = `scale(${w / DESIGN_WIDTH})`;
+    const availW = this.boardCol.clientWidth;
+    const availH = this.boardCol.clientHeight;
+    if (!availW || !availH) return;
+
+    let scale = Math.min(availW / DESIGN_WIDTH, availH / DESIGN_HEIGHT);
+    if (this.snapScale && scale >= 1) scale = Math.floor(scale);
+    scale = Math.max(0.35, scale);
+
+    this.board.style.transform = `scale(${scale})`;
+    this.boardWrap.style.width = `${Math.round(DESIGN_WIDTH * scale)}px`;
+    this.boardWrap.style.height = `${Math.round(DESIGN_HEIGHT * scale)}px`;
   }
 
   render(game: Game): void {
@@ -384,6 +424,20 @@ export class Ui {
     const soundBtn = el('button', 'b', this.handlers.soundOn() ? 'Sound: on' : 'Sound: off');
     soundBtn.onclick = () => this.handlers.onToggleSound();
     soundRow.append(soundBtn);
+    const snapBtn = el('button', 'b', this.snapScale ? 'Pixels: snapped' : 'Pixels: fit');
+    snapBtn.title =
+      'Snap the board to a whole-number scale so upscaled original art keeps even pixels';
+    snapBtn.onclick = () => {
+      this.toggleSnap();
+      this.render(game);
+    };
+    soundRow.append(snapBtn);
+
+    const smoothBtn = el('button', 'b', this.handlers.smoothOn() ? 'Art: smooth' : 'Art: crisp');
+    smoothBtn.title = 'Switch between nearest-neighbour and smoothed scaling for the original art';
+    smoothBtn.onclick = () => this.handlers.onToggleSmooth();
+    soundRow.append(smoothBtn);
+
     const autoBtn = el('button', 'b', 'Auto Click…');
     autoBtn.title = 'Dismiss result dialogs automatically after N seconds';
     autoBtn.onclick = () => this.handlers.onAutoClick();

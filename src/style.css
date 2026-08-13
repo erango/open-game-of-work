@@ -21,26 +21,42 @@ html, body {
   min-height: 100%;
 }
 
+html, body { height: 100%; }
+
 #app {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 330px;
   gap: 16px;
   padding: 16px;
-  max-width: 1440px;
-  margin: 0 auto;
-  align-items: start;
+  height: 100vh;
+  align-items: stretch;
 }
 
+/* The board column is measured to size the board, so it must never be driven by the
+   board's own dimensions — otherwise resizing feeds back on itself. */
+.board-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.side { overflow-y: auto; min-height: 0; }
+
 @media (max-width: 1020px) {
-  #app { grid-template-columns: minmax(0, 1fr); }
+  #app {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+  .board-col { height: min(70vh, 80vw); }
 }
 
 /* ---------------------------------------------------------------- board */
 
+/* Size is set in JS to the largest whole fit for the available space. */
 .board-wrap {
   position: relative;
-  width: 100%;
-  aspect-ratio: 776 / 535;
   background: var(--felt);
   border: 2px solid var(--felt-line);
   border-radius: 10px;
@@ -530,3 +546,8 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-bottom-color: rgb(0 0 0 / 0.32);
 }
 .board-original .stat-name { text-shadow: 0 1px 1px rgb(0 0 0 / .35); }
+
+/* Smoothed scaling for the original art, for very large displays where nearest-neighbour
+   blocks become distracting. Default is crisp. */
+.art-smooth .sq-art,
+.art-smooth .btn-art { image-rendering: auto; }

@@ -599,6 +599,146 @@ def chance_effects(pe: "PE", chance_texts: list[str]) -> list[list[int]]:
     return out
 
 
+# ----------------------------------------------------- scruples raw effects (unverified)
+
+# Recovered constructor signatures, from Ghidra headless decompilation:
+#
+#   0x402048  Chance card  (obj, flag, str, str, n1..n6)          -> fields [0],[1],[2],[3..8]
+#   0x413e10  Answer       (obj, n1..n9, str, str, n10..n15)      -> 18 dword fields
+#   0x4137fc  Card         (5 strings + 3 numerics)
+#
+# Each Scruples card is built as three answer constructions followed by one card
+# construction, which is what makes the grouping unambiguous: 36 card constructors, each
+# preceded by exactly three answer constructors, totalling the 108 answers in the deck.
+CHANCE_CTOR = 0x402048
+ANSWER_CTOR = 0x413E10
+CARD_CTOR = 0x4137FC
+
+
+def scruples_raw_effects(pe: "PE", situations: list[str]) -> dict:
+    """
+    Extracts the fifteen numeric parameters behind every Scruples answer.
+
+    UNVERIFIED, and recorded rather than used. The numbers themselves are real, read from
+    the answer constructor's call sites, but which slot carries Boss Rating, share price or
+    work is NOT established. Chance cards could be decoded because each states its
+    consequence in text, giving something to correlate against; answer labels are short
+    imperatives that state none, and the code that consumes these fields sits two layers
+    past the form's OK handler (which merely records the chosen index).
+
+    An assumption that the answer record matches the Chance record slot-for-slot was tested
+    and failed: the slot holding a -1 sentinel on every Chance card is 0 throughout here.
+
+    So this is preserved for whoever establishes the semantics, and the game continues to
+    infer answer effects. Requires capstone; skipped silently when it is absent.
+    """
+    try:
+        from capstone import CS_ARCH_X86, CS_MODE_32, Cs  # type: ignore
+    except ImportError:
+        return {}
+
+    text_sec = next(((va, ra, rs) for n, va, vs, ra, rs in pe.sections if n == ".text"), None)
+    data_sec = next(((va, ra, rs) for n, va, vs, ra, rs in pe.sections if n == ".data"), None)
+    if not text_sec or not data_sec:
+        return {}
+    tva, tra, trs = text_sec
+    dva, dra, drs = data_sec
+    d = pe.d
+    pe_off = struct.unpack_from("<I", d, 0x3C)[0]
+    base = struct.unpack_from("<I", d, pe_off + 24 + 28)[0]
+    text = d[tra:tra + trs]
+    tb = base + tva
+
+    def call_sites(target: int) -> list[int]:
+        return sorted(k for k in range(len(text) - 5)
+                      if text[k] == 0xE8
+                      and tb + k + 5 + struct.unpack_from("<i", text, k + 1)[0] == target)
+
+    answers = call_sites(ANSWER_CTOR)
+    ctors = call_sites(CARD_CTOR)
+    md = Cs(CS_ARCH_X86, CS_MODE_32)
+
+    # A byte just past any call is a guaranteed instruction boundary, which removes the
+    # need to guess an alignment when decoding backwards.
+    anchors = sorted({a + 5 for a in answers} | {c + 5 for c in ctors})
+
+    def immediate(op: str):
+        try:
+            return int(op, 0)   # note: capstone renders `push 0` with no 0x prefix
+        except ValueError:
+            return None
+
+    def params_at(call_off: int):
+        import bisect
+        i = bisect.bisect_left(anchors, call_off)
+        lo = anchors[i - 1] if i > 0 else max(0, call_off - 900)
+        ins = list(md.disasm(text[lo:call_off + 5], tb + lo))
+        if not ins or ins[-1].address != tb + call_off:
+            return None
+        runs: list[list[int]] = []
+        cur: list[int] = []
+        for m in ins[:-1]:
+            v = immediate(m.op_str) if m.mnemonic == "push" else None
+            if v is not None:
+                cur.append(v)
+                continue
+            if cur:
+                runs.append(cur)
+                cur = []
+        if cur:
+            runs.append(cur)
+        nine = [r for r in runs if len(r) == 9]
+        six = [r for r in runs if len(r) == 6]
+        if not nine or not six:
+            return None
+        # Reverse push order into argument order.
+        return list(reversed(nine[-1])) + list(reversed(six[-1]))
+
+    # Situation strings have exactly one code reference each, via `mov edx, imm32`.
+    sit_ref = {}
+    for i, situation in enumerate(situations):
+        off = d.find(situation[:24].encode("latin-1", "replace"), dra, dra + drs)
+        if off < 0:
+            continue
+        addr = base + dva + (off - dra)
+        site = text.find(b"\xba" + struct.pack("<I", addr))
+        if site >= 0:
+            sit_ref[i] = site
+
+    groups = []
+    for i, c in enumerate(ctors):
+        lo = ctors[i - 1] if i > 0 else 0
+        groups.append([a for a in answers if lo < a < c])
+
+    out = []
+    for i, c in enumerate(ctors):
+        trio = groups[i]
+        # Attribute a card only where its situation string is loaded between the last
+        # answer and the card constructor. Ordering heuristics were tested against these
+        # known pairs and disagreed on all of them, so unresolved entries stay null.
+        card = None
+        lo = trio[-1] if trio else 0
+        for idx, off in sit_ref.items():
+            if lo < off < c:
+                card = idx
+                break
+        out.append({"card": card, "answers": [params_at(a) for a in trio]})
+
+    resolved = sum(1 for e in out if e["card"] is not None)
+    complete = sum(1 for e in out for a in e["answers"] if a)
+    return {
+        "note": ("UNVERIFIED slot semantics -- recorded, not used by the game. Fifteen "
+                 "numeric parameters per answer, in argument order: nine from the first "
+                 "group, then six from the second. Which slot means Boss Rating, share "
+                 "price or work is not established. See scruples_raw_effects()."),
+        "constructors": {"card": hex(CARD_CTOR), "answer": hex(ANSWER_CTOR),
+                         "chance": hex(CHANCE_CTOR)},
+        "cardsAttributed": resolved,
+        "answersExtracted": complete,
+        "groups": out,
+    }
+
+
 def extract_cards(pe: "PE") -> dict:
     """
     Recovers the original Chance and Scruples decks from .data.
@@ -662,6 +802,7 @@ def extract_cards(pe: "PE") -> dict:
         "chance": chance,
         "chanceEffects": chance_effects(pe, chance),
         "scruples": scruples,
+        "scruplesRawEffects": scruples_raw_effects(pe, [s["situation"] for s in scruples]),
     }
 
 

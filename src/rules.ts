@@ -162,13 +162,41 @@ export const LENGTH_TURN_SCALE: Record<GameLength, number> = {
   long: 1.0,
 };
 
+/**
+ * Player colours, from TMAINFORM's playerNNameLabel Font.Color values (Delphi TColor is
+ * 0x00BBGGRR, so these are byte-swapped from the stored integers).
+ *
+ * These are the identity colours the original draws on the board — player names, and by
+ * extension the Boss Rating bar and owned project names, which its rules text says take the
+ * owner's colour. TNEWGAMEFORM tints its seat rows with a deliberately different set
+ * (SEAT_ROW_COLORS below): seats 1, 2 and 6 match, but 3, 4 and 5 differ, the label colours
+ * being tuned for legibility against the board's light blue rather than for a dialog row.
+ *
+ * Note the consequence for the SVG fallback: chosen for a light board, seat 4's dark green
+ * sits low-contrast on this port's dark felt. Faithful wins over convenient here, and the
+ * name labels carry a text shadow that keeps them readable.
+ */
 export const PLAYER_COLORS = [
-  '#d2323c', // red
-  '#2e63c8', // blue
-  '#2f9e44', // green
-  '#e0a020', // amber
-  '#8c4bc8', // violet
-  '#26a4a4', // teal
+  '#97f4ff', // 1 pale cyan
+  '#7dff9e', // 2 pale green
+  '#ffd2fc', // 3 pale pink
+  '#2f7d3f', // 4 dark green
+  '#4b63e4', // 5 blue
+  '#f4f872', // 6 pale yellow
+];
+
+/**
+ * Row tints for the New Game dialog's six seats, from TNEWGAMEFORM's Panel1..Panel6 Color.
+ * The original's dialog is light throughout and fills each row with these; this port's
+ * dialog is dark, so they are used as a left-edge accent instead of a full fill.
+ */
+export const SEAT_ROW_COLORS = [
+  '#97f4ff',
+  '#7dff9e',
+  '#ffa8f9',
+  '#53bf68',
+  '#8292ec',
+  '#f4f872',
 ];
 
 /** Where a player's Boss Rating sits relative to the rank they currently hold. */

@@ -135,7 +135,9 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       o.value = v;
       lenSel.append(o);
     });
-    lenSel.value = 'medium';
+    // The original defaults to Long: gameLengthRadioGroup.ItemIndex is 2 over
+    // ('Short', 'Medium', 'Long').
+    lenSel.value = 'long';
     lenSel.style.width = '100%';
     lenSel.className = '';
     Object.assign(lenSel.style, {
@@ -203,10 +205,14 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     const rows: Array<{ kind: HTMLSelectElement; name: HTMLInputElement; pers: HTMLSelectElement }> = [];
 
     for (let i = 0; i < 6; i++) {
+      let seatRowTint = R.SEAT_ROW_COLORS[i];
       const seat = el('div', 'seat seat-with-face');
       // The original's seat selector is a clickable image cycling three faces.
       const swatch = el('div', 'swatch');
       swatch.style.background = R.PLAYER_COLORS[i];
+      // The original fills the whole seat row with its own tint; this dialog is dark, so it
+      // becomes a left-edge accent.
+      seatRowTint = R.SEAT_ROW_COLORS[i];
       const faceImg = el('img', 'seat-face');
       faceImg.draggable = false;
       const paintFace = () => {
@@ -251,6 +257,8 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       kind.onchange = sync;
       sync();
 
+      seat.style.borderLeft = `4px solid ${seatRowTint}`;
+      seat.style.paddingLeft = '8px';
       paintFace();
       // Clicking the face cycles Human -> Computer -> Off, as in the original.
       faceImg.onclick = () => {

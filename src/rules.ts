@@ -107,6 +107,16 @@ export const SHODDY_PENALTY_DELAY = 3;
 export const SHODDY_PENALTY_BOSS_RATING = -8;
 export const SHODDY_PENALTY_STOCK = -4;
 
+/**
+ * Full scale of the workload meter in the stats panel.
+ *
+ * Recovered from the decompiled stats painter (FUN_004081a8), which sizes the two bars as
+ * `bossRating * width / 100` and `stress * width * 2 / 0x2c`. The second reduces to a full
+ * scale of 22, and the first independently confirms PRESIDENT_THRESHOLD, which until now
+ * rested only on the rules text.
+ */
+export const STRESS_BAR_MAX = 22;
+
 /** Office Party stress bands. */
 export const PARTY_DRUNK_STRESS = 14;   // at or above: drinks too much
 export const PARTY_BORED_STRESS = 4;    // at or below: parties too hard

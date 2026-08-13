@@ -534,7 +534,7 @@ export class Ui {
 
       const stress = game.stress(p.id);
       const brPct = Math.max(0, Math.min(100, (p.bossRating / R.PRESIDENT_THRESHOLD) * 100));
-      const stressPct = Math.min(100, (stress / 25) * 100);
+      const stressPct = Math.min(100, (stress / R.STRESS_BAR_MAX) * 100);
 
       const brFill = el('div', 'meter meter-boss');
       brFill.style.width = `${brPct}%`;

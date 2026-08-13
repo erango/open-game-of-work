@@ -1,5 +1,6 @@
 import { PROJECT_PROFILES, PROJECT_SQUARES, SQUARES } from './board';
-import { CHANCE, SCRUPLES, SET_BONUS_BOSS_RATING, type ChanceCard, type ScruplesCard } from './cards';
+import { SET_BONUS_BOSS_RATING, type ChanceCard, type ScruplesCard } from './cards';
+import { deck } from './decks';
 import { DEFAULT_NAMES, projectName } from './names';
 import { Rng } from './rng';
 import * as R from './rules';
@@ -177,9 +178,16 @@ export class Game {
     const rival = rivals.length ? this.rng.pick(rivals).name : 'a colleague';
     const own = this.projectsOf(playerId);
     const proj = own.length ? this.rng.pick(own).name : 'an unnamed initiative';
+    const rivalOwned = this.state.projects.filter(
+      (q) => q.owner !== null && q.owner !== playerId,
+    );
+    const rivalProj = rivalOwned.length
+      ? this.rng.pick(rivalOwned).name
+      : 'one of their projects';
     return text
       .replace(/\{you\}/g, p.name)
       .replace(/\{rival\}/g, rival)
+      .replace(/\{rivalproject\}/g, rivalProj)
       .replace(/\{project\}/g, proj);
   }
 
@@ -514,8 +522,9 @@ export class Game {
   private drawChance(playerId: number): number {
     const hasProject = this.projectsOf(playerId).length > 0;
     const hasRival = this.state.players.length > 1;
-    const eligible = CHANCE.map((_, i) => i).filter((i) => {
-      const c = CHANCE[i];
+    const pool = deck().chance;
+    const eligible = pool.map((_, i) => i).filter((i) => {
+      const c = pool[i];
       if (c.needsProject && !hasProject) return false;
       if (c.needsRival && !hasRival) return false;
       return true;
@@ -526,8 +535,9 @@ export class Game {
   private drawScruples(playerId: number): number {
     const hasProject = this.projectsOf(playerId).length > 0;
     const hasRival = this.state.players.length > 1;
-    const eligible = SCRUPLES.map((_, i) => i).filter((i) => {
-      const c = SCRUPLES[i];
+    const pool = deck().scruples;
+    const eligible = pool.map((_, i) => i).filter((i) => {
+      const c = pool[i];
       if (c.needsProject && !hasProject) return false;
       if (c.needsRival && !hasRival) return false;
       return true;
@@ -537,20 +547,24 @@ export class Game {
 
   /** Renders a chance card's text with names substituted. */
   chanceText(cardId: number, playerId: number): string {
-    return this.fill(CHANCE[cardId].text, playerId);
+    return this.fill(deck().chance[cardId].text, playerId);
+  }
+
+  chanceCard(cardId: number): ChanceCard {
+    return deck().chance[cardId];
   }
 
   scruplesCard(cardId: number): ScruplesCard {
-    return SCRUPLES[cardId];
+    return deck().scruples[cardId];
   }
 
   scruplesText(cardId: number, playerId: number): string {
-    return this.fill(SCRUPLES[cardId].situation, playerId);
+    return this.fill(deck().scruples[cardId].situation, playerId);
   }
 
   /** Applies a chance card and ends the square resolution. */
   applyChance(cardId: number, playerId: number): void {
-    const c: ChanceCard = CHANCE[cardId];
+    const c: ChanceCard = deck().chance[cardId];
     this.adjustBossRating(playerId, c.bossRating ?? 0);
     if (c.work) for (const proj of this.projectsOf(playerId)) this.addWork(proj, c.work);
     if (c.stock) this.adjustStock(c.stock, 'chance event');
@@ -577,7 +591,7 @@ export class Game {
 
   /** Applies a scruples answer (0-2) and ends the square resolution. */
   applyScruples(cardId: number, playerId: number, choiceIndex: number): string {
-    const choice = SCRUPLES[cardId].choices[choiceIndex];
+    const choice = deck().scruples[cardId].choices[choiceIndex];
     this.adjustBossRating(playerId, choice.bossRating ?? 0);
     if (choice.work) for (const proj of this.projectsOf(playerId)) this.addWork(proj, choice.work);
     if (choice.stock) this.adjustStock(choice.stock, 'scruples');

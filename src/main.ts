@@ -1,5 +1,6 @@
 import * as AI from './ai';
-import { applyFavicon, loadAssets, partySprite, rankArt, seatFace, type PartyMood } from './assets';
+import { applyFavicon, loadAssets, partySprite, rankArt, resourceImage, seatFace, type PartyMood } from './assets';
+import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
@@ -146,6 +147,45 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     lenField.append(lenHint);
     m.append(lenField);
 
+    // Deck picker. The original text is not distributed with this repo, so the original and
+    // combined options only appear when a local extraction is installed.
+    const deckField = el('div', 'field');
+    deckField.append(el('label', undefined, 'Chance & Scruples deck'));
+    const deckSel = el('select');
+    const deckOpts: Array<[DeckMode, string]> = originalAvailable()
+      ? [
+          ['new', 'Newly written (ships with this port)'],
+          ['original', "Original 2000 deck (30 chance, 36 scruples, with artwork)"],
+          ['both', 'Both, shuffled together'],
+        ]
+      : [['new', 'Newly written (ships with this port)']];
+    for (const [v, label] of deckOpts) {
+      const o = el('option', undefined, label);
+      o.value = v;
+      deckSel.append(o);
+    }
+    deckSel.value = deckMode();
+    styleControl(deckSel);
+    deckField.append(deckSel);
+    if (!originalAvailable()) {
+      deckField.append(
+        el(
+          'div',
+          'stat-rank',
+          'Run tools/extract-assets.py against your own copy of gamework.exe to play the original deck.',
+        ),
+      );
+    } else {
+      deckField.append(
+        el(
+          'div',
+          'stat-rank',
+          'The original deck uses its own wording and card art. Its numeric effects were compiled into code and could not be recovered, so this port infers them.',
+        ),
+      );
+    }
+    m.append(deckField);
+
     const seatsField = el('div', 'field');
     seatsField.append(el('label', undefined, 'Players (2–6)'));
     const grid = el('div', 'setup-grid');
@@ -231,6 +271,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
         err.textContent = 'At least 2 players must be Human or Computer.';
         return;
       }
+      setDeckMode(deckSel.value as DeckMode);
       done({ length: lenSel.value as GameLength, seats });
     };
     foot.append(start);
@@ -440,6 +481,15 @@ async function handleChance(m: Extract<Modal, { kind: 'chance' }>): Promise<void
 
   await ui.modal<void>((done) => {
     const d = Ui.modalShell('Chance', `${p.name} draws a chance card`);
+    const art = game.chanceCard(m.cardId).art;
+    const artUrl = art ? resourceImage(art) : null;
+    if (artUrl) {
+      const img = el('img', 'card-art');
+      img.src = artUrl;
+      img.alt = 'Chance card';
+      img.draggable = false;
+      d.append(img);
+    }
     d.append(el('p', undefined, text));
     const foot = el('div', 'foot');
     const ok = el('button', 'b primary', 'Continue');
@@ -472,6 +522,14 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
       'Scruples',
       isAi ? aiSubtitle(p.name, 'which answer to give') : 'Pick an answer — 1, 2 or 3',
     );
+    const sArt = card.art ? resourceImage(card.art) : null;
+    if (sArt) {
+      const img = el('img', 'card-art');
+      img.src = sArt;
+      img.alt = 'Scruples card';
+      img.draggable = false;
+      d.append(img);
+    }
     d.append(el('p', undefined, situation));
 
     card.choices.forEach((c, i) => {
@@ -1239,6 +1297,9 @@ async function boot(): Promise<void> {
   // Resolve original-artwork availability before the first render so the board does not
   // flash the SVG fallback and then swap.
   await loadAssets();
+  // Original decks live alongside the artwork and are equally optional.
+  await initDecks();
+  setDeckMode(deckMode());
   applyFavicon();
   applySmoothing();
   // The original showed a borderless splash (TSPLASHFORM: one full-bleed TImage) at launch,

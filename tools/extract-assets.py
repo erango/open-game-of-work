@@ -23,6 +23,7 @@ Default outdir is public/assets/graphics/
 from __future__ import annotations
 
 import os
+import re
 import struct
 import sys
 
@@ -527,6 +528,76 @@ def picture_to_bmp(blob: bytes) -> bytes | None:
     return None
 
 
+# --------------------------------------------------------------------------- card text
+
+CARD_PLACEHOLDERS = ("<yourname>", "<opponentname>", "<yourproject>",
+                     "<opponentproject>", "<youroldproject>")
+
+
+def extract_cards(pe: "PE") -> dict:
+    """
+    Recovers the original Chance and Scruples decks from .data.
+
+    Both are stored as ordinary Pascal string literals in the data section, in deck order,
+    which is what lets them line up with the numbered CHANCE0..29 and SCRUPLES0..35 bitmaps.
+
+    Structure, verified against this binary:
+      * A Scruples card is a situation string followed immediately by exactly three strings
+        beginning "1. ", "2. " and "3. ". There are 36 such blocks, i.e. 108 choice lines.
+      * The 30 Chance cards sit in one contiguous run just before the first Scruples
+        situation, each with a blank line separating the setup from its effect clause.
+
+    Only the text is emitted. The numeric effects live in compiled code and are not
+    recoverable, so the game infers them from the wording (see src/originalCards.ts).
+    """
+    section = next(((ra, rs) for n, va, vs, ra, rs in pe.sections if n == ".data"), None)
+    if not section:
+        return {}
+    ra, rs = section
+    data = pe.d[ra:ra + rs]
+
+    runs = [m.group().decode("latin-1")
+            for m in re.finditer(rb"[\x20-\x7e\r\n\t]{12,}", data)]
+    strings = [s for s in runs if " " in s and re.search(r"[a-z]{3}", s)]
+
+    def is_choice(s: str) -> bool:
+        return bool(re.match(r"^[123]\.\s", s.strip()))
+
+    def has_placeholder(s: str) -> bool:
+        return any(k in s for k in CARD_PLACEHOLDERS)
+
+    blocks = [i for i in range(len(strings) - 2)
+              if is_choice(strings[i]) and is_choice(strings[i + 1]) and is_choice(strings[i + 2])]
+
+    scruples = []
+    for b in blocks:
+        situation = strings[b - 1] if b > 0 else ""
+        if not has_placeholder(situation):
+            continue
+        scruples.append({
+            "situation": situation,
+            "choices": [re.sub(r"^[123]\.\s*", "", strings[b + j].strip()) for j in range(3)],
+        })
+
+    chance = []
+    if blocks:
+        first_situation = blocks[0] - 1
+        # Walk back over the contiguous run of placeholder-bearing cards ahead of it.
+        i = first_situation - 1
+        while i >= 0 and has_placeholder(strings[i]) and not is_choice(strings[i]):
+            chance.append(strings[i])
+            i -= 1
+        chance.reverse()
+
+    return {
+        "note": ("Text recovered from the original binary. Copyrighted by its authors -- do "
+                 "not redistribute. Numeric effects are not stored as text and are inferred "
+                 "by the game."),
+        "chance": chance,
+        "scruples": scruples,
+    }
+
+
 # --------------------------------------------------------------------------- extraction
 
 def safe(name: str) -> str:
@@ -660,6 +731,15 @@ def main() -> int:
 
     manifest.sort()
     open(os.path.join(outdir, "manifest.txt"), "w").write("\n".join(manifest) + "\n")
+
+    cards = extract_cards(pe)
+    if cards.get("chance") or cards.get("scruples"):
+        import json as _json
+        cards_path = os.path.join(os.path.dirname(outdir.rstrip("/")) or ".", "cards.json")
+        open(cards_path, "w").write(_json.dumps(cards, indent=1))
+        print(f"chance cards     : {len(cards['chance'])}")
+        print(f"scruples cards   : {len(cards['scruples'])}")
+        print(f"card text        : {cards_path}")
 
     print(f"resource bitmaps : {counts['bitmap']}")
     print(f"converted to png : {counts['png']}")

@@ -610,3 +610,15 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 }
 
 .seat-face:hover { outline: 2px solid var(--accent); }
+
+/* Original Chance / Scruples card artwork, shown when playing the original deck. */
+.card-art {
+  display: block;
+  margin: 0 auto 12px;
+  max-width: 100%;
+  image-rendering: pixelated;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+}
+
+.art-smooth .card-art { image-rendering: auto; }

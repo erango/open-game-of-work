@@ -16,6 +16,8 @@ import type { Profile } from './types';
 
 export interface ChanceCard {
   text: string;
+  /** Name of the original bitmap illustrating this card, when it came from that deck. */
+  art?: string;
   bossRating?: number;
   stock?: number;
   /** Work added to (or removed from) every project the player owns. */
@@ -193,6 +195,8 @@ export interface ScruplesChoice {
 
 export interface ScruplesCard {
   situation: string;
+  /** Name of the original bitmap illustrating this card, when it came from that deck. */
+  art?: string;
   choices: [ScruplesChoice, ScruplesChoice, ScruplesChoice];
   needsRival?: boolean;
   needsProject?: boolean;

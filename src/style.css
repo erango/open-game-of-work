@@ -986,3 +986,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 }
 
 .about-credit { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+
+/* The splash waits for a click, so give it an explicit affordance. */
+.splash-go { margin-top: 4px; padding: 10px 26px; font-size: 15px; }

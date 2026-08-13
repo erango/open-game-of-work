@@ -1676,9 +1676,8 @@ function bindKeys(): void {
  * TImage), with this port's credit beneath it.
  *
  * Shown whether or not an extraction is installed: without the original image it falls back
- * to a plain title card, so the credit is always reachable. Dismissed by a click anywhere or
- * after a few seconds — clicking a link cancels the timer so the splash stays put while the
- * link opens in another tab.
+ * to a plain title card, so the credit is always reachable. Dismissed only by a click, never
+ * on a timer — the credit and its links should not vanish while they are being read.
  */
 async function showSplash(): Promise<void> {
   const src = splashImage();
@@ -1702,11 +1701,9 @@ async function showSplash(): Promise<void> {
     }
 
     let done = false;
-    let timer = 0;
     const finish = () => {
       if (done) return;
       done = true;
-      window.clearTimeout(timer);
       layer.remove();
       resolve();
     };
@@ -1728,16 +1725,20 @@ async function showSplash(): Promise<void> {
 
     // A click on either link must not also dismiss the splash.
     for (const a of [gh, kofi]) {
-      a.onclick = (e) => {
-        e.stopPropagation();
-        window.clearTimeout(timer);
-      };
+      a.onclick = (e) => e.stopPropagation();
     }
 
-    inner.append(credit, kofi, el('div', 'splash-hint', 'click to continue'));
+    const go = el('button', 'b primary splash-go', 'Continue');
+    go.onclick = finish;
+    inner.append(credit, kofi, go, el('div', 'splash-hint', 'or click anywhere'));
     layer.append(inner);
     layer.onclick = finish;
-    timer = window.setTimeout(finish, 5000);
+    window.addEventListener('keydown', function onKey(e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+        window.removeEventListener('keydown', onKey);
+        finish();
+      }
+    });
     document.body.append(layer);
   });
 }

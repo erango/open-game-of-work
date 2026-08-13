@@ -64,6 +64,15 @@ export class Ui {
    * above the ticker rather than standing on Home.
    */
   private attract = false;
+  /**
+   * Transient face shown while the die tumbles, overriding the rolled value. UI-only, so it
+   * may use Math.random without touching the engine's seeded stream.
+   */
+  private dieOverride: number | null = null;
+
+  setDieFace(n: number | null): void {
+    this.dieOverride = n;
+  }
 
   setAttract(on: boolean): void {
     this.attract = on;
@@ -374,16 +383,17 @@ export class Ui {
     roll.style.top = `${CENTER.rollDie.top}px`;
     roll.style.width = `${CENTER.rollDie.size}px`;
     roll.style.height = `${CENTER.rollDie.size}px`;
-    const face = s.die ? dieFace(s.die) : null;
+    const shown = this.dieOverride ?? s.die;
+    const face = shown ? dieFace(shown) : null;
     if (face) {
       // The original's die is an image list indexed by the roll, not a static picture.
       const img = el('img', 'btn-art');
       img.src = face;
-      img.alt = `Rolled ${s.die}`;
+      img.alt = this.dieOverride ? 'Rolling' : `Rolled ${shown}`;
       img.draggable = false;
       roll.append(img);
     } else {
-      roll.append(el('div', 'die-face', s.die ? '⚀⚁⚂⚃⚄⚅'[s.die - 1] : '🎲'));
+      roll.append(el('div', 'die-face', shown ? '⚀⚁⚂⚃⚄⚅'[shown - 1] : '🎲'));
     }
     roll.disabled = busy || !game.canRoll() || !isHuman;
     roll.onclick = () => this.handlers.onRoll();

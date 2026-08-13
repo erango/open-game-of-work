@@ -29,6 +29,30 @@ function applySmoothing(): void {
 
 /** Guards against re-entrant AI stepping. */
 let stepping = false;
+/** Set when a roll has just happened, so the die tumbles once before the token moves. */
+let pendingTumble = false;
+
+/** Frames and pacing for the tumble. */
+const TUMBLE_FRAMES = 7;
+const TUMBLE_MS = 65;
+
+/**
+ * Cycles the die through random faces before settling on the rolled one.
+ *
+ * The original's die is an image list indexed by the roll, and showing only the final face
+ * made the roll read as instant. Faces here come from Math.random deliberately: this is
+ * presentation, so it must not draw on the engine's seeded stream and disturb replays.
+ */
+async function tumbleDie(): Promise<void> {
+  for (let i = 0; i < TUMBLE_FRAMES; i++) {
+    ui.setDieFace(1 + Math.floor(Math.random() * 6));
+    ui.render(game);
+    await sleep(TUMBLE_MS);
+  }
+  ui.setDieFace(null);
+  ui.render(game);
+  await sleep(120);
+}
 /** `${turn}:${playerId}` of the last turn announced, so it fires once per turn. */
 let announced = '';
 
@@ -1452,6 +1476,12 @@ async function step(): Promise<void> {
         continue;
       }
 
+      if (pendingTumble) {
+        pendingTumble = false;
+        await tumbleDie();
+        continue;
+      }
+
       // Walk the token one square at a time, then reveal the result — never both at once.
       if (game.moving) {
         game.stepMove();
@@ -1503,6 +1533,7 @@ async function step(): Promise<void> {
         }
         await sleep(500);
         game.roll();
+        pendingTumble = true;
         continue;
       }
 
@@ -1552,6 +1583,7 @@ function handlers() {
     onRoll() {
       if (!game.canRoll()) return;
       game.roll();
+      pendingTumble = true;
       void step();
     },
     onTrade() {

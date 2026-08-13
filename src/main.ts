@@ -178,6 +178,9 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       // Random by default, so a fresh game is not the same four opponents every time.
       pers.value = 'random';
 
+      kind.addEventListener('change', () => {
+        sound.seatChanged(kind.value as 'human' | 'computer' | 'off');
+      });
       const sync = () => {
         const off = kind.value === 'off';
         name.disabled = off;
@@ -1036,7 +1039,7 @@ async function step(): Promise<void> {
       const key = `${game.state.turn}:${p.id}`;
       if (!game.state.rolled && !game.state.modal && announced !== key) {
         announced = key;
-        await sound.announceTurn(p.name, p.id, p.kind === 'computer');
+        await sound.announceTurn(p.name, p.id);
       }
 
       // The turn ends itself. Every human decision happens before or during the roll —
@@ -1136,7 +1139,6 @@ async function newGame(): Promise<void> {
   const config = await askNewGame();
   if (!config) return;
   game = new Game(config);
-  sound.play('gameStart');
   game.state.log.push({
     turn: 1,
     playerId: null,
@@ -1167,6 +1169,10 @@ async function boot(): Promise<void> {
   // flash the SVG fallback and then swap.
   await loadAssets();
   applySmoothing();
+  // The original showed a borderless splash (TSPLASHFORM: one full-bleed TImage) at launch,
+  // so the intro clip belongs to app startup, once, not to every new game. Queued as speech
+  // so the first turn announcement waits for it instead of talking over it.
+  void sound.speak('gameStart');
   ui = new Ui(root, handlers());
   bindKeys();
   void newGame();

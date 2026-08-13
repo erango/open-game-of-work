@@ -15,8 +15,8 @@ import { MidiPlayer } from './midiPlayer';
 
 export type Cue =
   | 'gameStart'
-  | 'turnHuman'
-  | 'turnComputer'
+  | 'seatHuman'
+  | 'seatComputer'
   | 'soundOn'
   | 'stockHigh'
   | 'roll'
@@ -58,11 +58,14 @@ const CANDIDATES: Record<string, string[]> = {
   roll: ['roll.wav'],
   move: ['move.wav'],
   soundOn: ['soundon.wav'],
-  // human.wav and computer.wav announce the SEAT TYPE of whoever is up, so they belong at
-  // the start of a turn. TNEWGAMEFORM uses NEWGAMEHUMAN / NEWGAMECOMPUTER / NEWGAMEOFF
-  // bitmaps for the same three seat types in its selector.
-  turnHuman: ['human.wav'],
-  turnComputer: ['computer.wav'],
+  // human.wav and computer.wav are click feedback for the New Game seat selector, not turn
+  // announcements. TNEWGAMEFORM holds six clickable seat images (Image7..Image12, each with
+  // its own OnClick) whose three faces are the NEWGAMEHUMAN / NEWGAMECOMPUTER / NEWGAMEOFF
+  // bitmaps, so a seat is cycled by clicking and the clip confirms the new type. They are
+  // also short (0.57s and 0.88s) next to the 1.1-1.9s player<slot><variant>.wav lines, which
+  // is what actually announces whose turn it is.
+  seatHuman: ['human.wav'],
+  seatComputer: ['computer.wav'],
   stockHigh: ['NEWSTOCKHIGHSCORE.WAV', 'newstockhighscore.wav'],
   projectComplete: ['PROJECTCOMPLETED.WAV', 'projectcompleted.wav'],
   // The original shipped no Chance or Scruples sting. Leaving these empty keeps them silent
@@ -106,16 +109,6 @@ function shuffle<T>(arr: T[]): T[] {
   return out;
 }
 
-/**
- * Set true if human.wav and computer.wav turn out to announce the opposite seat type.
- *
- * Evidence says they do not: computer.wav runs 0.88s against human.wav's 0.57s, matching
- * "computer" being the longer word, and TNEWGAMEFORM pairs the same two names with its
- * NEWGAMEHUMAN / NEWGAMECOMPUTER seat-type bitmaps. Kept as a single switch because the
- * only way to be certain is to listen.
- */
-const SWAP_SEAT_CLIPS = false;
-
 const BASE = 'assets/sounds/';
 
 /**
@@ -125,6 +118,16 @@ const BASE = 'assets/sounds/';
 const MUSIC = 'assets/sounds/party.mid';
 
 export class Sound {
+  /**
+   * Spoken cues are serialized through this chain.
+   *
+   * The startup clip, the per-player name clips and the human/computer seat clips are all
+   * speech, so overlapping them makes both unintelligible. Fixed delays are not enough:
+   * browsers block audio until the first user gesture, so a clip can start much later than
+   * the code that requested it. Chaining on actual playback end is the only reliable order.
+   * Short effects (roll, move) still fire immediately and may overlap.
+   */
+  private voiceChain: Promise<void> = Promise.resolve();
   private music = new MidiPlayer();
   private musicLoaded: boolean | null = null;
   private cache = new Map<Cue, HTMLAudioElement | null>();
@@ -176,33 +179,58 @@ export class Sound {
     window.setTimeout(() => this.music.setVolume(0.32), 900);
   }
 
-  /**
-   * Announces whose turn it is, before they roll: the player's own voice clip if the
-   * original shipped one for that name, otherwise one of the five clips for their seat
-   * slot, then the human/computer seat-type clip a beat later so the two do not overlap.
+/**
+   * Queues a spoken cue behind any speech already playing. Resolves once it has finished,
+   * so callers can sequence further speech after it.
    */
-  async announceTurn(name: string, slot: number, isComputer: boolean): Promise<void> {
-    if (!this.enabled) return;
-    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    const named = slug ? await this.tryPlay(`name:${slug}`) : false;
-    if (!named) await this.tryPlay(`slot:${slot}`);
-    await new Promise<void>((r) => window.setTimeout(r, 420));
-    const computerClip = SWAP_SEAT_CLIPS ? !isComputer : isComputer;
-    await this.tryPlay(computerClip ? 'turnComputer' : 'turnHuman');
+  speak(cue: Cue): Promise<void> {
+    if (!this.enabled) return Promise.resolve();
+    this.voiceChain = this.voiceChain
+      .then(async () => {
+        await this.speakNow(cue);
+      })
+      .catch(() => {});
+    return this.voiceChain;
   }
 
-  /** Plays a cue and reports whether a file was actually found. */
-  private async tryPlay(cue: Cue): Promise<boolean> {
+  private async speakNow(cue: Cue): Promise<boolean> {
     if (!this.enabled) return false;
-    const cached = this.cache.get(cue);
-    if (cached === null) return false;
-    if (cached) {
-      void this.fire(cached);
-      return true;
+    let audio = this.cache.get(cue);
+    if (audio === undefined) {
+      await this.resolve(cue, /* autoplay */ false);
+      audio = this.cache.get(cue);
     }
-    await this.resolve(cue);
-    return this.cache.get(cue) != null;
+    if (!audio) return false;
+    this.duck();
+    await this.fire(audio);
+    return true;
   }
+
+  /**
+   * Announces whose turn it is, before they roll.
+   *
+   * Uses one of the five player<slot><variant>.wav lines for that seat, which is what the
+   * original shipped 30 of (6 seats x 5 variants) and why they run 1.1-1.9s. Falls back to
+   * the short per-name clip when a slot line is missing. Deliberately does NOT play the
+   * human/computer clips: those belong to the New Game seat selector, and firing them every
+   * turn means hearing "computer" on every AI move.
+   */
+  async announceTurn(name: string, slot: number): Promise<void> {
+    if (!this.enabled) return;
+    await this.speak(`slot:${slot}`);
+    if (this.spokeLast) return;
+    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (slug) await this.speak(`name:${slug}`);
+  }
+
+  /** Click feedback when a New Game seat is cycled between Human and Computer. */
+  seatChanged(kind: 'human' | 'computer' | 'off'): void {
+    if (kind === 'off') return; // the original shipped no clip for the Off state
+    void this.speak(kind === 'human' ? 'seatHuman' : 'seatComputer');
+  }
+
+  /** Whether the most recent speak() actually found a file. */
+  private spokeLast = false;
 
   play(cue: Cue): void {
     if (!this.enabled) return;
@@ -232,7 +260,7 @@ export class Sound {
     return CANDIDATES[cue] ?? [];
   }
 
-  private async resolve(cue: Cue): Promise<void> {
+  private async resolve(cue: Cue, autoplay = true): Promise<void> {
     for (const file of this.candidates(cue)) {
       const url = BASE + file;
       try {
@@ -242,7 +270,7 @@ export class Sound {
         audio.preload = 'auto';
         this.cache.set(cue, audio);
         this.available = true;
-        void this.fire(audio);
+        if (autoplay) void this.fire(audio);
         return;
       } catch {
         // network/permission failure — treat as missing and stop probing this cue
@@ -251,13 +279,32 @@ export class Sound {
     this.cache.set(cue, null);
   }
 
-  private async fire(audio: HTMLAudioElement): Promise<void> {
-    try {
+  /** Plays a clip and resolves when it ends, so speech can be sequenced. */
+  private fire(audio: HTMLAudioElement): Promise<void> {
+    this.spokeLast = false;
+    return new Promise<void>((resolve) => {
       const node = audio.cloneNode() as HTMLAudioElement;
       node.volume = 0.6;
-      await node.play();
-    } catch {
-      // Browsers block playback until the first user gesture; the next cue will land.
-    }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve();
+      };
+      node.addEventListener('ended', finish, { once: true });
+      node.addEventListener('error', finish, { once: true });
+      node
+        .play()
+        .then(() => {
+          this.spokeLast = true;
+          // Guard against a missing 'ended' event so the speech chain cannot stall.
+          const ms = Number.isFinite(node.duration) ? node.duration * 1000 + 250 : 4000;
+          window.setTimeout(finish, ms);
+        })
+        .catch(() => {
+          // Blocked until the first user gesture; give up on this one and keep the chain moving.
+          finish();
+        });
+    });
   }
 }

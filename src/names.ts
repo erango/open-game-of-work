@@ -6,22 +6,27 @@ import type { Rng } from './rng';
  * telegraphs difficulty. Tier 1 reads small and harmless, tier 5 reads absurdly grand.
  *
  * These word pools are newly written for this port. The original had its own.
+ *
+ * Keep every word to 9 characters or fewer. The name label is 73x27 in the original's design
+ * space, which holds roughly two lines of twelve characters at the recovered 11px bold, and
+ * the original's own pool tops out at 9 with a mean of 5.9. Longer words overflow the tile,
+ * and no amount of board scaling helps: the board is transform-scaled, so text grows with it.
  */
 
 const ADJECTIVES: Record<Profile, string[]> = {
   1: ['Tiny', 'Gentle', 'Napping', 'Casual', 'Beige', 'Snoozy', 'Mild', 'Placid'],
   2: ['Modest', 'Passable', 'Tepid', 'Semi', 'Chipper', 'Perky', 'Plain', 'Fussy'],
   3: ['Knotty', 'Cranky', 'Lumpy', 'Bristling', 'Stubborn', 'Middling', 'Wobbly', 'Thorny'],
-  4: ['Looming', 'Thunderous', 'Grim', 'Sprawling', 'Ravenous', 'Bleak', 'Colossal', 'Feral'],
-  5: ['Legendary', 'Apocalyptic', 'Imperial', 'Unhinged', 'Titanic', 'Supreme', 'Galactic', 'Immortal'],
+  4: ['Looming', 'Roaring', 'Grim', 'Sprawling', 'Ravenous', 'Bleak', 'Colossal', 'Feral'],
+  5: ['Legendary', 'Doomed', 'Imperial', 'Unhinged', 'Titanic', 'Supreme', 'Galactic', 'Immortal'],
 };
 
 const NOUNS: Record<Profile, string[]> = {
   1: ['Pebble', 'Teaspoon', 'Doorstop', 'Muffin', 'Sock', 'Kitten', 'Sprout', 'Postcard', 'Pigeon'],
   2: ['Toaster', 'Ferret', 'Bicycle', 'Casserole', 'Mailbag', 'Gerbil', 'Trellis', 'Kazoo'],
-  3: ['Doghouse', 'Wheelbarrow', 'Beehive', 'Sawmill', 'Llama', 'Furnace', 'Drawbridge', 'Ostrich'],
+  3: ['Doghouse', 'Barrow', 'Beehive', 'Sawmill', 'Llama', 'Furnace', 'Bridge', 'Ostrich'],
   4: ['Monolith', 'Leviathan', 'Ziggurat', 'Foundry', 'Cyclone', 'Aqueduct', 'Kraken', 'Quarry'],
-  5: ['Deathstar', 'Cathedral', 'Singularity', 'Colossus', 'Dreadnought', 'Obelisk', 'Behemoth', 'Pyramid'],
+  5: ['Deathstar', 'Cathedral', 'Vortex', 'Colossus', 'Titan', 'Obelisk', 'Behemoth', 'Pyramid'],
 };
 
 export function projectName(profile: Profile, rng: Rng): string {

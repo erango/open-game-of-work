@@ -1,4 +1,4 @@
-import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
+import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
 import { assetsAvailable, centerImage, cursorUrl, dieFace, eventArt, playerPortrait, playerToken, squareImage } from './assets';
 import { squareIcon } from './icons';
 import type { Game } from './engine';
@@ -330,7 +330,10 @@ export class Ui {
     empty.style.width = `${T.empty.width}px`;
     empty.style.height = `${remaining}px`;
 
-    const name = el('div', 'proj-name', this.attract ? 'project Name' : proj.name);
+    const label = this.attract ? 'project Name' : proj.name;
+    const name = el('div', 'proj-name', label);
+    // Recovered size, stepped down for the rare longest name so nothing ever clips.
+    name.style.fontSize = `${label.length > 17 ? FONTS.projectName - 2 : label.length > 14 ? FONTS.projectName - 1 : FONTS.projectName}px`;
     name.style.left = `${T.name.left}px`;
     name.style.top = `${T.name.top}px`;
     name.style.width = `${T.name.width}px`;
@@ -371,6 +374,7 @@ export class Ui {
 
     const caption = (c: { left: number; top: number; width: number; height: number; text: string }) => {
       const n = el('div', 'center-caption', c.text);
+      n.style.fontSize = `${FONTS.centerCaption}px`;
       n.style.left = `${c.left}px`;
       n.style.top = `${c.top}px`;
       n.style.width = `${c.width}px`;
@@ -472,6 +476,7 @@ export class Ui {
     readout.style.width = `${V.width}px`;
     readout.style.height = `${V.height}px`;
     readout.classList.add(delta > 0 ? 'ticker-up' : delta < 0 ? 'ticker-down' : 'ticker-flat');
+    readout.style.fontSize = `${FONTS.tickerValue}px`;
     readout.textContent = delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${delta}`;
     readout.title = `Share price ${game.state.stock} — last change ${delta >= 0 ? '+' : ''}${delta}`;
 
@@ -506,6 +511,7 @@ export class Ui {
       name.style.width = `${G.name.width}px`;
       name.style.height = `${G.name.height}px`;
       name.style.color = p.color;
+      name.style.fontSize = `${FONTS.playerName}px`;
 
       const portraitArt = playerPortrait(p.id);
       const portrait = el('div', 'stat-portrait');
@@ -551,6 +557,7 @@ export class Ui {
         `${game.projectsOf(p.id).length} project(s)`;
 
       const rank = el('div', 'stat-rankbadge', RANK_LETTERS[p.rank]);
+      rank.style.fontSize = `${FONTS.rankBadge}px`;
       rank.style.left = `${G.rank.left}px`;
       rank.style.top = `${barTop - 1}px`;
       rank.style.width = `${G.rank.width}px`;

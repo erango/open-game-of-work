@@ -185,6 +185,32 @@ export const PROJECT_TILE = {
   name: { left: 8, top: 0, width: 73, height: 27 },
 } as const;
 
+/**
+ * Recovered font sizes, in the original's design space.
+ *
+ * Delphi stores TFont.Height negative, and a DFM dump that reads those bytes as unsigned
+ * shows nonsense like 245 or 240. They are signed: 245 is -11, 240 is -16, 225 is -31, 241
+ * is -15, 243 is -13. So these are pixel heights, and because the board is transform-scaled
+ * they stay correct at any board size.
+ *
+ * Faces are recorded for reference; MS Sans Serif is long gone, so rendering falls back to
+ * the stack in style.css rather than pretending to match it.
+ */
+export const FONTS = {
+  /** projectNameLabel, MS Sans Serif bold. */
+  projectName: 11,
+  /** Label1/2/4 beneath the centre controls, Comic Sans MS bold. */
+  centerCaption: 16,
+  /** Label3 "Stock Ticker", Bookman Old Style bold. */
+  tickerLabel: 16,
+  /** stockChangeLabel, the lime readout. */
+  tickerValue: 31,
+  /** playerNNameLabel, Arial bold. */
+  playerName: 15,
+  /** rankLabelN has no font of its own, so it inherits the stats panel's. */
+  rankBadge: 13,
+} as const;
+
 /** Center-to-center token offset so multiple players on one square don't fully overlap. */
 export function tokenOffset(slot: number): { dx: number; dy: number } {
   const ring = [

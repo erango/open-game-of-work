@@ -327,6 +327,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 }
 
 .modal {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -869,3 +870,56 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 
 /* Avatars parked in their pre-game grid, with no disc behind them. */
 .token-parked { transition: none; }
+
+/* Only the help window reserves room for the switch; every other dialog keeps a full-width
+   heading. */
+.modal-help h3,
+.modal-help .sub { padding-right: 246px; }
+
+/* Two named sources, so a segmented switch rather than a relabelling button.
+   Sits in the dialog's top-right corner, level with the title. */
+.help-source {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-source-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-dim);
+}
+
+.segmented {
+  display: inline-flex;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.segment {
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.segment:hover { color: var(--ink); }
+
+.segment-on {
+  background: var(--accent);
+  color: #1a1408;
+  font-weight: 700;
+}
+
+.segment-on:hover { color: #1a1408; }

@@ -1134,6 +1134,7 @@ async function askAccept(
 function helpDialog(startKey = 'getStarted') {
   return ui.modal<void>((done) => {
     const d = Ui.modalShell('How to Play', 'Integrated Information System');
+    d.classList.add('modal-help');
     let useOriginal = originalHelpAvailable();
 
     const layout = el('div', 'help-layout');
@@ -1158,20 +1159,44 @@ function helpDialog(startKey = 'getStarted') {
       body.scrollTop = 0;
     };
     paint();
-    d.append(layout);
-
     if (originalHelpAvailable()) {
-      const row = el('div', 'sound-row');
-      const toggle = el('button', 'b', useOriginal ? 'Text: original' : 'Text: port summary');
-      toggle.title = 'Switch between the original help text and this port\u2019s own summaries';
-      toggle.onclick = () => {
-        useOriginal = !useOriginal;
-        toggle.textContent = useOriginal ? 'Text: original' : 'Text: port summary';
-        paint();
-      };
-      row.append(toggle);
+      // Two named sources rather than an on/off state, so a segmented switch reads clearer
+      // than a button whose label keeps changing.
+      const row = el('div', 'help-source');
+      row.append(el('span', 'help-source-label', 'Text'));
+      const seg = el('div', 'segmented');
+      const options: Array<[boolean, string, string]> = [
+        [true, 'Original', "The original game's own help text"],
+        [false, 'Port summary', "This port's own description of the same mechanics"],
+      ];
+      const buttons: HTMLButtonElement[] = [];
+      options.forEach(([value, label, hint]) => {
+        const b = el('button', 'segment');
+        b.textContent = label;
+        b.title = hint;
+        b.setAttribute('role', 'radio');
+        b.onclick = () => {
+          if (useOriginal === value) return;
+          useOriginal = value;
+          buttons.forEach((btn, i) => {
+            const on = options[i][0] === useOriginal;
+            btn.classList.toggle('segment-on', on);
+            btn.setAttribute('aria-checked', String(on));
+          });
+          paint();
+        };
+        const on = value === useOriginal;
+        b.classList.add(...(on ? ['segment-on'] : []));
+        b.setAttribute('aria-checked', String(on));
+        buttons.push(b);
+        seg.append(b);
+      });
+      seg.setAttribute('role', 'radiogroup');
+      seg.setAttribute('aria-label', 'Help text source');
+      row.append(seg);
       d.append(row);
     }
+    d.append(layout);
 
     const foot = el('div', 'foot');
     const ok = el('button', 'b primary', 'OK');

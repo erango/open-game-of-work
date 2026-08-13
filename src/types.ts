@@ -116,6 +116,8 @@ export interface LogEntry {
   turn: number;
   playerId: number | null;
   text: string;
+  /** Name of the original bitmap illustrating this event, when one exists. */
+  art?: string;
 }
 
 export interface GameState {

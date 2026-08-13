@@ -1,5 +1,5 @@
 import * as AI from './ai';
-import { applyFavicon, loadAssets, partySprite, rankArt, resourceImage, seatFace, type PartyMood } from './assets';
+import { applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
@@ -88,6 +88,17 @@ function armAutoClose(button: HTMLButtonElement, isComputer: boolean, fire: () =
     window.clearInterval(tick);
     window.clearTimeout(timer);
   };
+}
+
+/** Heads a dialog with one of the original's event illustrations, when it is installed. */
+function headArt(d: HTMLElement, name: string | null, alt: string): void {
+  const src = name ? eventArt(name) : null;
+  if (!src) return;
+  const img = el('img', 'event-art');
+  img.src = src;
+  img.alt = alt;
+  img.draggable = false;
+  d.append(img);
 }
 
 /** Subtitle marking a dialog as an AI decision the player is watching, not making. */
@@ -522,7 +533,7 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
       'Scruples',
       isAi ? aiSubtitle(p.name, 'which answer to give') : 'Pick an answer — 1, 2 or 3',
     );
-    const sArt = card.art ? resourceImage(card.art) : null;
+    const sArt = card.art ? resourceImage(card.art) : eventArt('SCRUPLESCHANCE');
     if (sArt) {
       const img = el('img', 'card-art');
       img.src = sArt;
@@ -595,6 +606,7 @@ async function handleMeeting(m: Extract<Modal, { kind: 'meeting' }>): Promise<vo
 
   await ui.modal<void>((done) => {
     const d = Ui.modalShell('Meeting', `${p.name} presents`);
+    headArt(d, m.delta >= 0 ? 'MEETINGGOOD' : 'MEETINGBAD', 'The meeting');
     d.append(el('p', undefined, m.text));
     const line = el('p');
     line.append(document.createTextNode('Boss Rating '), Ui.delta(m.delta));
@@ -621,6 +633,7 @@ async function handleOfficeParty(m: Extract<Modal, { kind: 'officeParty' }>): Pr
   if (anyHuman) {
     await ui.modal<void>((done) => {
       const d = Ui.modalShell('Office Party', 'The whole office attends. The boss is watching.');
+      headArt(d, 'DRINK', 'The office party');
 
       // Each player gets their sprite from the set matching their outcome, animated by
       // alternating frames — the original drove this scene from the only TTimer it had.
@@ -1098,6 +1111,18 @@ async function askAccept(
 async function handleGameOver(m: Extract<Modal, { kind: 'gameOver' }>): Promise<void> {
   await ui.modal<void>((done) => {
     const d = Ui.modalShell(game.state.winner !== null ? 'President' : 'Company disbanded');
+    if (game.state.winner !== null) {
+      const win = presidentArt(game.state.winner);
+      if (win) {
+        const img = el('img', 'event-art');
+        img.src = win;
+        img.alt = 'President';
+        img.draggable = false;
+        d.append(img);
+      }
+    } else {
+      headArt(d, 'COMPANYDISBANDED1', 'The company folds');
+    }
     d.append(el('p', undefined, m.text));
     const ul = el('ul');
     const ranked = [...game.state.players].sort((a, b) => b.bossRating - a.bossRating);
@@ -1292,6 +1317,34 @@ function bindKeys(): void {
   });
 }
 
+/**
+ * Shows the original's startup splash, dismissed by a click or after a few seconds.
+ * TSPLASHFORM is a borderless form holding one full-bleed image, so this mirrors it.
+ * Skipped when no extraction is installed.
+ */
+async function showSplash(): Promise<void> {
+  const src = splashImage();
+  if (!src) return;
+  await new Promise<void>((resolve) => {
+    const layer = el('div', 'splash');
+    const img = el('img');
+    img.src = src;
+    img.alt = 'Game of Work';
+    img.draggable = false;
+    layer.append(img, el('div', 'splash-hint', 'click to continue'));
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      layer.remove();
+      resolve();
+    };
+    layer.onclick = finish;
+    window.setTimeout(finish, 3200);
+    document.body.append(layer);
+  });
+}
+
 async function boot(): Promise<void> {
   const root = document.getElementById('app')!;
   // Resolve original-artwork availability before the first render so the board does not
@@ -1306,6 +1359,7 @@ async function boot(): Promise<void> {
   // so the intro clip belongs to app startup, once, not to every new game. Queued as speech
   // so the first turn announcement waits for it instead of talking over it.
   void sound.speak('gameStart');
+  await showSplash();
   ui = new Ui(root, handlers());
   bindKeys();
   void newGame();

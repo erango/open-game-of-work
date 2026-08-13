@@ -145,6 +145,48 @@ export function rankArt(from: number, to: number): string | null {
   return url(`res/RANKPROMO${n}.png`);
 }
 
+/**
+ * The original's illustration for a game event. These are PE bitmap resources whose names
+ * say what they depict, so each maps to the moment it belongs to.
+ */
+export type EventArt =
+  | 'FINISHEDPROJECT'
+  | 'LANDOWN'
+  | 'LANDOTHER'
+  | 'SETOFPROJECTS'
+  | 'STOCKBONUS'
+  | 'TRIP'
+  | 'DRINK'
+  | 'MEETINGGOOD'
+  | 'MEETINGBAD'
+  | 'COMPANYDISBANDED1'
+  | 'COMPANYDISBANDED2'
+  | 'STAR'
+  | 'SCRUPLESPOPUP'
+  | 'SCRUPLESCHANCE'
+  | `PLAYER${number}PRES`;
+
+export function eventArt(name: EventArt | string): string | null {
+  return url(`res/${name}.png`);
+}
+
+/** The borderless startup splash (TSPLASHFORM holds a single full-bleed TImage). */
+export function splashImage(): string | null {
+  return url('forms/TSPLASHFORM/Image1.png');
+}
+
+/** Winner artwork for a seat — PLAYER1PRES..PLAYER6PRES, "PRES" for President. */
+export function presidentArt(slot: number): string | null {
+  return url(`res/PLAYER${slot + 1}PRES.png`);
+}
+
+/** Original mouse cursors, for CSS `cursor: url(...)`. */
+export function cursorUrl(which: 'Dice' | 'Hand' | 'Stock' | 'Trade'): string | null {
+  const rel = `cursors/Cursor${which}.cur`;
+  // Cursors are copied alongside the extraction rather than listed in the manifest.
+  return available.size > 0 ? BASE + rel : null;
+}
+
 /** Which office-party sprite set a player is drawn from. */
 export type PartyMood = 'fine' | 'wild' | 'drunk';
 

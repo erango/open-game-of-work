@@ -167,8 +167,8 @@ export class Game {
     return out;
   }
 
-  private log(text: string, playerId: number | null = null): void {
-    this.state.log.push({ turn: this.state.turn, playerId, text });
+  private log(text: string, playerId: number | null = null, art?: string): void {
+    this.state.log.push({ turn: this.state.turn, playerId, text, art });
     if (this.state.log.length > 400) this.state.log.shift();
   }
 
@@ -202,7 +202,11 @@ export class Game {
       this.state.crashed = true;
       this.state.phase = 'gameOver';
       this.cue('crash');
-      this.log(`The stock hit zero. The company is disbanded — everybody loses. (${why})`);
+      this.log(
+        `The stock hit zero. The company is disbanded — everybody loses. (${why})`,
+        null,
+        'COMPANYDISBANDED1',
+      );
       this.state.modal = {
         kind: 'gameOver',
         text: 'The share price reached zero. The company has been disbanded and every player loses.',
@@ -347,13 +351,18 @@ export class Game {
           return;
         }
         if (proj.owner === p.id) {
-          this.log(`${p.name} lands on their own project ${proj.name} — extra work done.`, p.id);
+          this.log(
+            `${p.name} lands on their own project ${proj.name} — extra work done.`,
+            p.id,
+            'LANDOWN',
+          );
           this.finishWork({ landedOnOther: false, ownProject: proj.id });
         } else {
           const owner = this.player(proj.owner);
           this.log(
             `${p.name} lands on ${owner.name}'s project ${proj.name} and must work on it instead.`,
             p.id,
+            'LANDOTHER',
           );
           this.addWork(proj, R.WORK_LANDING_OTHER);
           this.adjustFriendliness(p.id, 1);
@@ -364,7 +373,7 @@ export class Game {
 
       case 'businessTrip':
         this.cue('businessTrip');
-        this.log(`${p.name} is sent on a business trip.`, p.id);
+        this.log(`${p.name} is sent on a business trip.`, p.id, 'TRIP');
         p.square = 0;
         this.arriveHome(p, 'landing');
         if (this.state.phase === 'gameOver') return;
@@ -455,6 +464,7 @@ export class Game {
     this.log(
       `${owner.name} completes ${proj.name} (profile ${proj.profile}): +${br} Boss Rating.`,
       ownerId,
+      'FINISHEDPROJECT',
     );
     this.adjustStock(R.COMPLETION_STOCK[proj.profile], `${proj.name} shipped`);
 
@@ -513,6 +523,7 @@ export class Game {
       this.log(
         `${this.player(id).name} now owns every profile-${profile} project: +${bonus} Boss Rating, and double work on them.`,
         id,
+        'SETOFPROJECTS',
       );
     }
   }
@@ -774,7 +785,11 @@ export class Game {
     if (this.state.turn % R.STOCK_BONUS_EVERY !== 0) return;
     if (this.state.stock < R.STOCK_BONUS_THRESHOLD) return;
     this.cue('stockMarket');
-    this.log(`The stock is at ${this.state.stock}. The boss hands out rank-scaled rewards.`);
+    this.log(
+      `The stock is at ${this.state.stock}. The boss hands out rank-scaled rewards.`,
+      null,
+      'STOCKBONUS',
+    );
     for (const p of this.state.players) {
       const bonus = p.rank * R.STOCK_BONUS_PER_RANK;
       if (bonus > 0) {

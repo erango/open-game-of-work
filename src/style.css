@@ -622,3 +622,63 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 }
 
 .art-smooth .card-art { image-rendering: auto; }
+
+/* ---------------------------------------------------------------- event art */
+
+/* The original illustrated several moments (a finished project, a full set, the company
+   folding). Those appear beside the matching log entry instead of as extra dialogs. */
+.log-with-art {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 5px 0;
+}
+
+.log-art {
+  width: 44px;
+  height: auto;
+  border-radius: 3px;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.art-smooth .log-art { image-rendering: auto; }
+
+/* Full-size art heading a dialog (meeting outcome, party, endings). */
+.event-art {
+  display: block;
+  margin: 0 auto 12px;
+  max-width: 100%;
+  image-rendering: pixelated;
+  border-radius: 6px;
+}
+
+.art-smooth .event-art { image-rendering: auto; }
+
+/* Startup splash, shown once while the intro clip plays. */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.splash img {
+  max-width: 92vw;
+  max-height: 92vh;
+  image-rendering: pixelated;
+  box-shadow: 0 20px 70px rgb(0 0 0 / .8);
+}
+
+.splash-hint {
+  position: absolute;
+  bottom: 22px;
+  color: rgb(255 255 255 / .55);
+  font-size: 13px;
+  letter-spacing: .05em;
+}

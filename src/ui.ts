@@ -1,5 +1,5 @@
 import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
-import { assetsAvailable, centerImage, dieFace, playerPortrait, playerToken, squareImage } from './assets';
+import { assetsAvailable, centerImage, cursorUrl, dieFace, eventArt, playerPortrait, playerToken, squareImage } from './assets';
 import { squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
@@ -47,6 +47,7 @@ export class Ui {
    * every source pixel the same size, at the cost of leaving some space unused.
    */
   private snapScale = localStorage.getItem('ogow:snap') === 'on';
+  private cursorsApplied = false;
 
   constructor(root: HTMLElement, handlers: UiHandlers) {
     this.root = root;
@@ -99,7 +100,28 @@ export class Ui {
     this.boardWrap.style.height = `${Math.round(DESIGN_HEIGHT * scale)}px`;
   }
 
+  /** Points the board's controls at the original's own cursors, when they are installed. */
+  private applyCursors(): void {
+    if (!assetsAvailable() || this.cursorsApplied) return;
+    this.cursorsApplied = true;
+    const rules: Array<[string, ReturnType<typeof cursorUrl>]> = [
+      ['.board .center-btn[title*="Roll"]', cursorUrl('Dice')],
+      ['.board .center-btn[title*="Trade"]', cursorUrl('Trade')],
+      ['.board .sq-project', cursorUrl('Stock')],
+      ['.board .token', cursorUrl('Hand')],
+    ];
+    const css = rules
+      .filter(([, u]) => u)
+      .map(([sel, u]) => `${sel} { cursor: url("${u}"), pointer; }`)
+      .join('\n');
+    if (!css) return;
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.append(style);
+  }
+
   render(game: Game): void {
+    this.applyCursors();
     // With the original art installed, use the original's board colour so the opaque tile
     // artwork sits on the background it was drawn for rather than on the fallback felt.
     this.boardWrap.style.background = assetsAvailable() ? BOARD_COLOR : '';
@@ -525,6 +547,17 @@ export class Ui {
     const log = el('div', 'log');
     for (const entry of [...s.log].reverse().slice(0, 60)) {
       const d = el('div');
+      // The original illustrated these moments; show its art beside the entry rather than
+      // interrupting play with another dialog.
+      const art = entry.art ? eventArt(entry.art) : null;
+      if (art) {
+        d.classList.add('log-with-art');
+        const img = el('img', 'log-art');
+        img.src = art;
+        img.alt = '';
+        img.draggable = false;
+        d.append(img);
+      }
       if (entry.playerId !== null) {
         const b = el('b', undefined, `${game.player(entry.playerId).name}: `);
         b.style.color = game.player(entry.playerId).color;

@@ -31,16 +31,18 @@ export function projectName(profile: Profile, rng: Rng): string {
 }
 
 /**
- * Default seat names, matching the original: TNEWGAMEFORM's Edit1..Edit6 ship with Text
- * values of 'Player 1' through 'Player 6'.
+ * Default seat names, in seat order.
  *
- * An earlier version of this file used Brad / Muriel / Ned / Jen / Spot / George and
- * described them as recovered. That was wrong. Those names do exist in the original as
- * voice clips (brad.wav and friends) and appear together in the rules text's Power Monger
- * worked example, but they are not the seat defaults, and pinning one to each seat invented
- * a name-to-avatar pairing the original never had — seat avatars are fixed, names are not.
+ * Confirmed twice over. The six names sit consecutively in .data at 0x47cc48, 0x47cc4d,
+ * 0x47cc51, 0x47cc58, 0x47cc5d and 0x47cc64, each with exactly one code reference, and a
+ * screenshot of the original's New Game dialog shows the same order down the six seats.
  *
- * Typing one of those names still triggers its clip: announceTurn falls back to a per-name
- * clip when a seat has one, which is most likely how the original used them.
+ * Two earlier attempts at this were wrong. First the order was guessed from the audio
+ * filenames, which put Muriel in seat 2 where Jen belongs. Then it was "corrected" to
+ * generic Player 1..6 on the strength of TNEWGAMEFORM's design-time Edit Text values —
+ * but those are placeholders the runtime overwrites, as the dialog itself shows.
+ *
+ * The pairing matters because seat avatars are fixed art: seat 4 is Spot, and Spot is the
+ * dog. Getting the order wrong visibly mismatches every name against its portrait.
  */
-export const DEFAULT_NAMES = ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6'];
+export const DEFAULT_NAMES = ['Brad', 'Jen', 'George', 'Spot', 'Muriel', 'Ned'];

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!--
+    Fallback favicon, drawn for this port.
+
+    The original's application icon (GROUP_ICON "MAINICON") is its own artwork and is not
+    redistributable, so it is not committed here. When a local extraction is installed,
+    src/assets.ts swaps this out for the real one at runtime. This mark is deliberately not
+    an imitation of it: a board ring with a token on it, matching the port's own SVG set.
+  -->
+  <rect width="32" height="32" rx="5" fill="#2a4a3a"/>
+  <g fill="none" stroke="#d8a13c" stroke-width="2.6" stroke-linejoin="round">
+    <rect x="6.5" y="6.5" width="19" height="19" rx="2"/>
+  </g>
+  <rect x="11" y="11" width="4" height="4" fill="#8bb889"/>
+  <rect x="17" y="11" width="4" height="4" fill="#94bcda"/>
+  <rect x="11" y="17" width="4" height="4" fill="#debe89"/>
+  <circle cx="19" cy="19" r="2.6" fill="#d2323c"/>
+</svg>

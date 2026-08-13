@@ -170,6 +170,100 @@ def encode_png(width: int, height: int, rows: list[bytes]) -> bytes:
             + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
 
 
+def encode_png_rgba(width: int, height: int, rows: list[bytes]) -> bytes:
+    """PNG writer for 8-bit RGBA, so icon transparency survives."""
+    import zlib
+
+    raw = b"".join(b"\x00" + r for r in rows)
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return (struct.pack(">I", len(data)) + tag + data
+                + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
+
+
+def decode_icon(dib: bytes):
+    """
+    Decodes a PE ICON resource into (width, height, rgba_rows).
+
+    An icon DIB stores its height doubled: the top half is the colour (XOR) bitmap and the
+    bottom half a 1bpp AND mask, where a set bit means transparent. Both are bottom-up with
+    rows padded to 4 bytes.
+    """
+    if dib[:8] == b"\x89PNG\r\n\x1a\n":
+        return None  # already a PNG icon; caller writes it verbatim
+    header_size, width, doubled, _planes, bpp = struct.unpack_from("<IiiHH", dib, 0)
+    if header_size != 40:
+        return None
+    height = doubled // 2
+
+    palette = []
+    if bpp <= 8:
+        clr_used = struct.unpack_from("<I", dib, 32)[0] or (1 << bpp)
+        base = header_size
+        for i in range(clr_used):
+            b, g, r, _a = dib[base + i * 4: base + i * 4 + 4]
+            palette.append((r, g, b))
+        xor_start = header_size + clr_used * 4
+    else:
+        xor_start = header_size
+
+    xor_stride = ((bpp * width + 31) // 32) * 4
+    mask_stride = ((width + 31) // 32) * 4
+    mask_start = xor_start + xor_stride * height
+
+    rows = []
+    for y in range(height):
+        src = height - 1 - y  # bottom-up
+        xrow = dib[xor_start + src * xor_stride: xor_start + (src + 1) * xor_stride]
+        mrow = dib[mask_start + src * mask_stride: mask_start + (src + 1) * mask_stride]
+        if len(xrow) < xor_stride:
+            return None
+        out = bytearray()
+        for x in range(width):
+            if bpp == 32:
+                b, g, r, a = xrow[x * 4: x * 4 + 4]
+            elif bpp == 24:
+                b, g, r = xrow[x * 3: x * 3 + 3]
+                a = 255
+            elif bpp == 8:
+                r, g, b = palette[xrow[x]] if xrow[x] < len(palette) else (0, 0, 0)
+                a = 255
+            elif bpp == 4:
+                nib = (xrow[x >> 1] >> (0 if x & 1 else 4)) & 0x0F
+                r, g, b = palette[nib] if nib < len(palette) else (0, 0, 0)
+                a = 255
+            elif bpp == 1:
+                bit = (xrow[x >> 3] >> (7 - (x & 7))) & 1
+                r, g, b = palette[bit] if bit < len(palette) else (0, 0, 0)
+                a = 255
+            else:
+                return None
+            # A set AND-mask bit means this pixel is transparent.
+            if mrow and (mrow[x >> 3] >> (7 - (x & 7))) & 1:
+                a = 0
+            out += bytes((r, g, b, a))
+        rows.append(bytes(out))
+    return width, height, rows
+
+
+def ico_from_dib(dib: bytes) -> bytes:
+    """Wraps a single icon DIB in an ICONDIR so it becomes a valid .ico file."""
+    _hs, width, doubled, _planes, bpp = struct.unpack_from("<IiiHH", dib, 0)
+    height = doubled // 2
+    entry = struct.pack(
+        "<BBBBHHII",
+        width if width < 256 else 0,
+        height if height < 256 else 0,
+        (1 << bpp) if bpp <= 8 else 0,
+        0, 1, bpp, len(dib), 6 + 16,
+    )
+    return struct.pack("<HHH", 0, 1, 1) + entry + dib
+
+
 def write_image(path_no_ext: str, bmp: bytes) -> str | None:
     """Writes a PNG next to the BMP. Returns the PNG's basename, or None on failure."""
     decoded = decode_bmp(bmp)
@@ -368,7 +462,7 @@ def main() -> int:
     os.makedirs(res_dir, exist_ok=True)
     os.makedirs(form_dir, exist_ok=True)
 
-    counts = {"bitmap": 0, "cursor": 0, "picture": 0, "png": 0, "skipped": 0}
+    counts = {"bitmap": 0, "cursor": 0, "picture": 0, "png": 0, "icon": 0, "skipped": 0}
     manifest: list[str] = []
 
     for path, data in pe.resources():
@@ -384,6 +478,24 @@ def main() -> int:
             if write_image(stem, bmp):
                 counts["png"] += 1
                 manifest.append(f"res/{safe(path[1])}.png")
+        elif kind == "ICON":
+            # The application icon (GROUP_ICON is named MAINICON in this binary).
+            stem = os.path.join(outdir, "icon")
+            if data[:8] == b"\x89PNG\r\n\x1a\n":
+                open(stem + ".png", "wb").write(data)
+                counts["icon"] += 1
+                manifest.append("icon.png")
+                continue
+            decoded = decode_icon(data)
+            if not decoded:
+                counts["skipped"] += 1
+                continue
+            w, h, rows = decoded
+            open(stem + ".png", "wb").write(encode_png_rgba(w, h, rows))
+            open(stem + ".ico", "wb").write(ico_from_dib(data))
+            counts["icon"] += 1
+            manifest.append("icon.png")
+            manifest.append("icon.ico")
         elif kind == "CURSOR":
             # Raw CURSOR resources lack the .cur file header; keep them for reference only.
             fn = os.path.join(res_dir, "cursor_" + safe(path[1]) + ".bin")
@@ -420,6 +532,7 @@ def main() -> int:
 
     print(f"resource bitmaps : {counts['bitmap']}")
     print(f"converted to png : {counts['png']}")
+    print(f"application icon : {counts['icon']}")
     print(f"form pictures    : {counts['picture']}")
     print(f"cursors (raw)    : {counts['cursor']}")
     print(f"skipped          : {counts['skipped']}")

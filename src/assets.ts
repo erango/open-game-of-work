@@ -65,6 +65,22 @@ export function assetsAvailable(): boolean {
   return available.size > 0;
 }
 
+/**
+ * Swaps the tab icon for the original's application icon when one has been extracted.
+ *
+ * The original stores a single 32x32 4bpp icon under GROUP_ICON "MAINICON". Because that is
+ * its artwork rather than ours, it is never committed; the repo ships an SVG of its own and
+ * this upgrade only fires on a machine with a local extraction.
+ */
+export function applyFavicon(): void {
+  const png = url('icon.png');
+  if (!png) return;
+  const link = document.getElementById('favicon') as HTMLLinkElement | null;
+  if (!link) return;
+  link.type = 'image/png';
+  link.href = png;
+}
+
 function url(rel: string): string | null {
   return available.has(rel) ? BASE + rel : null;
 }

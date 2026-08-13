@@ -4,3 +4,5 @@ dist/
 .DS_Store
 .vite/
 public/assets/
+__pycache__/
+*.pyc

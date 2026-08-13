@@ -1,5 +1,5 @@
 import * as AI from './ai';
-import { loadAssets } from './assets';
+import { applyFavicon, loadAssets } from './assets';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
@@ -1168,6 +1168,7 @@ async function boot(): Promise<void> {
   // Resolve original-artwork availability before the first render so the board does not
   // flash the SVG fallback and then swap.
   await loadAssets();
+  applyFavicon();
   applySmoothing();
   // The original showed a borderless splash (TSPLASHFORM: one full-bleed TImage) at launch,
   // so the intro clip belongs to app startup, once, not to every new game. Queued as speech

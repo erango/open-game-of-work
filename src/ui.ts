@@ -22,6 +22,7 @@ export interface UiHandlers {
   onToggleSound(): void;
   onAutoClick(): void;
   onHighScores(): void;
+  onHelp(): void;
   soundOn(): boolean;
   onRoll(): void;
   onTrade(): void;
@@ -518,6 +519,10 @@ export class Ui {
     smoothBtn.title = 'Switch between nearest-neighbour and smoothed scaling for the original art';
     smoothBtn.onclick = () => this.handlers.onToggleSmooth();
     soundRow.append(smoothBtn);
+
+    const helpBtn = el('button', 'b', 'How to Play');
+    helpBtn.onclick = () => this.handlers.onHelp();
+    soundRow.append(helpBtn);
 
     const hsBtn = el('button', 'b', 'High Scores');
     hsBtn.onclick = () => this.handlers.onHighScores();

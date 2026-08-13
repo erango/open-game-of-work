@@ -2,6 +2,7 @@ import * as AI from './ai';
 import { applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
+import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
@@ -280,6 +281,10 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     m.append(err);
 
     const foot = el('div', 'foot');
+    const helpBtn = el('button', 'b help-mark', '?');
+    helpBtn.title = 'How to Play';
+    helpBtn.onclick = () => void helpDialog();
+    foot.append(helpBtn);
     const start = el('button', 'b primary', 'Start game');
     start.onclick = () => {
       const seats: SeatConfig[] = rows.map((r) => ({
@@ -360,6 +365,7 @@ function stubHandlers() {
     onToggleSound() {},
     onAutoClick() {},
     onHighScores() {},
+    onHelp() {},
     soundOn() {
       return false;
     },
@@ -1119,6 +1125,61 @@ async function askAccept(
   });
 }
 
+/**
+ * The How to Play window, mirroring THELPFORM: twelve topics down the left edge, each
+ * swapping the text in a scrolling panel, under the heading the original used for the group.
+ */
+function helpDialog(startKey = 'getStarted') {
+  return ui.modal<void>((done) => {
+    const d = Ui.modalShell('How to Play', 'Integrated Information System');
+    let useOriginal = originalHelpAvailable();
+
+    const layout = el('div', 'help-layout');
+    const list = el('div', 'help-topics');
+    const body = el('div', 'help-body');
+    layout.append(list, body);
+
+    let current = startKey;
+    const paint = () => {
+      const all = helpTopics(useOriginal);
+      list.textContent = '';
+      for (const t of all) {
+        const b = el('button', 'help-topic' + (t.key === current ? ' help-topic-on' : ''), t.title);
+        b.onclick = () => {
+          current = t.key;
+          paint();
+        };
+        list.append(b);
+      }
+      const topic = all.find((t) => t.key === current) ?? all[0];
+      body.textContent = topic ? topic.body : '';
+      body.scrollTop = 0;
+    };
+    paint();
+    d.append(layout);
+
+    if (originalHelpAvailable()) {
+      const row = el('div', 'sound-row');
+      const toggle = el('button', 'b', useOriginal ? 'Text: original' : 'Text: port summary');
+      toggle.title = 'Switch between the original help text and this port\u2019s own summaries';
+      toggle.onclick = () => {
+        useOriginal = !useOriginal;
+        toggle.textContent = useOriginal ? 'Text: original' : 'Text: port summary';
+        paint();
+      };
+      row.append(toggle);
+      d.append(row);
+    }
+
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'OK');
+    ok.onclick = () => done();
+    foot.append(ok);
+    d.append(foot);
+    return d;
+  });
+}
+
 /** The High Scores window: two tables of ten, as THIGHSCORESFORM lays them out. */
 function highScoresDialog(highlight?: { fastest: number | null; richest: number | null }) {
   return ui.modal<void>((done) => {
@@ -1367,6 +1428,9 @@ function handlers() {
     onHighScores() {
       void highScoresDialog();
     },
+    onHelp() {
+      void helpDialog();
+    },
     soundOn() {
       return sound.on;
     },
@@ -1471,6 +1535,7 @@ async function boot(): Promise<void> {
   await loadAssets();
   // Original decks live alongside the artwork and are equally optional.
   await initDecks();
+  await loadHelp();
   setDeckMode(deckMode());
   applyFavicon();
   applySmoothing();

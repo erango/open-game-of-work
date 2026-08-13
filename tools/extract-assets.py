@@ -599,6 +599,55 @@ def chance_effects(pe: "PE", chance_texts: list[str]) -> list[list[int]]:
     return out
 
 
+# --------------------------------------------------------------------------- help topics
+
+# THELPFORM ("How to Play") lists twelve topics down its left edge, each swapping the text
+# in a read-only memo. Every topic's body is a Pascal literal in .data, identifiable by the
+# line it opens with.
+HELP_TOPICS = [
+    ("getStarted", "How to Get Started", "HOW TO GET STARTED"),
+    ("rules", "Rules of the Game", "RULES"),
+    ("home", "Home", "Home square:"),
+    ("projects", "Projects", "Project squares:"),
+    ("chance", "Chance", "Chance squares:"),
+    ("scruples", "Scruples", "Scruples squares:"),
+    ("officeParty", "Office Party", "Office Party square:"),
+    ("meeting", "Meeting", "Meeting square:"),
+    ("powerMonger", "Power Monger", "Power Monger square:"),
+    ("businessTrip", "Business Trip", "Business Trip square:"),
+    ("stockMarket", "Stock Market", "Stock Market:"),
+    ("other", "Anything Else?", "Miscellaneous"),
+]
+
+
+def extract_help(pe: "PE") -> dict:
+    """
+    Recovers the twelve in-game help topics from .data.
+
+    The text is the original authors' prose, so like the card decks it is written to a
+    gitignored file and loaded at runtime; the port ships its own summaries instead.
+    """
+    section = next(((ra, rs) for n, va, vs, ra, rs in pe.sections if n == ".data"), None)
+    if not section:
+        return {}
+    ra, rs = section
+    data = pe.d[ra:ra + rs]
+    runs = [m.group().decode("latin-1")
+            for m in re.finditer(rb"[\x20-\x7e\r\n\t]{40,}", data)]
+
+    topics = {}
+    for key, title, marker in HELP_TOPICS:
+        best = None
+        for run in runs:
+            if run.lstrip().startswith(marker):
+                # Several topics share a prefix, so prefer the longest match.
+                if best is None or len(run) > len(best):
+                    best = run
+        if best:
+            topics[key] = {"title": title, "body": best.replace("\r\n", "\n").strip()}
+    return topics
+
+
 # ----------------------------------------------------- scruples raw effects (unverified)
 
 # Recovered constructor signatures, from Ghidra headless decompilation:
@@ -939,6 +988,16 @@ def main() -> int:
 
     manifest.sort()
     open(os.path.join(outdir, "manifest.txt"), "w").write("\n".join(manifest) + "\n")
+
+    help_topics = extract_help(pe)
+    if help_topics:
+        import json as _json
+        help_path = os.path.join(os.path.dirname(outdir.rstrip("/")) or ".", "help.json")
+        open(help_path, "w").write(_json.dumps(
+            {"note": ("In-game help text recovered from the original binary and copyrighted "
+                      "by its authors -- do not redistribute."),
+             "topics": help_topics}, indent=1))
+        print(f"help topics      : {len(help_topics)}/12 -> {help_path}")
 
     cards = extract_cards(pe)
     if cards.get("chance") or cards.get("scruples"):

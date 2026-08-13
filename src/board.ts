@@ -153,6 +153,24 @@ export const PROFILE_COLORS: Record<Profile, string> = {
 export const BOARD_COLOR = '#67aeef';
 export const STATS_PANEL_COLOR = '#5199fb';
 
+/**
+ * Project tile anatomy, tile-relative, transcribed from TMAINFORM.
+ *
+ * The original composed each project square from four shapes rather than one: a flat
+ * profile-coloured tile, a black vertical bar track down the left edge, a fill inside that
+ * track whose height is the progress, and a centred name label occupying the space to the
+ * right of the bar.
+ */
+export const PROJECT_TILE = {
+  size: 81,
+  /** projectFullBarShape: 7x81 at the tile's own origin, Brush.Color = clBlack. */
+  track: { left: 0, top: 0, width: 7, height: 81 },
+  /** projectStatusShape: 6 wide, inset 1px, height varies with work completed. */
+  fill: { left: 1, width: 6, maxHeight: 79, top: 1 },
+  /** projectNameLabel: 73x27 at x=8, taCenter — clear of the bar. */
+  name: { left: 8, top: 0, width: 73, height: 27 },
+} as const;
+
 /** Center-to-center token offset so multiple players on one square don't fully overlap. */
 export function tokenOffset(slot: number): { dx: number; dy: number } {
   const ring = [

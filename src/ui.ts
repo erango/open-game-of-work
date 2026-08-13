@@ -1,6 +1,6 @@
-import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
+import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
 import { assetsAvailable, centerImage, squareImage } from './assets';
-import { PROJECT_WATERMARK, squareIcon } from './icons';
+import { squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
 import { RANK_LETTERS, RANKS, type GameState, type Player, type Project } from './types';
@@ -149,30 +149,58 @@ export class Ui {
     this.paintTokens(s);
   }
 
+  /**
+   * A project square, built the way the original composed it (see PROJECT_TILE): a flat
+   * profile-coloured tile, a black bar track down the left edge, a fill inside the track
+   * whose height tracks work done, and the name centred in the remaining space.
+   *
+   * The fill grows upward from the bottom, because the original's rules text says "the
+   * higher the progress bar, the less work left to do". The design-time DFM snapshot has it
+   * top-anchored at 41px, but that is the placeholder state the form was saved in; the
+   * height is assigned at runtime.
+   */
   private paintProject(node: HTMLElement, proj: Project, game: Game): void {
+    const T = PROJECT_TILE;
     const owner = proj.owner === null ? null : game.player(proj.owner);
-    const color = owner ? owner.color : '#000';
+    node.style.background = PROFILE_COLORS[proj.profile];
 
-    const mark = el('div', 'proj-watermark');
-    mark.innerHTML = PROJECT_WATERMARK;
-    mark.style.color = PROFILE_COLORS[proj.profile];
+    const track = el('div', 'proj-track');
+    track.style.left = `${T.track.left}px`;
+    track.style.top = `${T.track.top}px`;
+    track.style.width = `${T.track.width}px`;
+    track.style.height = `${T.track.height}px`;
 
-    const tile = el('div', 'proj-tile');
-    tile.style.background = PROFILE_COLORS[proj.profile];
+    const ratio = Math.max(0, Math.min(1, proj.progress / proj.work));
+    const h = Math.round(T.fill.maxHeight * ratio);
+    const fill = el('div', 'proj-fill');
+    fill.style.left = `${T.fill.left}px`;
+    fill.style.width = `${T.fill.width}px`;
+    fill.style.height = `${h}px`;
+    fill.style.top = `${T.fill.top + (T.fill.maxHeight - h)}px`;
+    // Unowned projects draw name and bar in black, per the original's rules text.
+    fill.style.background = owner ? owner.color : '#000';
 
     const name = el('div', 'proj-name', proj.name);
-    name.style.color = owner ? owner.color : '#c8ccd2';
+    name.style.left = `${T.name.left}px`;
+    name.style.top = `${T.name.top}px`;
+    name.style.width = `${T.name.width}px`;
+    name.style.height = `${T.name.height}px`;
+    name.style.color = owner ? owner.color : '#000';
 
-    const bar = el('div', 'proj-bar');
-    const fill = el('i');
-    fill.style.width = `${Math.min(100, (proj.progress / proj.work) * 100)}%`;
-    fill.style.background = color === '#000' ? '#666' : color;
-    bar.append(fill);
+    node.append(track, fill, name);
 
-    const meta = el('div', 'proj-meta', `P${proj.profile} · ${proj.progress}/${proj.work}`);
+    if (proj.shoddy) {
+      // Not in the original, which had no on-tile shoddy marker, but the player needs to see
+      // it. Kept to a small corner dot rather than a label so the tile still reads correctly.
+      const dot = el('div', 'proj-shoddy-dot');
+      dot.title = 'Shoddy — will rebound on whoever ships it';
+      node.append(dot);
+    }
 
-    node.append(mark, tile, name, bar, meta);
-    if (proj.shoddy) node.append(el('div', 'proj-shoddy', 'SHODDY'));
+    node.title =
+      `${proj.name} — profile ${proj.profile}, ${proj.progress}/${proj.work} work` +
+      (owner ? `, owned by ${owner.name}` : ', unowned') +
+      (proj.shoddy ? ', SHODDY' : '');
   }
 
   private paintCenter(game: Game): void {

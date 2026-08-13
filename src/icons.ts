@@ -88,9 +88,3 @@ export function squareIcon(kind: SquareKind, size = 40): string {
   if (!body) return '';
   return size === 40 ? body : body.replace(/width="40" height="40"/, `width="${size}" height="${size}"`);
 }
-
-/** A folder motif used as the project-square watermark. */
-export const PROJECT_WATERMARK = svg(
-  `<path d="M5 13a2 2 0 0 1 2-2h11l4 5h19a2 2 0 0 1 2 2v19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"/>`,
-  30,
-);

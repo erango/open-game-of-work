@@ -112,8 +112,10 @@ test('no stylesheet rule overrides .sq absolute positioning', () => {
   while ((m = ruleRe.exec(css))) {
     const selector = m[1].trim();
     const body = m[2];
-    if (!/(^|,|\s)\.sq[-\w]*(\s|,|$)/.test(selector)) continue;
-    if (selector.includes(' ') && !/^\.sq[-\w]*$/.test(selector.split(',')[0].trim())) continue;
+    // Any rule touching .sq or its descendants, including child selectors like
+    // `.sq-project > *`, which outrank a plain `.proj-track { position: absolute }` and
+    // silently collapse the tile layout.
+    if (!/\.sq[-\w]*/.test(selector)) continue;
     const pos = /(?:^|;)\s*position\s*:\s*([a-z]+)/.exec(body);
     if (pos && pos[1] !== 'absolute') offenders.push(`${selector} -> position: ${pos[1]}`);
   }

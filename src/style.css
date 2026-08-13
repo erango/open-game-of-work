@@ -111,16 +111,17 @@ html, body { height: 100%; }
    overriding it drops every project square out of the ring. */
 .sq-project { padding: 0; }
 
-/* projectFullBarShape: black vertical track down the left edge. */
-.proj-track {
+/* projectFullBarShape: the bar itself, owner-coloured or black when unowned. */
+.proj-bar {
   position: absolute;
-  background: #000;
+  border: 1px solid rgb(0 0 0 / .55);
 }
 
-/* projectStatusShape: fill inside the track, grows upward as work is done. */
-.proj-fill {
+/* projectStatusShape: white shape masking the work still outstanding, from the top down. */
+.proj-empty {
   position: absolute;
-  transition: height .25s ease, top .25s ease;
+  background: #fff;
+  transition: height .25s ease;
 }
 
 /* projectNameLabel: centred, clear of the bar. */

@@ -291,35 +291,35 @@ export class Ui {
   }
 
   /**
-   * A project square, built the way the original composed it (see PROJECT_TILE): a flat
-   * profile-coloured tile, a black bar track down the left edge, a fill inside the track
-   * whose height tracks work done, and the name centred in the remaining space.
+   * A project square, as the original composes it (see PROJECT_TILE): a flat profile-coloured
+   * tile, a vertical bar down the left edge in the owner's colour (black when unowned), a
+   * white shape masking the part of that bar not yet earned, and the name centred clear of
+   * the bar.
    *
-   * The fill grows upward from the bottom, because the original's rules text says "the
-   * higher the progress bar, the less work left to do". The design-time DFM snapshot has it
-   * top-anchored at 41px, but that is the placeholder state the form was saved in; the
-   * height is assigned at runtime.
+   * The bar is drawn full and masked from the top, not filled from the bottom. Getting that
+   * backwards makes an untouched project look finished, which is what it used to do.
    */
   private paintProject(node: HTMLElement, proj: Project, game: Game): void {
     const T = PROJECT_TILE;
     const owner = proj.owner === null ? null : game.player(proj.owner);
     node.style.background = PROFILE_COLORS[proj.profile];
 
-    const track = el('div', 'proj-track');
-    track.style.left = `${T.track.left}px`;
-    track.style.top = `${T.track.top}px`;
-    track.style.width = `${T.track.width}px`;
-    track.style.height = `${T.track.height}px`;
+    const bar = el('div', 'proj-bar');
+    bar.style.left = `${T.bar.left}px`;
+    bar.style.top = `${T.bar.top}px`;
+    bar.style.width = `${T.bar.width}px`;
+    bar.style.height = `${T.bar.height}px`;
+    bar.style.background = owner ? owner.color : '#000';
 
     const ratio = Math.max(0, Math.min(1, proj.progress / proj.work));
-    const h = Math.round(T.fill.maxHeight * ratio);
-    const fill = el('div', 'proj-fill');
-    fill.style.left = `${T.fill.left}px`;
-    fill.style.width = `${T.fill.width}px`;
-    fill.style.height = `${h}px`;
-    fill.style.top = `${T.fill.top + (T.fill.maxHeight - h)}px`;
-    // Unowned projects draw name and bar in black, per the original's rules text.
-    fill.style.background = owner ? owner.color : '#000';
+    const remaining = this.attract
+      ? T.empty.designHeight
+      : Math.round(T.empty.maxHeight * (1 - ratio));
+    const empty = el('div', 'proj-empty');
+    empty.style.left = `${T.empty.left}px`;
+    empty.style.top = `${T.empty.top}px`;
+    empty.style.width = `${T.empty.width}px`;
+    empty.style.height = `${remaining}px`;
 
     const name = el('div', 'proj-name', this.attract ? 'project Name' : proj.name);
     name.style.left = `${T.name.left}px`;
@@ -328,11 +328,9 @@ export class Ui {
     name.style.height = `${T.name.height}px`;
     name.style.color = owner ? owner.color : '#000';
 
-    node.append(track, fill, name);
+    node.append(bar, empty, name);
 
     if (proj.shoddy) {
-      // Not in the original, which had no on-tile shoddy marker, but the player needs to see
-      // it. Kept to a small corner dot rather than a label so the tile still reads correctly.
       const dot = el('div', 'proj-shoddy-dot');
       dot.title = 'Shoddy — will rebound on whoever ships it';
       node.append(dot);

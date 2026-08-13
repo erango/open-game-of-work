@@ -163,10 +163,24 @@ export const STATS_PANEL_COLOR = '#5199fb';
  */
 export const PROJECT_TILE = {
   size: 81,
-  /** projectFullBarShape: 7x81 at the tile's own origin, Brush.Color = clBlack. */
-  track: { left: 0, top: 0, width: 7, height: 81 },
-  /** projectStatusShape: 6 wide, inset 1px, height varies with work completed. */
-  fill: { left: 1, width: 6, maxHeight: 79, top: 1 },
+  /**
+   * projectFullBarShape: 7x81 at the tile's own origin, Brush.Color = clBlack.
+   *
+   * This is the bar itself, not a track. It is black in the DFM because an unowned project
+   * draws its bar black, and runtime recolours it to the owner's colour.
+   */
+  bar: { left: 0, top: 0, width: 7, height: 81 },
+  /**
+   * projectStatusShape: 6 wide, inset 1px, masking the TOP of the bar.
+   *
+   * It carries no Brush.Color in the DFM, and TShape defaults to clWhite, so this is the
+   * empty remainder rather than the fill. Its height is the work still outstanding, which is
+   * why the original's rules text says "the higher the progress bar, the less work left to
+   * do" — the coloured part grows upward as the white shrinks.
+   *
+   * designHeight is the 41 the form was saved with, which is what the pre-game board shows.
+   */
+  empty: { left: 1, width: 6, maxHeight: 79, top: 1, designHeight: 41 },
   /** projectNameLabel: 73x27 at x=8, taCenter — clear of the bar. */
   name: { left: 8, top: 0, width: 73, height: 27 },
 } as const;

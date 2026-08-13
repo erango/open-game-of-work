@@ -153,32 +153,123 @@ TypeScript narrows `phase` away across mutating helpers and rejects the direct c
 
 ## Reverse-engineering notes
 
-Hard-won lessons for anyone digging further into the binary:
+Hard-won lessons. Nearly every wrong turn in this project came from reading a recovered value
+without checking how it was encoded or whether the running program overrode it.
 
-- **The DFM is authoritative for geometry and colours, and unreliable for defaults and runtime
-  behaviour.** Five bugs came from trusting a design-time property where the running program
-  did something else — most memorably `Edit1..Edit6` carrying `Text='Player 1'..'Player 6'`
-  while the game actually assigns Brad, Jen, George, Spot, Muriel, Ned. Seat avatars are fixed
-  art, so a wrong name order visibly mismatches every portrait. Prefer a screenshot of the
-  running game over a DFM property for anything the code can overwrite.
-- **capstone** is not installed system-wide; use a venv (`python3 -m venv`, `pip install
-  capstone`). The extractor treats it as optional.
-- **capstone renders `push 0` with no `0x` prefix.** An immediate-detector keyed on that prefix
-  silently discards every zero. This caused several dead ends. Parse with `int(op, 0)`.
-- **Decoding x86 backwards from an arbitrary offset desynchronises.** Anchor on the byte just
-  past a `call`, which is always an instruction boundary.
-- **Ghidra headless** works and is the right tool for anything structural:
+### Tooling
+
+- **Ghidra** is a brew *formula*, not a cask, and needs JDK 21:
   ```bash
+  brew install ghidra openjdk@21
   JAVA_HOME=/opt/homebrew/opt/openjdk@21 \
     /opt/homebrew/Cellar/ghidra/*/libexec/support/analyzeHeadless \
     /tmp/gproj gow -import gamework.exe -scriptPath <dir> -postScript DumpFuncs.java 0x413e10
   ```
-  Known addresses: `0x402048` Chance card constructor, `0x413e10` Scruples answer constructor
-  (18 params), `0x4137fc` card constructor, `0x413c14` the Scruples OK handler.
-- **Chance effects are genuinely recovered** (all 30, confirmed three independent ways).
-  **Scruples answer effects are not.** All 108 × 15 parameters are extracted and preserved in
-  `cards.json` as `scruplesRawEffects`, but which slot means Boss Rating is unestablished, so
-  `originalCards.ts` infers them. Do not apply those numbers under guessed labels.
+  Re-run against an existing project with `-process gamework.exe -noanalysis` to skip
+  re-analysis. A script that decompiles every function in `0x401000..0x430000` and scores
+  which struct-field offsets it touches is an effective way to find a subsystem.
+- **capstone** is not installed system-wide; use a venv. `tools/extract-assets.py` treats it
+  as optional and skips the disassembly-dependent output without it.
+
+### The DFM: authoritative for some things, misleading for others
+
+**Trust it for** geometry, colours, fonts, component names and event-handler names. Every
+coordinate, tile colour and font size in `board.ts` came from there and has held up.
+
+**Do not trust it for** anything the running program assigns:
+
+- `Edit1..Edit6` carry `Text='Player 1'..'Player 6'`, but the game actually assigns Brad,
+  Jen, George, Spot, Muriel, Ned. Seat avatars are fixed art, so a wrong name order visibly
+  mismatches every portrait.
+- A *missing* property means **defaulted, not unset**. `projectStatusShape` has no
+  `Brush.Color`, and `TShape` defaults to `clWhite` — so it is the white mask over the unearned
+  part of the bar, not the fill. Misreading that inverted every progress bar, making untouched
+  projects look finished.
+- Identical `Left`/`Top` across sibling controls means they live in separate parents and are
+  templated, which is a hint their contents are set in code.
+
+**One inversion worth knowing:** design-time captions *are* authoritative for the idle screen,
+because that is literally what the program showed before a game started —
+`projectNameLabel='project Name'`, `stockChangeLabel='+32'`, `rankLabel='E'`. That is where the
+pre-game board's appearance came from.
+
+Prefer a screenshot of the running game over a DFM property for anything code can overwrite.
+Several errors here were caught only because the user supplied one.
+
+### Binary structures
+
+- **`TFont.Height` is negative.** A dump that reads those bytes as unsigned reports nonsense
+  like 245, 240, 225 — signed they are -11, -16, -31, i.e. pixel heights. See `board.ts` FONTS.
+- **`TPicture` blobs are inconsistent by class.** `TBitmap` is class name + u32 length +
+  payload; `TIcon` is class name followed *immediately* by the `.ico` bytes with no length.
+  Being 4 bytes out made every icon fail to parse.
+- **`TImageList.Bitmap`** is `[u32 colour-BMP size][u32 images in use][24bpp strip][1bpp mask]`.
+  Frames sit in a wrapping grid and Delphi over-allocates, so the strip holds more cells than
+  are used; a set mask bit means transparent.
+- **Icon DIBs store height doubled**: top half colour, bottom half a 1bpp AND mask.
+- **Validate frame order with a self-checking case.** The die list's six frames contain 279,
+  558, 837, 1116, 1395 and 1674 white pixels — an exact 1:2:3:4:5:6 ratio, so frame *k* carries
+  *k*+1 pips. That proved the grid layout without needing to look at anything.
+
+### Decompilation
+
+Known addresses:
+
+| Address | What |
+|---|---|
+| `0x402048` | Chance card constructor — 6 numerics into fields `[3..8]` |
+| `0x413e10` | Scruples answer constructor — 18 params, 15 numerics in two groups |
+| `0x4137fc` | card constructor (5 strings + 3 numerics) |
+| `0x413c14` | Scruples OK handler — records the chosen index only |
+| `0x4081a8` | stats panel painter |
+| `0x43b018` / `0x472024` | string assign / allocator, useful as block landmarks |
+
+- **A field offset does not tell you whether a slot holds a value or a pointer.**
+  `DAT_004751e8+0xc..+0x20` looks exactly like the Chance card's six-integer record, but the
+  slots are double-dereferenced and null-checked: they are six *player* pointers. Assuming
+  otherwise sent a whole investigation sideways.
+- The stats painter sizes its meters as `bossRating * width / 100` and
+  `stress * width * 2 / 0x2c`, which independently confirms `PRESIDENT_THRESHOLD = 100` from
+  compiled code and gives the workload meter a full scale of 22. Boss Rating is at
+  `player + 0x18`.
+- **capstone renders `push 0` with no `0x` prefix.** An immediate-detector keyed on that
+  prefix silently discards every zero, which caused several dead ends. Parse with
+  `int(op, 0)`.
+- **Decoding x86 backwards from an arbitrary offset desynchronises.** Anchor on the byte just
+  past a `call`, always an instruction boundary.
+
+### What is recovered versus calibrated
+
+Recovered from the binary: board geometry, tile and player colours, profile distribution
+(2/4/4/3/2), fonts, seat names and order, default game length, the presidency threshold, the
+workload meter scale, and **all 30 Chance card effects** (confirmed three independent ways).
+
+Calibrated by simulation, not recovered: everything else in `rules.ts`, and the Scruples
+answer effects. All 108 answers × 15 parameters are extracted and preserved in `cards.json`
+as `scruplesRawEffects`, and the grouping is proven (36 constructors each preceded by exactly
+3 answers), but **which slot means Boss Rating is unestablished**. Two decompiler scans found
+no reader of the answer object's high fields. Do not apply those numbers under guessed labels.
+
+### Verification discipline
+
+The failures here were all *plausible-looking* results, so:
+
+- **Test a hypothesis against a known-good subset before trusting it.** Pairing answer groups
+  to cards by rank order looked reasonable and disagreed with all 23 directly-evidenced pairs.
+- **A clean-looking bijection is not evidence.** A global matching returned a "perfect" 36-to-36
+  assignment whose distances ran from 65 to 28,013 bytes, with two thirds of pairs pointing the
+  wrong way. Check the residuals, not the fact that it converged.
+- **Verify a new guard actually fails on the bug it targets.** The stylesheet-positioning test
+  was confirmed by reintroducing the bug and watching it fail, twice.
+- Word pools must stay within 9 characters: the original's own pool tops out there (mean 5.9),
+  and a 73x27 label at 11px will not hold more. Board scaling does not help, since the board is
+  transform-scaled and text grows with it.
+
+### Working practice
+
+`ui.ts` and `main.ts` are now large enough that string-anchored patching is risky — one edit
+here spliced the wrong region and duplicated five methods. Prefer explicit method boundaries,
+and let `npm run typecheck` catch it before anything else.
 
 ## The clean-room boundary
 

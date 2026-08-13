@@ -97,6 +97,7 @@ export class Game {
       die: null,
       stock: R.STOCK_START,
       stockHistory: [{ turn: 0, price: R.STOCK_START }],
+      stockPeak: R.STOCK_START,
       lastStockDelta: 0,
       log: [],
       crashed: false,
@@ -197,6 +198,7 @@ export class Game {
     this.state.stock = Math.max(R.STOCK_MIN, Math.min(R.STOCK_MAX, before + delta));
     // Report the change that actually landed, after clamping at the floor and ceiling.
     this.state.lastStockDelta = this.state.stock - before;
+    if (this.state.stock > this.state.stockPeak) this.state.stockPeak = this.state.stock;
     this.state.stockHistory.push({ turn: this.state.turn, price: this.state.stock });
     if (this.state.stock <= R.STOCK_MIN && !this.state.crashed) {
       this.state.crashed = true;

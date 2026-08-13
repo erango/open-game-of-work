@@ -21,6 +21,7 @@ export interface UiHandlers {
   smoothOn(): boolean;
   onToggleSound(): void;
   onAutoClick(): void;
+  onHighScores(): void;
   soundOn(): boolean;
   onRoll(): void;
   onTrade(): void;
@@ -517,6 +518,10 @@ export class Ui {
     smoothBtn.title = 'Switch between nearest-neighbour and smoothed scaling for the original art';
     smoothBtn.onclick = () => this.handlers.onToggleSmooth();
     soundRow.append(smoothBtn);
+
+    const hsBtn = el('button', 'b', 'High Scores');
+    hsBtn.onclick = () => this.handlers.onHighScores();
+    soundRow.append(hsBtn);
 
     const autoBtn = el('button', 'b', 'Auto Click…');
     autoBtn.title = 'Dismiss result dialogs automatically after N seconds';

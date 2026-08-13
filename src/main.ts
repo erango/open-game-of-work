@@ -1,6 +1,7 @@
 import * as AI from './ai';
 import { applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
+import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
@@ -13,6 +14,7 @@ const SAVE_KEY = 'open-game-of-work:save';
 let game: Game;
 let ui: Ui;
 const sound = new Sound();
+let scores: HighScores = loadScores();
 /**
  * Nearest-neighbour vs smoothed scaling for the original art. Nearest keeps the era
  * pixels crisp when the board is scaled up; smoothing suits very large displays where the
@@ -357,6 +359,7 @@ function stubHandlers() {
     },
     onToggleSound() {},
     onAutoClick() {},
+    onHighScores() {},
     soundOn() {
       return false;
     },
@@ -1116,7 +1119,99 @@ async function askAccept(
   });
 }
 
+/** The High Scores window: two tables of ten, as THIGHSCORESFORM lays them out. */
+function highScoresDialog(highlight?: { fastest: number | null; richest: number | null }) {
+  return ui.modal<void>((done) => {
+    const d = Ui.modalShell('High Scores');
+    const wrap = el('div', 'hs-wrap');
+
+    const table = (
+      title: string,
+      nameHead: string,
+      valueHead: string,
+      rows: Array<{ name: string; value: string; note: string }>,
+      mark: number | null | undefined,
+    ) => {
+      const box = el('div', 'hs-table');
+      box.append(el('h4', undefined, title));
+      const grid = el('div', 'hs-grid');
+      grid.append(
+        el('b', 'hs-h', 'Rank'),
+        el('b', 'hs-h', nameHead),
+        el('b', 'hs-h hs-num', valueHead),
+      );
+      for (let i = 0; i < TABLE_SIZE; i++) {
+        const r = rows[i];
+        const isNew = mark === i + 1;
+        grid.append(
+          el('span', 'hs-c' + (isNew ? ' hs-new' : ''), String(i + 1)),
+          el('span', 'hs-c' + (isNew ? ' hs-new' : ''), r ? r.name : '—'),
+          el('span', 'hs-c hs-num' + (isNew ? ' hs-new' : ''), r ? r.value : ''),
+        );
+        if (r && r.note) {
+          const n = el('span', 'hs-note');
+          n.textContent = r.note;
+          grid.append(el('span'), n, el('span'));
+        }
+      }
+      box.append(grid);
+      return box;
+    };
+
+    wrap.append(
+      table(
+        'Shortest time to President',
+        'Name of President',
+        '# of turns',
+        scores.fastest.map((s2) => ({
+          name: s2.name,
+          value: String(s2.scaled),
+          // Long games are the baseline, so only scaled entries need the raw figure shown.
+          note: s2.length === 'long' ? '' : `${s2.turns} actual, ${s2.length}`,
+        })),
+        highlight?.fastest,
+      ),
+      table(
+        'Highest Stock',
+        'Name of Eventual President',
+        'Stock Price',
+        scores.richest.map((s2) => ({ name: s2.name, value: String(s2.price), note: '' })),
+        highlight?.richest,
+      ),
+    );
+    d.append(wrap);
+    d.append(
+      el(
+        'p',
+        'stat-rank',
+        'Short and Medium games have their turn counts scaled so they compare against Long games, as the original did.',
+      ),
+    );
+    const foot = el('div', 'foot');
+    const ok = el('button', 'b primary', 'OK');
+    ok.onclick = () => done();
+    foot.append(ok);
+    d.append(foot);
+    return d;
+  });
+}
+
 async function handleGameOver(m: Extract<Modal, { kind: 'gameOver' }>): Promise<void> {
+  // Only a game with a president places: both tables name one.
+  let placed: ReturnType<typeof record> | null = null;
+  if (game.state.winner !== null) {
+    placed = record(scores, {
+      name: game.player(game.state.winner).name,
+      turns: game.state.turn,
+      peakStock: game.state.stockPeak,
+      length: game.state.length,
+      when: game.state.log.length,
+    });
+    scores = placed.scores;
+    saveScores(scores);
+    if (placed.fastestPlace) sound.play('win');
+    if (placed.richestPlace) sound.play('stockHigh');
+  }
   await ui.modal<void>((done) => {
     const d = Ui.modalShell(game.state.winner !== null ? 'President' : 'Company disbanded');
     if (game.state.winner !== null) {
@@ -1140,13 +1235,26 @@ async function handleGameOver(m: Extract<Modal, { kind: 'gameOver' }>): Promise<
       );
     }
     d.append(el('div', 'sub', `Finished on turn ${game.state.turn}.`), ul);
+    if (placed) {
+      const line: string[] = [];
+      if (placed.fastestPlace) line.push(`#${placed.fastestPlace} shortest time to President`);
+      if (placed.richestPlace) line.push(`#${placed.richestPlace} highest stock`);
+      if (line.length) d.append(el('p', 'ai-verdict', `New high score: ${line.join(' · ')}.`));
+    }
     const foot = el('div', 'foot');
+    const table = el('button', 'b', 'High Scores');
+    table.onclick = () => {
+      done();
+      void highScoresDialog(
+        placed ? { fastest: placed.fastestPlace, richest: placed.richestPlace } : undefined,
+      ).then(() => newGame());
+    };
     const again = el('button', 'b primary', 'New game');
     again.onclick = () => {
       done();
       void newGame();
     };
-    foot.append(again);
+    foot.append(table, again);
     d.append(foot);
     return d;
   });
@@ -1255,6 +1363,9 @@ function handlers() {
     },
     onAutoClick() {
       void askAutoClick();
+    },
+    onHighScores() {
+      void highScoresDialog();
     },
     soundOn() {
       return sound.on;

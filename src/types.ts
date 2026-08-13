@@ -130,6 +130,8 @@ export interface GameState {
   die: number | null;
   stock: number;
   stockHistory: StockPoint[];
+  /** Highest share price reached this game, for the Highest Stock table. */
+  stockPeak: number;
   /**
    * Most recent change to the share price, for the board's Stock Ticker readout. The
    * original showed this in a small raised panel labelled "Stock Ticker", in lime.

@@ -682,3 +682,36 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   font-size: 13px;
   letter-spacing: .05em;
 }
+
+/* ---------------------------------------------------------------- high scores */
+
+.hs-wrap { display: grid; gap: 18px; }
+
+.hs-table h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: .02em;
+}
+
+.hs-grid {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 2px 10px;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.hs-h {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-dim);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hs-c { padding: 3px 0; }
+.hs-num { text-align: right; font-variant-numeric: tabular-nums; }
+.hs-new { color: var(--accent); font-weight: 700; }
+.hs-note { font-size: 11px; color: var(--ink-dim); grid-column: 2 / 4; }

@@ -4,6 +4,7 @@ import { autoplay } from '../src/autoplay.ts';
 import { PROJECT_PROFILES, PROJECT_COUNT, SQUARES } from '../src/board.ts';
 import { Game } from '../src/engine.ts';
 import { parseMidi } from '../src/midi.ts';
+import { emptyScores, record, scaleTurns, TABLE_SIZE } from '../src/highscores.ts';
 import * as R from '../src/rules.ts';
 import type { GameLength, NewGameConfig, Personality } from '../src/types.ts';
 
@@ -217,6 +218,70 @@ test('save/load round-trips', () => {
     h.state.players.map((p) => p.square),
     g.state.players.map((p) => p.square),
   );
+});
+
+console.log('\nhigh scores');
+
+test('turn counts scale so shorter games compare against Long', () => {
+  assert.equal(scaleTurns(20, 'long'), 20, 'Long is the baseline');
+  assert.ok(scaleTurns(20, 'medium') > 20, 'Medium scales up');
+  assert.ok(scaleTurns(20, 'short') > scaleTurns(20, 'medium'), 'Short scales up further');
+});
+
+test('fastest table ranks by scaled turns, not raw', () => {
+  let s = emptyScores();
+  // A 30-turn Long game beats a 20-turn Short game once scaled.
+  s = record(s, { name: 'Long', turns: 30, peakStock: 60, length: 'long', when: 1 }).scores;
+  const r = record(s, { name: 'Short', turns: 20, peakStock: 60, length: 'short', when: 2 });
+  assert.equal(r.scores.fastest[0].name, 'Long', 'scaled comparison must decide the order');
+  assert.equal(r.fastestPlace, 2);
+});
+
+test('richest table ranks by highest peak stock', () => {
+  let s = emptyScores();
+  s = record(s, { name: 'Low', turns: 30, peakStock: 70, length: 'long', when: 1 }).scores;
+  const r = record(s, { name: 'High', turns: 40, peakStock: 150, length: 'long', when: 2 });
+  assert.equal(r.scores.richest[0].name, 'High');
+  assert.equal(r.richestPlace, 1);
+});
+
+test('each table keeps only the best ten', () => {
+  let s = emptyScores();
+  for (let i = 0; i < 15; i++) {
+    s = record(s, { name: `P${i}`, turns: 100 - i, peakStock: 50 + i, length: 'long', when: i }).scores;
+  }
+  assert.equal(s.fastest.length, TABLE_SIZE);
+  assert.equal(s.richest.length, TABLE_SIZE);
+  assert.equal(s.fastest[0].turns, 86, 'fewest turns first');
+  assert.equal(s.richest[0].price, 64, 'highest stock first');
+});
+
+test('a score that does not place reports no position', () => {
+  let s = emptyScores();
+  for (let i = 0; i < TABLE_SIZE; i++) {
+    s = record(s, { name: `P${i}`, turns: 20, peakStock: 200, length: 'long', when: i }).scores;
+  }
+  const r = record(s, { name: 'Slow', turns: 400, peakStock: 1, length: 'long', when: 99 });
+  assert.equal(r.fastestPlace, null);
+  assert.equal(r.richestPlace, null);
+});
+
+test('engine tracks the peak share price, not just the final one', () => {
+  const g = new Game(config('medium', 3, 8080));
+  assert.equal(g.state.stockPeak, R.STOCK_START);
+  for (let i = 0; i < 120 && g.state.phase !== 'gameOver'; i++) {
+    const m = g.state.modal;
+    if (m) {
+      g.state.modal = null;
+      if (m.kind === 'takeProject') g.takeProject(m.projectId, m.playerId);
+      if (g.state.phase === 'resolving') g.finishWork({ landedOnOther: false, ownProject: null });
+      continue;
+    }
+    if (g.turnComplete()) { g.endTurn(); continue; }
+    g.roll();
+    g.finishMoveInstantly();
+    assert.ok(g.state.stockPeak >= g.state.stock, 'peak must never fall below current');
+  }
 });
 
 console.log('\nMIDI parser');

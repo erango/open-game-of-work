@@ -1265,6 +1265,21 @@ function aboutDialog() {
       el('p', undefined, 'This is an independent, clean-room reimplementation. Its mechanics, board geometry and colours were recovered by analysing the original program; its artwork, audio and text are loaded from your own copy when present and are never distributed with this port.'),
       el('p', undefined, 'Not affiliated with or endorsed by the original authors.'),
     );
+    const credit = el('p', 'about-credit');
+    credit.append(document.createTextNode('Ported with love by '));
+    const gh = el('a');
+    gh.href = 'https://github.com/erango';
+    gh.textContent = '@erango';
+    gh.target = '_blank';
+    gh.rel = 'noopener noreferrer';
+    credit.append(gh, document.createTextNode(' \u00b7 '));
+    const kofi = el('a');
+    kofi.href = 'https://ko-fi.com/erango';
+    kofi.textContent = '\u2615 Ko-fi';
+    kofi.target = '_blank';
+    kofi.rel = 'noopener noreferrer';
+    credit.append(kofi);
+    d.append(credit);
     const foot = el('div', 'foot');
     const ok = el('button', 'b primary', 'OK');
     ok.onclick = () => done();
@@ -1625,29 +1640,72 @@ function bindKeys(): void {
 }
 
 /**
- * Shows the original's startup splash, dismissed by a click or after a few seconds.
- * TSPLASHFORM is a borderless form holding one full-bleed image, so this mirrors it.
- * Skipped when no extraction is installed.
+ * Startup splash, mirroring the original's borderless TSPLASHFORM (a single full-bleed
+ * TImage), with this port's credit beneath it.
+ *
+ * Shown whether or not an extraction is installed: without the original image it falls back
+ * to a plain title card, so the credit is always reachable. Dismissed by a click anywhere or
+ * after a few seconds — clicking a link cancels the timer so the splash stays put while the
+ * link opens in another tab.
  */
 async function showSplash(): Promise<void> {
   const src = splashImage();
-  if (!src) return;
   await new Promise<void>((resolve) => {
     const layer = el('div', 'splash');
-    const img = el('img');
-    img.src = src;
-    img.alt = 'Game of Work';
-    img.draggable = false;
-    layer.append(img, el('div', 'splash-hint', 'click to continue'));
+    const inner = el('div', 'splash-inner');
+
+    if (src) {
+      const img = el('img');
+      img.src = src;
+      img.alt = 'Game of Work';
+      img.draggable = false;
+      inner.append(img);
+    } else {
+      const card = el('div', 'splash-card');
+      card.append(
+        el('div', 'splash-title', 'Game of Work'),
+        el('div', 'splash-sub', 'an open reimplementation'),
+      );
+      inner.append(card);
+    }
+
     let done = false;
+    let timer = 0;
     const finish = () => {
       if (done) return;
       done = true;
+      window.clearTimeout(timer);
       layer.remove();
       resolve();
     };
+
+    const credit = el('div', 'splash-credit');
+    credit.append(document.createTextNode('Ported with love by '));
+    const gh = el('a');
+    gh.href = 'https://github.com/erango';
+    gh.textContent = '@erango';
+    gh.target = '_blank';
+    gh.rel = 'noopener noreferrer';
+    credit.append(gh);
+
+    const kofi = el('a', 'splash-kofi');
+    kofi.href = 'https://ko-fi.com/erango';
+    kofi.textContent = '\u2615 Support on Ko-fi';
+    kofi.target = '_blank';
+    kofi.rel = 'noopener noreferrer';
+
+    // A click on either link must not also dismiss the splash.
+    for (const a of [gh, kofi]) {
+      a.onclick = (e) => {
+        e.stopPropagation();
+        window.clearTimeout(timer);
+      };
+    }
+
+    inner.append(credit, kofi, el('div', 'splash-hint', 'click to continue'));
+    layer.append(inner);
     layer.onclick = finish;
-    window.setTimeout(finish, 3200);
+    timer = window.setTimeout(finish, 5000);
     document.body.append(layer);
   });
 }

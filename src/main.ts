@@ -1,5 +1,5 @@
 import * as AI from './ai';
-import { applyFavicon, loadAssets } from './assets';
+import { applyFavicon, loadAssets, partySprite, rankArt, seatFace, type PartyMood } from './assets';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
@@ -152,9 +152,18 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     const rows: Array<{ kind: HTMLSelectElement; name: HTMLInputElement; pers: HTMLSelectElement }> = [];
 
     for (let i = 0; i < 6; i++) {
-      const seat = el('div', 'seat');
+      const seat = el('div', 'seat seat-with-face');
+      // The original's seat selector is a clickable image cycling three faces.
       const swatch = el('div', 'swatch');
       swatch.style.background = R.PLAYER_COLORS[i];
+      const faceImg = el('img', 'seat-face');
+      faceImg.draggable = false;
+      const paintFace = () => {
+        const src = seatFace(kind.value as 'human' | 'computer' | 'off');
+        faceImg.style.display = src ? '' : 'none';
+        if (src) faceImg.src = src;
+        faceImg.alt = kind.value;
+      };
 
       const name = el('input');
       name.value = DEFAULT_NAMES[i];
@@ -180,6 +189,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
 
       kind.addEventListener('change', () => {
         sound.seatChanged(kind.value as 'human' | 'computer' | 'off');
+        paintFace();
       });
       const sync = () => {
         const off = kind.value === 'off';
@@ -190,7 +200,14 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       kind.onchange = sync;
       sync();
 
-      seat.append(swatch, name, kind, pers);
+      paintFace();
+      // Clicking the face cycles Human -> Computer -> Off, as in the original.
+      faceImg.onclick = () => {
+        const order = ['human', 'computer', 'off'];
+        kind.value = order[(order.indexOf(kind.value) + 1) % order.length];
+        kind.dispatchEvent(new Event('change'));
+      };
+      seat.append(swatch, faceImg, name, kind, pers);
       grid.append(seat);
       rows.push({ kind, name, pers });
     }
@@ -546,14 +563,60 @@ async function handleOfficeParty(m: Extract<Modal, { kind: 'officeParty' }>): Pr
   if (anyHuman) {
     await ui.modal<void>((done) => {
       const d = Ui.modalShell('Office Party', 'The whole office attends. The boss is watching.');
-      const ul = el('ul');
-      for (const line of m.lines) ul.append(el('li', undefined, line));
-      d.append(ul);
+
+      // Each player gets their sprite from the set matching their outcome, animated by
+      // alternating frames — the original drove this scene from the only TTimer it had.
+      const sprites: Array<{ img: HTMLImageElement; mood: PartyMood; slot: number }> = [];
+      const list = el('div', 'party-list');
+      for (const entry of m.entries) {
+        const p = game.player(entry.playerId);
+        const row = el('div', 'party-row');
+
+        const art = partySprite(entry.mood, p.id, 0);
+        if (art) {
+          const img = el('img', 'party-sprite');
+          img.src = art;
+          img.alt = `${p.name} at the party`;
+          img.draggable = false;
+          row.append(img);
+          sprites.push({ img, mood: entry.mood, slot: p.id });
+        }
+
+        const body = el('div', 'party-text');
+        const who = el('div', 'party-who', p.name);
+        who.style.color = p.color;
+        const line = el('div', undefined, entry.text);
+        const delta = el('div', 'party-delta');
+        delta.append(document.createTextNode('Boss Rating '), Ui.delta(entry.delta));
+        body.append(who, line, delta);
+        row.append(body);
+        list.append(row);
+      }
+      d.append(list);
+
+      // Only the drunk and over-excited sprites have a second frame to alternate to.
+      let phase = 0;
+      const timer = window.setInterval(() => {
+        phase += 1;
+        for (const s2 of sprites) {
+          if (s2.mood === 'fine') continue;
+          const next = partySprite(s2.mood, s2.slot, phase);
+          if (next) s2.img.src = next;
+        }
+      }, 420);
+
       const foot = el('div', 'foot');
       const ok = el('button', 'b primary', 'Continue');
-      ok.onclick = () => done();
+      let cancelAuto = () => {};
+      const finish = () => {
+        window.clearInterval(timer);
+        cancelAuto();
+        done();
+      };
+      ok.onclick = finish;
       foot.append(ok);
       d.append(foot);
+      cancelAuto = armAutoClose(ok, !anyHuman, finish);
       return d;
     });
   } else {
@@ -570,6 +633,14 @@ async function handleRankChange(m: Extract<Modal, { kind: 'rankChange' }>): Prom
 
   await ui.modal<void>((done) => {
     const d = Ui.modalShell(up ? 'Promotion' : 'Demotion', p.name);
+    const art = rankArt(m.from, m.to);
+    if (art) {
+      const img = el('img', 'rank-art');
+      img.src = art;
+      img.alt = up ? 'Promotion' : 'Demotion';
+      img.draggable = false;
+      d.append(img);
+    }
     d.append(el('p', undefined, `${p.name} moves from ${RANKS[m.from]} to ${RANKS[m.to]}.`));
     d.append(
       el('p', undefined, `Power Monger actions at this rank: ${R.POWER_MONGER_ACTIONS[m.to]}.`),

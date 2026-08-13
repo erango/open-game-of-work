@@ -91,6 +91,14 @@ export interface KarmaEntry {
   stock: number;
 }
 
+/** One player's outcome at the office party, including which sprite set to draw. */
+export interface PartyEntry {
+  playerId: number;
+  text: string;
+  delta: number;
+  mood: 'fine' | 'wild' | 'drunk';
+}
+
 export interface StockPoint {
   turn: number;
   price: number;
@@ -159,7 +167,7 @@ export type Modal =
   | { kind: 'chance'; playerId: number; cardId: number }
   | { kind: 'scruples'; playerId: number; cardId: number }
   | { kind: 'meeting'; playerId: number; text: string; delta: number }
-  | { kind: 'officeParty'; lines: string[] }
+  | { kind: 'officeParty'; entries: PartyEntry[] }
   | { kind: 'powerMonger'; playerId: number; actionsLeft: number }
   | { kind: 'trade'; from: number }
   | { kind: 'acceptTrade'; from: number; to: number; give: number[]; want: number[] }

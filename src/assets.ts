@@ -99,3 +99,68 @@ export function centerImage(which: keyof typeof CENTER_IMAGES): string | null {
 export function resourceImage(name: string): string | null {
   return url(`res/${name}.png`);
 }
+
+/**
+ * Die face for a roll of 1-6, from TMAINFORM's dieImageList (6 frames of 81x81). The die
+ * was never a static picture in the original — it is an image list indexed by the roll.
+ */
+export function dieFace(roll: number): string | null {
+  if (roll < 1 || roll > 6) return null;
+  return url(`forms/TMAINFORM/dieImageList/${roll - 1}.png`);
+}
+
+/**
+ * Board token for a seat, from player1Image..player6Image. These are TIcon pictures parked
+ * in a 3x2 grid at design time and repositioned at runtime, i.e. the moving pieces.
+ */
+export function playerToken(slot: number): string | null {
+  return url(`forms/TMAINFORM/player${slot + 1}Image.png`);
+}
+
+/** 16x16 portrait for the stats panel, from playerSmallImageList. */
+export function playerPortrait(slot: number): string | null {
+  return url(`forms/TMAINFORM/playerSmallImageList/${slot}.png`);
+}
+
+/** Seat-type face for the New Game selector, cycled by clicking in the original. */
+export function seatFace(kind: 'human' | 'computer' | 'off'): string | null {
+  const name =
+    kind === 'human' ? 'NEWGAMEHUMAN' : kind === 'computer' ? 'NEWGAMECOMPUTER' : 'NEWGAMEOFF';
+  return url(`res/${name}.png`);
+}
+
+/**
+ * Artwork for a rank change.
+ *
+ * The original ships RANKPROMO1..5 plus RANKDEMO and RANKDEMOMAILROOM. Seven ranks give
+ * six possible promotions, so which promo image belongs to which step is not recoverable;
+ * this maps the target rank onto the five available images and is marked as approximate.
+ * Demotion into Mailroom has its own image, which is why that one is unambiguous.
+ */
+export function rankArt(from: number, to: number): string | null {
+  if (to < from) {
+    return url(`res/${to === 0 ? 'RANKDEMOMAILROOM' : 'RANKDEMO'}.png`);
+  }
+  const n = Math.min(5, Math.max(1, to - 1));
+  return url(`res/RANKPROMO${n}.png`);
+}
+
+/** Which office-party sprite set a player is drawn from. */
+export type PartyMood = 'fine' | 'wild' | 'drunk';
+
+/**
+ * Office-party sprite. TOFFICEPARTYFORM carries six 6-frame image lists — one per player —
+ * for standing, hammered, crawling and wobbling left/right, plus a 32x32 idle set. It also
+ * holds the only TTimer in the application, so the scene animated.
+ */
+export function partySprite(mood: PartyMood, slot: number, phase: number): string | null {
+  let list: string;
+  if (mood === 'drunk') {
+    list = phase % 2 === 0 ? 'playerHammeredImageList' : 'crawlImageList';
+  } else if (mood === 'wild') {
+    list = phase % 2 === 0 ? 'wobbleLeftImageList' : 'wobbleRightImageList';
+  } else {
+    list = 'playerVerticalImageList';
+  }
+  return url(`forms/TOFFICEPARTYFORM/${list}/${slot}.png`);
+}

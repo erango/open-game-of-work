@@ -11,6 +11,7 @@ import {
   type Modal,
   type Personality,
   type PersonalityChoice,
+  type PartyEntry,
   type Player,
   type Profile,
   type Project,
@@ -656,28 +657,36 @@ export class Game {
     this.finishWork({ landedOnOther: false, ownProject: null });
   }
 
-  /** The whole office attends, so every player gets an outcome. */
+  /**
+   * The whole office attends, so every player gets an outcome. Each entry carries the mood
+   * that selects its sprite set, matching the original's separate hammered, crawling,
+   * wobbling and standing image lists.
+   */
   private buildOfficeParty(_playerId: number): Modal {
-    const lines: string[] = [];
+    const entries: PartyEntry[] = [];
     for (const p of this.state.players) {
       const stress = this.stress(p.id);
       let delta: number;
       let line: string;
+      let mood: PartyEntry['mood'];
       if (stress >= R.PARTY_DRUNK_STRESS) {
         delta = -this.rng.range(4, 8);
+        mood = 'drunk';
         line = `${p.name} is carrying too much and drinks to forget about all of it. The boss watches.`;
       } else if (stress <= R.PARTY_BORED_STRESS) {
         delta = -this.rng.range(2, 5);
+        mood = 'wild';
         line = `${p.name} has nothing to worry about and parties far too hard.`;
       } else {
         delta = this.rng.range(1, 5);
+        mood = 'fine';
         line = `${p.name} works the room, stays sober, and leaves at a respectable hour.`;
       }
       this.adjustBossRating(p.id, delta);
-      lines.push(`${line} (${delta >= 0 ? '+' : ''}${delta} Boss Rating)`);
+      entries.push({ playerId: p.id, text: line, delta, mood });
       this.log(line, p.id);
     }
-    return { kind: 'officeParty', lines };
+    return { kind: 'officeParty', entries };
   }
 
   // ---------------------------------------------------------------- power monger

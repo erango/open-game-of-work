@@ -275,6 +275,96 @@ def write_image(path_no_ext: str, bmp: bytes) -> str | None:
     return os.path.basename(path_no_ext) + ".png"
 
 
+# --------------------------------------------------------------- TImageList / TIcon
+
+def split_imagelist(blob: bytes, cell_w: int, cell_h: int):
+    """
+    Splits a Delphi TImageList 'Bitmap' blob into per-frame RGBA images.
+
+    Layout, determined empirically from this binary and consistent across all nine lists:
+
+        u32  size of the colour BMP
+        u32  number of images actually in use
+        ...  colour BMP (24bpp strip)
+        ...  1bpp mask BMP, same dimensions
+
+    Windows image lists pack frames into a grid left-to-right then wrapping, and Delphi
+    over-allocates, so the strip usually has more cells than are used. The count tells us
+    how many are real. In the mask a set bit means transparent, as with icon AND masks.
+    """
+    if len(blob) < 8:
+        return None
+    color_size, count = struct.unpack_from("<II", blob, 0)
+    color = blob[8:8 + color_size]
+    mask = blob[8 + color_size:]
+    if color[:2] != b"BM":
+        return None
+
+    cdec = decode_bmp(color)
+    if not cdec:
+        return None
+    sw, sh, crows = cdec
+
+    mrows = None
+    if mask[:2] == b"BM":
+        mdec = decode_bmp(mask)
+        if mdec and mdec[0] == sw and mdec[1] == sh:
+            mrows = mdec[2]
+
+    cols = max(1, sw // cell_w)
+    frames = []
+    for i in range(count):
+        cx = (i % cols) * cell_w
+        cy = (i // cols) * cell_h
+        if cx + cell_w > sw or cy + cell_h > sh:
+            break
+        rows = []
+        for y in range(cell_h):
+            crow = crows[cy + y]
+            mrow = mrows[cy + y] if mrows else None
+            out = bytearray()
+            for x in range(cell_w):
+                px = (cx + x) * 3
+                r, g, b = crow[px], crow[px + 1], crow[px + 2]
+                # The mask decodes to RGB, so any non-black pixel means transparent.
+                a = 0 if (mrow and mrow[(cx + x) * 3] > 127) else 255
+                out += bytes((r, g, b, a))
+            rows.append(bytes(out))
+        frames.append((cell_w, cell_h, rows))
+    return frames
+
+
+def icon_payload(blob: bytes) -> bytes | None:
+    """
+    Unwraps a TIcon TPicture blob into the .ico file it contains.
+
+    Note the asymmetry with TBitmap: a TBitmap blob is class name + u32 length + payload,
+    but a TIcon blob is class name followed immediately by the .ico bytes, with no length.
+    Verified by arithmetic — a 772-byte blob is 1 + len("TIcon") + 766, and 766 is exactly
+    the size of the ICONDIR-wrapped 32x32 icon.
+    """
+    if not blob:
+        return None
+    n = blob[0]
+    if blob[1:1 + n].decode("latin-1", "replace").lower() != "ticon":
+        return None
+    ico = blob[1 + n:]
+    if len(ico) < 22:
+        return None
+    reserved, kind, count = struct.unpack_from("<HHH", ico, 0)
+    if reserved != 0 or kind != 1 or count < 1:
+        return None
+    return ico
+
+
+def ico_first_dib(ico: bytes) -> bytes | None:
+    """Returns the first image's DIB from a .ico file."""
+    if len(ico) < 22 or struct.unpack_from("<HHH", ico, 0)[1] != 1:
+        return None
+    size, offset = struct.unpack_from("<II", ico, 6 + 8)
+    return ico[offset:offset + size]
+
+
 # --------------------------------------------------------------------------- DFM parsing
 
 VT_LIST, VT_INT8, VT_INT16, VT_INT32, VT_EXTENDED = 1, 2, 3, 4, 5
@@ -462,7 +552,8 @@ def main() -> int:
     os.makedirs(res_dir, exist_ok=True)
     os.makedirs(form_dir, exist_ok=True)
 
-    counts = {"bitmap": 0, "cursor": 0, "picture": 0, "png": 0, "icon": 0, "skipped": 0}
+    counts = {"bitmap": 0, "cursor": 0, "picture": 0, "png": 0, "icon": 0,
+              "frames": 0, "skipped": 0}
     manifest: list[str] = []
 
     for path, data in pe.resources():
@@ -512,6 +603,46 @@ def main() -> int:
                 for prop, val in obj["props"].items():
                     if not (isinstance(val, tuple) and val and val[0] == "binary"):
                         continue
+
+                    name = safe(obj["name"] or obj["class"])
+
+                    # TImageList frames: one PNG per image, numbered.
+                    if prop == "Bitmap":
+                        cw = obj["props"].get("Width") or 16
+                        ch = obj["props"].get("Height") or 16
+                        if not isinstance(cw, int) or not isinstance(ch, int):
+                            cw, ch = 16, 16
+                        frames = split_imagelist(val[1], cw, ch)
+                        if not frames:
+                            counts["skipped"] += 1
+                            continue
+                        d = os.path.join(form_dir, form, name)
+                        os.makedirs(d, exist_ok=True)
+                        for i, (fw, fh, rows) in enumerate(frames):
+                            open(os.path.join(d, f"{i}.png"), "wb").write(
+                                encode_png_rgba(fw, fh, rows))
+                            manifest.append(f"forms/{form}/{name}/{i}.png")
+                        counts["frames"] += len(frames)
+                        continue
+
+                    # A TIcon picture: keep the .ico and a transparent PNG.
+                    ico = icon_payload(val[1])
+                    if ico:
+                        dib = ico_first_dib(ico)
+                        dec = decode_icon(dib) if dib else None
+                        if not dec:
+                            counts["skipped"] += 1
+                            continue
+                        d = os.path.join(form_dir, form)
+                        os.makedirs(d, exist_ok=True)
+                        stem = os.path.join(d, name)
+                        iw, ih, rows = dec
+                        open(stem + ".png", "wb").write(encode_png_rgba(iw, ih, rows))
+                        open(stem + ".ico", "wb").write(ico)
+                        counts["icon"] += 1
+                        manifest.append(f"forms/{form}/{name}.png")
+                        continue
+
                     if "picture" not in prop.lower() and "glyph" not in prop.lower():
                         continue
                     bmp = picture_to_bmp(val[1])
@@ -532,7 +663,8 @@ def main() -> int:
 
     print(f"resource bitmaps : {counts['bitmap']}")
     print(f"converted to png : {counts['png']}")
-    print(f"application icon : {counts['icon']}")
+    print(f"icons            : {counts['icon']}")
+    print(f"imagelist frames : {counts['frames']}")
     print(f"form pictures    : {counts['picture']}")
     print(f"cursors (raw)    : {counts['cursor']}")
     print(f"skipped          : {counts['skipped']}")

@@ -1,5 +1,5 @@
 import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
-import { assetsAvailable, centerImage, squareImage } from './assets';
+import { assetsAvailable, centerImage, dieFace, playerPortrait, playerToken, squareImage } from './assets';
 import { squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
@@ -235,7 +235,17 @@ export class Ui {
     roll.style.top = `${CENTER.rollDie.top}px`;
     roll.style.width = `${CENTER.rollDie.size}px`;
     roll.style.height = `${CENTER.rollDie.size}px`;
-    roll.append(el('div', 'die-face', s.die ? '⚀⚁⚂⚃⚄⚅'[s.die - 1] : '🎲'));
+    const face = s.die ? dieFace(s.die) : null;
+    if (face) {
+      // The original's die is an image list indexed by the roll, not a static picture.
+      const img = el('img', 'btn-art');
+      img.src = face;
+      img.alt = `Rolled ${s.die}`;
+      img.draggable = false;
+      roll.append(img);
+    } else {
+      roll.append(el('div', 'die-face', s.die ? '⚀⚁⚂⚃⚄⚅'[s.die - 1] : '🎲'));
+    }
     roll.disabled = busy || !game.canRoll() || !isHuman;
     roll.onclick = () => this.handlers.onRoll();
     roll.title = 'Roll the die (Space)';
@@ -348,13 +358,23 @@ export class Ui {
       name.style.height = `${G.name.height}px`;
       name.style.color = p.color;
 
+      const portraitArt = playerPortrait(p.id);
       const portrait = el('div', 'stat-portrait');
       portrait.style.left = `${G.portrait.left}px`;
       portrait.style.top = `${barTop}px`;
       portrait.style.width = `${G.portrait.size}px`;
       portrait.style.height = `${G.portrait.size}px`;
-      portrait.style.background = p.color;
-      portrait.textContent = p.name.slice(0, 1).toUpperCase();
+      if (portraitArt) {
+        // smallPlayerImage in the original, sourced from playerSmallImageList.
+        const img = el('img', 'portrait-art');
+        img.src = portraitArt;
+        img.alt = p.name;
+        img.draggable = false;
+        portrait.append(img);
+      } else {
+        portrait.style.background = p.color;
+        portrait.textContent = p.name.slice(0, 1).toUpperCase();
+      }
       portrait.title = p.kind === 'computer' ? `${p.name} — computer (${p.personality})` : `${p.name} — human`;
 
       const track = el('div', 'stat-track');
@@ -401,14 +421,24 @@ export class Ui {
       perSquare.set(p.square, slot + 1);
       const sq = SQUARES[p.square];
       const { dx, dy } = tokenOffset(slot);
-      const size = 22;
-      const t = el('div', 'token');
+      const art = playerToken(p.id);
+      // player1Image..player6Image are 32x32 TIcons: the actual moving pieces.
+      const size = art ? 26 : 22;
+      const t = el('div', art ? 'token token-art' : 'token');
       t.style.width = `${size}px`;
       t.style.height = `${size}px`;
       t.style.left = `${sq.left + sq.size / 2 - size / 2 + dx}px`;
       t.style.top = `${sq.top + sq.size / 2 - size / 2 + dy}px`;
-      t.style.background = p.color;
-      t.textContent = p.name.slice(0, 1).toUpperCase();
+      if (art) {
+        const img = el('img');
+        img.src = art;
+        img.alt = p.name;
+        img.draggable = false;
+        t.append(img);
+      } else {
+        t.style.background = p.color;
+        t.textContent = p.name.slice(0, 1).toUpperCase();
+      }
       t.title = `${p.name} — ${RANKS[p.rank]}`;
       this.board.append(t);
     }

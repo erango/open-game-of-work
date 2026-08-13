@@ -534,6 +534,71 @@ CARD_PLACEHOLDERS = ("<yourname>", "<opponentname>", "<yourproject>",
                      "<opponentproject>", "<youroldproject>")
 
 
+def chance_effects(pe: "PE", chance_texts: list[str]) -> list[list[int]]:
+    """
+    Recovers the real numeric effects of the Chance cards from compiled code.
+
+    Each card is constructed by one call site that pushes six immediates, then loads the
+    card's text with `mov edx, <string address>` (opcode BA) before calling the constructor.
+    Walking backwards from that opcode over push-immediate opcodes (6A ib, 68 id) recovers
+    the six values without needing a full disassembler, and cannot desynchronise the way
+    decoding from an arbitrary offset can.
+
+    Values are returned in push order. Correlating them against the cards' own effect
+    clauses identifies three of the six:
+
+        index 2  change in work REMAINING  (positive slows the project, negative speeds it;
+                 correlates perfectly across all ten cards that mention work)
+        index 3  share price delta
+        index 4  Boss Rating delta
+        index 0  set when the card applies to every project rather than one
+                 (agrees with the wording on 26 of 30 cards)
+        index 1  a secondary amount, semantics not established -- recorded, not applied
+        index 5  always -1 in every card, so a sentinel rather than a value
+
+    Numeric parameters are facts about behaviour rather than creative expression, which is
+    why they are recoverable here in the same spirit as the board coordinates and tile
+    colours. The card wording itself stays out of the repo.
+    """
+    text_sec = next(((va, ra, rs) for n, va, vs, ra, rs in pe.sections if n == ".text"), None)
+    data_sec = next(((va, ra, rs) for n, va, vs, ra, rs in pe.sections if n == ".data"), None)
+    if not text_sec or not data_sec:
+        return []
+    tva, tra, trs = text_sec
+    dva, dra, drs = data_sec
+    d = pe.d
+    pe_off = struct.unpack_from("<I", d, 0x3C)[0]
+    base = struct.unpack_from("<I", d, pe_off + 24 + 28)[0]
+    text = d[tra:tra + trs]
+
+    out = []
+    for card in chance_texts:
+        probe = card[:24].encode("latin-1", "replace")
+        off = d.find(probe, dra, dra + drs)
+        if off < 0:
+            out.append([])
+            continue
+        addr = base + dva + (off - dra)
+        site = text.find(b"\xba" + struct.pack("<I", addr))
+        if site < 0:
+            out.append([])
+            continue
+        vals: list[int] = []
+        i = site
+        while len(vals) < 6:
+            if i - 2 >= 0 and text[i - 2] == 0x6A:
+                vals.append(struct.unpack_from("<b", text, i - 1)[0])
+                i -= 2
+            elif i - 5 >= 0 and text[i - 5] == 0x68:
+                vals.append(struct.unpack_from("<i", text, i - 4)[0])
+                i -= 5
+            else:
+                break
+        vals.reverse()
+        out.append(vals if len(vals) == 6 else [])
+    return out
+
+
 def extract_cards(pe: "PE") -> dict:
     """
     Recovers the original Chance and Scruples decks from .data.
@@ -590,10 +655,12 @@ def extract_cards(pe: "PE") -> dict:
         chance.reverse()
 
     return {
-        "note": ("Text recovered from the original binary. Copyrighted by its authors -- do "
-                 "not redistribute. Numeric effects are not stored as text and are inferred "
-                 "by the game."),
+        "note": ("Recovered from the original binary. The wording is copyrighted by its "
+                 "authors -- do not redistribute. chanceEffects holds the real numeric "
+                 "effects read out of compiled code; Scruples answer effects live in a "
+                 "separate handler and are not recovered, so the game infers those."),
         "chance": chance,
+        "chanceEffects": chance_effects(pe, chance),
         "scruples": scruples,
     }
 

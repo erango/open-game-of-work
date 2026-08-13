@@ -8,17 +8,49 @@ import type { ChanceCard, ScruplesCard, ScruplesChoice } from './cards';
  * and audio are handled. With no local extraction the game uses its own decks and this
  * module is inert.
  *
- * IMPORTANT about fidelity: only the *wording* is the original's. The numeric effects were
- * compiled into code, not stored as text, so they are not recoverable. This module infers
- * them from the wording using the table below. So playing the original deck gives you the
- * original's writing and artwork with this port's balance — not the original's balance.
+ * Fidelity, precisely:
+ *
+ *  - Chance cards use the original's REAL effects. The numbers were compiled into code
+ *    rather than stored as text, and are recovered from the call site that builds each card
+ *    (see chance_effects in tools/extract-assets.py). All 30 came back complete.
+ *  - Scruples answers do NOT. Their effects are applied by a separate handler roughly 450
+ *    bytes away from the answer strings, because all three answers are assigned before any
+ *    effect runs, so a call site cannot be attributed to a specific answer by proximity.
+ *    106 candidate sites were found against 108 answers. Rather than ship a guessed mapping
+ *    as though it were the original's, those effects stay inferred; see choiceSpread.
  */
 
 const CARDS_URL = 'assets/cards.json';
 
 interface RawCards {
   chance: string[];
+  /** Six values per card, read out of compiled code. See tools/extract-assets.py. */
+  chanceEffects?: number[][];
   scruples: Array<{ situation: string; choices: string[] }>;
+}
+
+/**
+ * Slot meanings for a recovered Chance effect tuple, in push order.
+ *
+ * Established by correlating the values against the cards' own effect clauses:
+ * slot 2 tracks work remaining and agrees with every card that mentions work, slot 3 is the
+ * share price, slot 4 is Boss Rating, and slot 0 flags a card that hits every project rather
+ * than one (agreeing with the wording on 26 of 30). Slot 1's meaning is not established and
+ * is deliberately not applied. Slot 5 is -1 on all 30 cards, so a sentinel.
+ */
+const SLOT = { allProjects: 0, unknown: 1, workRemaining: 2, stock: 3, bossRating: 4 } as const;
+
+function fromRecovered(values: number[], text: string): ChanceCard {
+  // The original counts work REMAINING, where this port counts work DONE, so the sign flips.
+  const work = -values[SLOT.workRemaining];
+  const card: ChanceCard = {
+    text,
+    bossRating: values[SLOT.bossRating],
+    stock: values[SLOT.stock],
+    work,
+    workSingleProject: work !== 0 && values[SLOT.allProjects] === 0,
+  };
+  return card;
 }
 
 /**
@@ -143,17 +175,18 @@ function choiceSpread(cardIndex: number, choiceIndex: number): Inferred {
   return profile[choiceIndex] ?? profile[0];
 }
 
-function toChance(raw: string, index: number): ChanceCard {
+function toChance(raw: string, index: number, recovered?: number[]): ChanceCard {
   const text = convertPlaceholders(tidy(raw));
-  let effect = infer(text);
-  if (isEmpty(effect)) effect = fallback(index);
-  const card: ChanceCard = {
-    text,
-    bossRating: effect.bossRating,
-    stock: effect.stock,
-    work: effect.work,
-    art: `CHANCE${index}`,
-  };
+  let card: ChanceCard;
+  if (recovered && recovered.length === 6) {
+    // Real values from the binary; no guessing needed.
+    card = fromRecovered(recovered, text);
+  } else {
+    let effect = infer(text);
+    if (isEmpty(effect)) effect = fallback(index);
+    card = { text, bossRating: effect.bossRating, stock: effect.stock, work: effect.work };
+  }
+  card.art = `CHANCE${index}`;
   if (/\{project\}/.test(text)) card.needsProject = true;
   if (/\{rival\}|\{rivalproject\}/.test(text)) card.needsRival = true;
   return card;
@@ -204,7 +237,7 @@ export async function loadOriginalDeck(): Promise<OriginalDeck | null> {
     const raw = (await res.json()) as RawCards;
     if (!Array.isArray(raw.chance) || !Array.isArray(raw.scruples)) return null;
     cached = {
-      chance: raw.chance.map(toChance),
+      chance: raw.chance.map((t, i) => toChance(t, i, raw.chanceEffects?.[i])),
       scruples: raw.scruples.map(toScruples),
     };
   } catch {

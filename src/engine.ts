@@ -566,7 +566,15 @@ export class Game {
   applyChance(cardId: number, playerId: number): void {
     const c: ChanceCard = deck().chance[cardId];
     this.adjustBossRating(playerId, c.bossRating ?? 0);
-    if (c.work) for (const proj of this.projectsOf(playerId)) this.addWork(proj, c.work);
+    if (c.work) {
+      const own = this.projectsOf(playerId);
+      if (c.workSingleProject && own.length) {
+        // The original applies some cards to one project rather than the whole workload.
+        this.addWork(this.rng.pick(own), c.work);
+      } else {
+        for (const proj of own) this.addWork(proj, c.work);
+      }
+    }
     if (c.stock) this.adjustStock(c.stock, 'chance event');
     if (c.delayed) {
       this.player(playerId).karma.push({

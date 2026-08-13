@@ -20,8 +20,14 @@ export interface ChanceCard {
   art?: string;
   bossRating?: number;
   stock?: number;
-  /** Work added to (or removed from) every project the player owns. */
+  /** Work added to (or removed from) the player's projects. */
   work?: number;
+  /**
+   * When set, `work` lands on a single project rather than every one the player owns.
+   * The original distinguishes these cases with a flag; see chance_effects in
+   * tools/extract-assets.py.
+   */
+  workSingleProject?: boolean;
   /** Move the player to this square index. */
   moveTo?: number;
   /** Queue a delayed consequence. */

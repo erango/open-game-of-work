@@ -31,10 +31,16 @@ export function projectName(profile: Profile, rng: Rng): string {
 }
 
 /**
- * Default seat names.
+ * Default seat names, matching the original: TNEWGAMEFORM's Edit1..Edit6 ship with Text
+ * values of 'Player 1' through 'Player 6'.
  *
- * Recovered from the original's audio filenames — it shipped one voice clip per default
- * player (`brad.wav`, `muriel.wav`, `ned.wav`, `jen.wav`, `spot.wav`, `george.wav`), and
- * the in-game rules text uses the same cast in its Power Monger worked example.
+ * An earlier version of this file used Brad / Muriel / Ned / Jen / Spot / George and
+ * described them as recovered. That was wrong. Those names do exist in the original as
+ * voice clips (brad.wav and friends) and appear together in the rules text's Power Monger
+ * worked example, but they are not the seat defaults, and pinning one to each seat invented
+ * a name-to-avatar pairing the original never had — seat avatars are fixed, names are not.
+ *
+ * Typing one of those names still triggers its clip: announceTurn falls back to a per-name
+ * clip when a seat has one, which is most likely how the original used them.
  */
-export const DEFAULT_NAMES = ['Brad', 'Muriel', 'Ned', 'Jen', 'Spot', 'George'];
+export const DEFAULT_NAMES = ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6'];

@@ -155,13 +155,6 @@
   --track-wide2: .2em;
   --track-adj: .12em;
 }
-/* Aliases for names the current rules still use. These disappear as the board, shell and
-   dialogs are rewritten in the following steps. */
-:root {
-  --ink-dim: var(--ink-3);
-  --felt: var(--bg);
-  --felt-line: var(--panel-line);
-}
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
@@ -672,135 +665,19 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .sq-hasart { padding: 0; }
 .btn-art { width: 100%; height: 100%; object-fit: contain; display: block; }
 .portrait-art { width: 100%; height: 100%; display: block; }
-.token-art > img { width: 100%; height: 100%; display: block; }
-/* The board column is measured to size the board, so it must never be driven by the
-   board's own dimensions — otherwise resizing feeds back on itself. */
-.board-col {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-@media (max-width: 1020px) {
+.token-art > img { width: 100%; height: 100%; display: block; }@media (max-width: 1020px) {
   #app {
     grid-template-columns: minmax(0, 1fr);
     height: auto;
   }
   .board-col { height: min(70vh, 80vw); }
-}
-/* ---------------------------------------------------------------- board */
-
-/* Size is set in JS to the largest whole fit for the available space. */
-.board-wrap {
-  position: relative;
-  background: var(--felt);
-  border: 2px solid var(--felt-line);
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgb(0 0 0 / 0.45);
-}
-/* Everything inside is positioned in the original 776x535 design space. */
-.board {
-  position: absolute;
-  inset: 0;
-  width: 776px;
-  height: 535px;
-  transform-origin: top left;
-}
-/* Project squares position their parts absolutely in the tile's own 81x81 space, matching
-   TMAINFORM. NOTE: never set `position` on .sq-project itself — .sq is already absolute and
-   overriding it drops every project square out of the ring. */
-.sq-project { padding: 0; }
-/* projectFullBarShape: the bar itself, owner-coloured or black when unowned. */
+}/* projectFullBarShape: the bar itself, owner-coloured or black when unowned. */
 .proj-bar {
   position: absolute;
   border: 1px solid rgb(0 0 0 / .55);
-}
-/* projectNameLabel: centred, clear of the bar. Size is set from FONTS in ui.ts. */
-.proj-name {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-weight: 700;
-  line-height: 1.15;
-  word-break: break-word;
-  overflow: hidden;
-}
-/* Not in the original: a small marker so shoddy work is visible on the board. */
-.proj-shoddy-dot {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--danger-2);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / .55);
-}
-/* center cluster */
+}/* ---------------------------------------------------------------- sound toggle */
 
-.center-btn {
-  position: absolute;
-  border: 1px solid rgb(0 0 0 / .5);
-  border-radius: 6px;
-  background: var(--panel-2);
-  color: var(--ink);
-  font: inherit;
-  font-size: calc(11px * var(--text-k, 1));
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  padding: 4px;
-  text-align: center;
-}
-/* Stat rows are absolutely positioned on the original's geometry. Each player has ONE
-   bordered track containing TWO stacked 8px meters: Boss Rating on top in the player's
-   colour, workload beneath it in red. */
-
-.stats-panel > * { position: absolute; }
-/* ---------------------------------------------------------------- sidebar */
-
-.side { display: flex; flex-direction: column; gap: 12px; }
-/* ---------------------------------------------------------------- modal */
-
-.scrim {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / .6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 100;
-}
-/* setup */
-
-.setup-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
-/* ---------------------------------------------------------------- square art */
-
-.sq-icon {
-  color: rgb(255 255 255 / 0.82);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-}
-/* Scruples squares previously rendered a huge glyph; the icon carries it now. */
-.sq-scruples { font-size: inherit; font-weight: inherit; }
-/* ---------------------------------------------------------------- sound toggle */
-
-.sound-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-/* AI decisions are shown but not editable: the picked option is highlighted, the rest
-   are disabled, and only the confirm button stays live. */
-.choice:disabled { opacity: .55; cursor: default; }
-/* ---------------------------------------------------------------- centre cluster */
+.sound-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }/* ---------------------------------------------------------------- centre cluster */
 
 /* Raised frames, standing in for the original's bsRaised TBevels. */
 .bevel {
@@ -812,46 +689,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   border-right: 2px solid rgb(0 0 0 / 0.35);
   border-bottom: 2px solid rgb(0 0 0 / 0.4);
   pointer-events: none;
-}
-/* Captions sit below each control, as in the original. */
-.center-caption {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  letter-spacing: .02em;
-  color: var(--ink);
-  text-shadow: 0 1px 2px rgb(0 0 0 / .55);
-  pointer-events: none;
-  white-space: nowrap;
-}
-/* Inset LCD readout for the share-price change. */
-.ticker {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--inset);
-  border-radius: 3px;
-  box-shadow: inset 0 2px 5px rgb(0 0 0 / .9);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-weight: 700;
-  letter-spacing: .04em;
-}
-/* ---------------------------------------------------------------- original artwork */
-
-/* When the original art is installed, tiles are filled edge to edge by the bitmap and the
-   board uses the original's own background colour (TmainForm.Color). */
-.sq-art {
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  display: block;
-  image-rendering: pixelated; /* 1bpp/4bpp era art, keep it crisp rather than blurred */
-  user-select: none;
-}
-/* Smoothed scaling for the original art, for very large displays where nearest-neighbour
+}/* Smoothed scaling for the original art, for very large displays where nearest-neighbour
    blocks become distracting. Default is crisp. */
 .art-smooth .sq-art,
 .art-smooth .btn-art { image-rendering: auto; }
@@ -863,56 +701,14 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   height: 100%;
   display: block;
   image-rendering: pixelated;
-}
-/* With the original icons the token needs no disc behind it. */
-.token-art {
-  background: none;
-  border: none;
-  box-shadow: none;
-  filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6));
-}
-/* Rank change artwork (RANKPROMO* / RANKDEMO*). */
-.rank-art {
-  display: block;
-  margin: 0 auto 12px;
-  width: 150px;
-  height: 150px;
-  image-rendering: pixelated;
-  border-radius: 6px;
-}
-/* Office party: one row per player, sprite plus outcome. */
-.party-list { display: flex; flex-direction: column; gap: 10px; }
-/* New Game seat selector: the artwork and its word in one clickable control, cycling
+}/* New Game seat selector: the artwork and its word in one clickable control, cycling
    human / computer / off. Art is drawn at its native 64px so nothing is resampled — at 34px
    the 64px source was downscaled by a non-integer factor and became illegible. */
 .seat-with-face {
   grid-template-columns: 18px 152px minmax(0, 1fr) 140px;
   align-items: center;
   padding-left: 8px;
-}
-/* Original Chance / Scruples card artwork, shown when playing the original deck. */
-.card-art {
-  display: block;
-  margin: 0 auto 12px;
-  max-width: 100%;
-  image-rendering: pixelated;
-  border-radius: 5px;
-  border: 1px solid var(--line);
-}
-/* ---------------------------------------------------------------- event art */
-
-/* The original illustrated several moments (a finished project, a full set, the company
-   folding). Those appear beside the matching log entry instead of as extra dialogs. */
-.log-with-art {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 8px;
-  align-items: start;
-  padding: 5px 0;
-}
-/* Name and message in one item, so the grid always has exactly two children. */
-.log-text { min-width: 0; overflow-wrap: anywhere; }
-/* Full-size art heading a dialog (meeting outcome, party, endings). */
+}/* Full-size art heading a dialog (meeting outcome, party, endings). */
 .event-art {
   display: block;
   margin: 0 auto 12px;
@@ -943,73 +739,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   color: rgb(255 255 255 / .55);
   font-size: 13px;
   letter-spacing: .05em;
-}
-/* ---------------------------------------------------------------- high scores */
-
-.hs-wrap { display: grid; gap: 18px; }
-/* ---------------------------------------------------------------- how to play */
-
-/* THELPFORM: topics down the left, a scrolling body on the right. */
-.help-layout {
-  display: grid;
-  grid-template-columns: 168px 1fr;
-  gap: 14px;
-  align-items: start;
-}
-/* The original puts a round red ? in the corner of its New Game window. */
-.help-mark {
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  font-size: 18px;
-  font-weight: 700;
-  background: var(--danger);
-  border-color: transparent;
-  color: var(--accent-ink);
-  margin-right: auto;
-}
-/* ---------------------------------------------------------------- menu bar */
-
-/* Mirrors TMAINFORM's TMainMenu, and keeps the sidebar from filling up with buttons. */
-.left-col {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
-  min-width: 0;
-  min-height: 0;
-}
-/* `.menu-top:hover` outranks `.menu-open` on specificity, so hovering an open menu kept the
-   dark hover background while the open state's dark text still applied, and the label all but
-   vanished. The hovered case is stated explicitly: dark background, white label. */
-.menu-top:hover { background: var(--panel-2); }
-/* Stock Chart window */
-.chart-big {
-  width: 100%;
-  height: auto;
-  display: block;
-  background: rgb(0 0 0 / .28);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  margin-bottom: 12px;
-}
-/* Avatars parked in their pre-game grid, with no disc behind them. */
-.token-parked { transition: none; }
-/* Only the help window reserves room for the switch; every other dialog keeps a full-width
-   heading. */
-.modal-help h3,
-.modal-help .sub { padding-right: 246px; }
-/* Two named sources, so a segmented switch rather than a relabelling button.
-   Sits in the dialog's top-right corner, level with the title. */
-.help-source {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-/* ---------------------------------------------------------------- splash credit */
+}/* ---------------------------------------------------------------- splash credit */
 
 .splash-inner {
   display: flex;
@@ -1084,6 +814,11 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   max-height: 86vh;
   overflow-y: auto;
 }
+/* New Game leads with a head row, because the original's ? sits in the window corner rather
+   than among the buttons. */
+.modal-head { display: flex; align-items: flex-start; gap: 12px; }
+.modal-head > div:first-child { min-width: 0; }
+.modal-head .help-mark { margin: 2px 0 0 auto; flex: none; }
 .modal h3 { margin: 0 0 6px; font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
 .modal .sub { font-size: 14px; line-height: 1.5; color: var(--ink-2); margin-bottom: 14px; }
 .modal p { font-size: 17px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
@@ -1257,6 +992,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   padding: 12px 14px;
 }
 .help-source { position: absolute; top: 18px; right: 22px; display: flex; align-items: center; gap: 8px; }
+.help-source-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--ink-2b); }
 .modal-help h3, .modal-help .sub { padding-right: 260px; }
 /* -------- high scores */
 .hs-wrap { display: grid; gap: 18px; }
@@ -1279,7 +1015,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   image-rendering: pixelated;
 }
 .rank-art { width: 150px; height: 150px; }
-.card-art { box-shadow: inset 0 0 0 1px var(--line); }
+.card-art { width: 120px; height: 120px; box-shadow: inset 0 0 0 1px var(--line); }
 .art-smooth .event-art, .art-smooth .rank-art, .art-smooth .card-art { image-rendering: auto; }
 /* -------- office party */
 .party-list { display: flex; flex-direction: column; gap: 10px; }

@@ -6,7 +6,8 @@ import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
 import { DEFAULT_NAMES } from './names';
 import * as R from './rules';
-import { PERSONALITIES, RANKS, type GameLength, type Modal, type PersonalityChoice, type Project } from './types';
+import { squareIcon } from './icons';
+import { PERSONALITIES, RANKS, type GameLength, type Modal, type PersonalityChoice, type Project, type SquareKind } from './types';
 import { Sound, type Cue } from './sound';
 import { Ui, el } from './ui';
 
@@ -151,10 +152,30 @@ const END_TURN_MS = 520;
 async function askNewGame(): Promise<NewGameConfig | null> {
   const tmp = new Ui(document.createElement('div'), stubHandlers());
   return tmp.modal<NewGameConfig | null>((done) => {
-    const m = Ui.modalShell(
-      'New Game',
-      'Work your way up the company ladder. First to President wins — unless the share price hits zero first, in which case everybody loses.',
+    const m = el('div', 'modal');
+
+    // The original puts a round red ? in the corner of this window rather than among the
+    // buttons, so the heading is a row with the affordance at its end.
+    const head = el('div', 'modal-head');
+    const headText = el('div');
+    headText.append(
+      el('h3', undefined, 'New Game'),
+      el(
+        'div',
+        'sub',
+        'Work your way up the company ladder. First to President wins — unless the share price hits zero first, in which case everybody loses.',
+      ),
     );
+    const helpBtn = el('button', 'b help-mark', '?');
+    helpBtn.type = 'button';
+    helpBtn.title = 'How to Play';
+    helpBtn.onclick = () => void helpDialog();
+    head.append(headText, helpBtn);
+    m.append(head);
+
+    // Length and deck are both single-line choices, so they share one row and leave the
+    // seats — the only part that needs the height — the rest of the dialog.
+    const topRow = el('div', 'two-up');
 
     const lenField = el('div', 'field');
     lenField.append(el('label', undefined, 'Game length'));
@@ -167,18 +188,8 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     // The original defaults to Long: gameLengthRadioGroup.ItemIndex is 2 over
     // ('Short', 'Medium', 'Long').
     lenSel.value = 'long';
-    lenSel.style.width = '100%';
-    lenSel.className = '';
-    Object.assign(lenSel.style, {
-      background: 'var(--panel-2)',
-      border: '1px solid var(--line)',
-      color: 'var(--ink)',
-      borderRadius: '5px',
-      padding: '7px 9px',
-      font: 'inherit',
-    });
     lenField.append(lenSel);
-    const lenHint = el('div', 'stat-rank');
+    const lenHint = el('div', 'hint-line');
     const describe = () => {
       const v = lenSel.value as GameLength;
       const st = R.LENGTH_START[v];
@@ -187,7 +198,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     lenSel.onchange = describe;
     describe();
     lenField.append(lenHint);
-    m.append(lenField);
+    topRow.append(lenField);
 
     // Deck picker. The original text is not distributed with this repo, so the original and
     // combined options only appear when a local extraction is installed.
@@ -196,77 +207,104 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     const deckSel = el('select');
     const deckOpts: Array<[DeckMode, string]> = originalAvailable()
       ? [
-          ['new', 'Newly written (ships with this port)'],
-          ['original', "Original 2000 deck (30 chance, 36 scruples, with artwork)"],
+          ['new', 'Newly written'],
+          ['original', 'Original 2000 deck'],
           ['both', 'Both, shuffled together'],
         ]
-      : [['new', 'Newly written (ships with this port)']];
+      : [['new', 'Newly written']];
     for (const [v, label] of deckOpts) {
       const o = el('option', undefined, label);
       o.value = v;
       deckSel.append(o);
     }
     deckSel.value = deckMode();
-    styleControl(deckSel);
     deckField.append(deckSel);
-    if (!originalAvailable()) {
-      deckField.append(
-        el(
-          'div',
-          'stat-rank',
-          'Run tools/extract-assets.py against your own copy of gamework.exe to play the original deck.',
-        ),
-      );
-    } else {
-      deckField.append(
-        el(
-          'div',
-          'stat-rank',
-          'The original deck uses its own wording and card art. Its numeric effects were compiled into code and could not be recovered, so this port infers them.',
-        ),
-      );
-    }
-    m.append(deckField);
+    deckField.append(
+      el(
+        'div',
+        'hint-line',
+        originalAvailable()
+          ? 'The original deck uses its own wording and card art. Its numeric effects were compiled into code, so this port infers them.'
+          : 'Run tools/extract-assets.py against your own copy of gamework.exe to play the original deck.',
+      ),
+    );
+    topRow.append(deckField);
+    m.append(topRow);
 
     const seatsField = el('div', 'field');
-    seatsField.append(el('label', undefined, 'Players (2–6)'));
+    const seatsHead = el('div', 'seats-head');
+    seatsHead.append(el('label', undefined, 'Players (2–6)'));
+    const seatsCount = el('span', 'seats-count');
+    seatsHead.append(seatsCount);
+    seatsField.append(seatsHead);
+
     const grid = el('div', 'setup-grid');
     const rows: Array<{ kind: HTMLSelectElement; name: HTMLInputElement; pers: HTMLSelectElement }> = [];
 
+    const KINDS = ['human', 'computer', 'off'] as const;
+    type SeatKind = (typeof KINDS)[number];
+    // 'Cpu' rather than 'Computer': three segments share 132px, and the long word does not
+    // fit without shrinking the type below the rest of the dialog.
+    const SEG_LABEL: Record<SeatKind, string> = { human: 'Human', computer: 'Cpu', off: 'Off' };
+    const WORD: Record<SeatKind, string> = { human: 'Human', computer: 'Computer', off: 'Off' };
+
+    const updateCount = () => {
+      const n = rows.filter((r) => r.kind.value !== 'off').length;
+      seatsCount.textContent = `${n} of 6 filled`;
+    };
+
     for (let i = 0; i < 6; i++) {
-      const seat = el('div', 'seat seat-with-face');
-      const swatch = el('div', 'swatch');
-      swatch.style.background = R.PLAYER_COLORS[i];
-      // The original fills the whole seat row with its own tint; this dialog is dark, so it
-      // becomes a left-edge accent instead.
-      seat.style.borderLeft = `4px solid ${R.SEAT_ROW_COLORS[i]}`;
+      const seat = el('div', 'seat');
+
+      // The seat's identity column: its colour as a bar down the edge, then the artwork.
+      const idCol = el('div', 'seat-id');
+      const bar = el('div', 'seat-bar');
+      bar.style.background = R.PLAYER_COLORS[i];
+      const faceImg = el('img', 'seat-face');
+      faceImg.draggable = false;
+      // Native size. The original art is 64px and resampling it to fit a smaller row was
+      // what made it illegible.
+      faceImg.width = 64;
+      faceImg.height = 64;
+      idCol.append(bar, faceImg);
 
       /**
        * Seat type lives in a detached <select>, which stays the single source of truth and
-       * keeps the existing change-event plumbing, while the visible control is a button
-       * carrying the artwork and its word — the way the original presented it. The art is
-       * drawn at its native 64px, so nothing is resampled.
+       * keeps the existing change-event plumbing; the visible control is a three-state
+       * segmented switch, so the current type is readable without clicking through it.
        */
       const kind = el('select');
-      (['human', 'computer', 'off'] as const).forEach((k) => {
-        const o = el('option', undefined, k === 'off' ? 'Off' : k === 'human' ? 'Human' : 'Computer');
+      KINDS.forEach((k) => {
+        const o = el('option', undefined, WORD[k]);
         o.value = k;
         kind.append(o);
       });
       kind.value = i === 0 ? 'human' : i < 4 ? 'computer' : 'off';
 
-      const faceImg = el('img', 'seat-face');
-      faceImg.draggable = false;
-      const faceWord = el('span', 'seat-word');
-      const typeBtn = el('button', 'seat-type');
-      typeBtn.type = 'button';
-      typeBtn.append(faceImg, faceWord);
+      const seg = el('div', 'segmented seat-seg');
+      seg.setAttribute('role', 'radiogroup');
+      seg.setAttribute('aria-label', `Seat ${i + 1} type`);
+      const segBtns = KINDS.map((k) => {
+        const b = el('button', 'segment', SEG_LABEL[k]);
+        b.type = 'button';
+        b.setAttribute('role', 'radio');
+        b.title = WORD[k];
+        b.onclick = () => {
+          if (kind.value === k) return;
+          kind.value = k;
+          kind.dispatchEvent(new Event('change'));
+        };
+        seg.append(b);
+        return b;
+      });
 
-      const name = el('input');
+      const name = el('input', 'seat-name-input');
       name.value = DEFAULT_NAMES[i];
       name.maxLength = 14;
+      name.setAttribute('aria-label', `Seat ${i + 1} name`);
 
       const pers = el('select');
+      pers.setAttribute('aria-label', `Seat ${i + 1} personality`);
       const choices: PersonalityChoice[] = ['random', ...PERSONALITIES];
       choices.forEach((pc) => {
         const o = el('option', undefined, pc[0].toUpperCase() + pc.slice(1));
@@ -276,53 +314,46 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       // Random by default, so a fresh game is not the same four opponents every time.
       pers.value = 'random';
 
-      const label = () =>
-        kind.value === 'off' ? 'Off' : kind.value === 'human' ? 'Human' : 'Computer';
-
       const sync = () => {
-        const src = seatFace(kind.value as 'human' | 'computer' | 'off');
+        const k = kind.value as SeatKind;
+        const src = seatFace(k);
         faceImg.style.display = src ? '' : 'none';
         if (src) faceImg.src = src;
         faceImg.alt = '';
-        faceWord.textContent = label();
-        typeBtn.title = `${label()} — click to change`;
-        typeBtn.setAttribute('aria-label', `Seat ${i + 1}: ${label()}. Click to change.`);
-        const off = kind.value === 'off';
+        segBtns.forEach((b, j) => {
+          const on = KINDS[j] === k;
+          b.classList.toggle('segment-on', on);
+          b.setAttribute('aria-checked', String(on));
+        });
+        // An empty seat dims its own row rather than the whole control: the name and
+        // personality still have to be readable when you turn the seat back on.
+        const off = k === 'off';
+        seat.classList.toggle('seat-off', off);
         name.disabled = off;
-        pers.disabled = off || kind.value === 'human';
-        seat.style.opacity = off ? '0.45' : '1';
+        pers.disabled = off || k === 'human';
+        bar.style.opacity = off ? '0.35' : '1';
+        updateCount();
       };
 
       // One handler, so the order of side effects is explicit.
       kind.addEventListener('change', () => {
-        sound.seatChanged(kind.value as 'human' | 'computer' | 'off');
+        sound.seatChanged(kind.value as SeatKind);
         sync();
       });
-      sync();
 
-      // Cycles Human -> Computer -> Off, as clicking the original's image does.
-      typeBtn.onclick = () => {
-        const order = ['human', 'computer', 'off'];
-        kind.value = order[(order.indexOf(kind.value) + 1) % order.length];
-        kind.dispatchEvent(new Event('change'));
-      };
-
-      seat.append(swatch, typeBtn, name, pers);
+      seat.append(idCol, seg, name, pers);
       grid.append(seat);
       rows.push({ kind, name, pers });
+      sync();
     }
     seatsField.append(grid);
     m.append(seatsField);
 
-    const err = el('div', 'stat-rank');
-    err.style.color = '#e07a6a';
+    const err = el('div', 'hint-line');
+    err.style.color = 'var(--danger-2)';
     m.append(err);
 
     const foot = el('div', 'foot');
-    const helpBtn = el('button', 'b help-mark', '?');
-    helpBtn.title = 'How to Play';
-    helpBtn.onclick = () => void helpDialog();
-    foot.append(helpBtn);
 
     // Escape cancels, as it would in the original's dialog.
     const onKey = (e: KeyboardEvent) => {
@@ -440,6 +471,36 @@ function stubHandlers() {
  * Resolves whatever modal the engine has raised. Human players get a dialog;
  * computer players are decided by ai.ts and shown a brief notice.
  */
+/**
+ * Head row for the dialogs that resolve a board square: the square's own icon at 20px, the
+ * kicker naming it, and who it is happening to. Prepended above the title, so the dialog
+ * says which square it came from before it says what happened.
+ */
+function cardHead(kind: SquareKind, kicker: string, who: string): HTMLElement {
+  const row = el('div', 'card-head-row');
+  const markup = squareIcon(kind, 20);
+  if (markup) {
+    const icon = el('div', 'sq-icon');
+    icon.innerHTML = markup;
+    row.append(icon);
+  }
+  row.append(el('span', 'card-kicker', kicker), el('span', 'card-meta', who));
+  return row;
+}
+
+/** `<player> \u00b7 turn <n>`, the right-hand half of every card head. */
+function whoLine(name: string): string {
+  return `${name} \u00b7 turn ${game.state.turn}`;
+}
+
+/** A numbered answer button. The numeral is a chip, so the keyboard shortcut is visible. */
+function choiceButton(n: number, label: string, extra = ''): HTMLButtonElement {
+  const b = el('button', `choice${extra ? ` ${extra}` : ''}`);
+  b.type = 'button';
+  b.append(el('span', 'choice-num', String(n)), el('span', undefined, label));
+  return b;
+}
+
 async function resolveModal(): Promise<void> {
   const m = game.state.modal;
   if (!m) return;
@@ -502,6 +563,7 @@ async function handleTakeProject(m: Extract<Modal, { kind: 'takeProject' }>): Pr
         ? aiSubtitle(p.name, `whether to take on ${proj.name}`)
         : `${proj.name} — profile ${proj.profile}, ${proj.work} work to ship`,
     );
+    d.prepend(cardHead('project', 'Unclaimed project', whoLine(p.name)));
     d.append(
       el(
         'p',
@@ -565,6 +627,7 @@ async function handleChance(m: Extract<Modal, { kind: 'chance' }>): Promise<void
 
   await ui.modal<void>((done) => {
     const d = Ui.modalShell('Chance', `${p.name} draws a chance card`);
+    d.prepend(cardHead('chance', 'Chance card', whoLine(p.name)));
     const art = game.chanceCard(m.cardId).art;
     const artUrl = art ? resourceImage(art) : null;
     if (artUrl) {
@@ -604,8 +667,9 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
   const choice = await ui.modal<number>((done) => {
     const d = Ui.modalShell(
       'Scruples',
-      isAi ? aiSubtitle(p.name, 'which answer to give') : 'Pick an answer — 1, 2 or 3',
+      isAi ? aiSubtitle(p.name, 'which answer to give') : 'Pick an answer.',
     );
+    d.prepend(cardHead('scruples', 'Scruples card', whoLine(p.name)));
     const sArt = card.art ? resourceImage(card.art) : eventArt('SCRUPLESCHANCE');
     if (sArt) {
       const img = el('img', 'card-art');
@@ -617,8 +681,7 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
     d.append(el('p', undefined, situation));
 
     card.choices.forEach((c, i) => {
-      const b = el('button', 'choice' + (isAi && i === aiChoice ? ' choice-chosen' : ''));
-      b.append(el('b', undefined, `${i + 1}.`), document.createTextNode(c.label));
+      const b = choiceButton(i + 1, c.label, isAi && i === aiChoice ? 'choice-chosen' : '');
       if (isAi) {
         // Every option is shown, but none is clickable — the decision is already made.
         b.disabled = true;
@@ -648,6 +711,12 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
         }
       };
       window.addEventListener('keydown', onKey);
+      // The number keys work, so say so rather than leaving them to be discovered.
+      const foot = el('div', 'foot');
+      const hint = el('div', 'hint-line', 'Click an answer, or press 1, 2 or 3.');
+      hint.style.marginRight = 'auto';
+      foot.append(hint);
+      d.append(foot);
     }
     return d;
   });
@@ -657,6 +726,7 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
 
   await ui.modal<void>((done) => {
     const d = Ui.modalShell('Outcome', isAi ? `${p.name}'s decision` : undefined);
+    d.prepend(cardHead('scruples', 'Scruples', whoLine(p.name)));
     d.append(el('p', undefined, outcome));
     const foot = el('div', 'foot');
     const ok = el('button', 'b primary', 'Continue');
@@ -679,6 +749,7 @@ async function handleMeeting(m: Extract<Modal, { kind: 'meeting' }>): Promise<vo
 
   await ui.modal<void>((done) => {
     const d = Ui.modalShell('Meeting', `${p.name} presents`);
+    d.prepend(cardHead('meeting', 'Meeting', whoLine(p.name)));
     headArt(d, m.delta >= 0 ? 'MEETINGGOOD' : 'MEETINGBAD', 'The meeting');
     d.append(el('p', undefined, m.text));
     const line = el('p');
@@ -706,6 +777,7 @@ async function handleOfficeParty(m: Extract<Modal, { kind: 'officeParty' }>): Pr
   if (anyHuman) {
     await ui.modal<void>((done) => {
       const d = Ui.modalShell('Office Party', 'The whole office attends. The boss is watching.');
+      d.prepend(cardHead('officeParty', 'Office Party', `turn ${game.state.turn}`));
       headArt(d, 'DRINK', 'The office party');
 
       // Each player gets their sprite from the set matching their outcome, animated by
@@ -777,6 +849,7 @@ async function handleRankChange(m: Extract<Modal, { kind: 'rankChange' }>): Prom
 
   await ui.modal<void>((done) => {
     const d = Ui.modalShell(up ? 'Promotion' : 'Demotion', p.name);
+    d.prepend(cardHead('home', up ? 'Review passed' : 'Review failed', whoLine(p.name)));
     const art = rankArt(m.from, m.to);
     if (art) {
       const img = el('img', 'rank-art');
@@ -861,6 +934,7 @@ function powerMongerDialog(
         ? aiSubtitle(p.name, `how to use a Power Monger action (${left} left)`)
         : `${p.name} — ${RANKS[p.rank]} — ${left} action${left === 1 ? '' : 's'} remaining`,
     );
+    d.prepend(cardHead('powerMonger', 'Power Monger', whoLine(p.name)));
     d.append(
       el(
         'p',
@@ -881,7 +955,6 @@ function powerMongerDialog(
       o.value = k;
       actSel.append(o);
     });
-    styleControl(actSel);
     actionField.append(actSel);
     d.append(actionField);
 
@@ -894,7 +967,6 @@ function powerMongerDialog(
       tgtSel.append(o);
     }
     tgtSel.value = String(playerId);
-    styleControl(tgtSel);
     targetField.append(tgtSel);
     d.append(targetField);
 
@@ -974,8 +1046,8 @@ function powerMongerDialog(
       projField.after(el('p', 'ai-verdict', verdict));
     }
 
-    const err = el('div', 'stat-rank');
-    err.style.color = '#e07a6a';
+    const err = el('div', 'hint-line');
+    err.style.color = 'var(--danger-2)';
     d.append(err);
 
     const foot = el('div', 'foot');
@@ -1018,17 +1090,6 @@ function powerMongerDialog(
   });
 }
 
-function styleControl(n: HTMLElement): void {
-  Object.assign(n.style, {
-    background: 'var(--panel-2)',
-    border: '1px solid var(--line)',
-    color: 'var(--ink)',
-    borderRadius: '5px',
-    padding: '7px 9px',
-    font: 'inherit',
-    width: '100%',
-  });
-}
 
 // ------------------------------------------------------------------ trading
 
@@ -1054,6 +1115,7 @@ function tradeDialog(fromId: number): Promise<Offer | null> {
       'Trade projects',
       'Offer projects you own for projects held by another player.',
     );
+    d.prepend(cardHead('project', 'Make a trade', whoLine(game.player(fromId).name)));
 
     const targetField = el('div', 'field');
     targetField.append(el('label', undefined, 'Trade with'));
@@ -1064,7 +1126,6 @@ function tradeDialog(fromId: number): Promise<Offer | null> {
       o.value = String(q.id);
       tgt.append(o);
     }
-    styleControl(tgt);
     targetField.append(tgt);
     d.append(targetField);
 
@@ -1106,8 +1167,8 @@ function tradeDialog(fromId: number): Promise<Offer | null> {
     tgt.onchange = rebuild;
     rebuild();
 
-    const err = el('div', 'stat-rank');
-    err.style.color = '#e07a6a';
+    const err = el('div', 'hint-line');
+    err.style.color = 'var(--danger-2)';
     d.append(err);
 
     const collect = (list: HTMLElement) =>

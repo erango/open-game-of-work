@@ -99,10 +99,15 @@ def write_variant(img: "Image.Image", out: str, size: int, landscape: bool) -> N
 
 
 manifest = json.load(open(os.path.join(ROOT, "scripts", "art-manifest.json")))
-done = skip = fail = missing = 0
+done = skip = fail = missing = drawn = 0
 
 for job in manifest:
     if FILTER and not any(f in job["id"] or f == job["kind"] for f in FILTER):
+        continue
+    if job.get("drawn"):
+        # The die faces are drawn by scripts/die-faces.py. Never overwrite them from a raw,
+        # not even under FORCE: a generated die has the wrong number of pips.
+        drawn += 1
         continue
     raw = os.path.join(ROOT, job["raw"])
     out = os.path.join(ROOT, job["out"])
@@ -148,4 +153,7 @@ if os.path.isdir(GRAPHICS):
         fh.write("\n".join(found) + "\n")
     print(f"\nmanifest.txt rewritten: {len(found)} images")
 
-print(f"done: {done} written, {skip} already done, {missing} awaiting generation, {fail} failed.")
+print(
+    f"done: {done} written, {skip} already done, {missing} awaiting generation, "
+    f"{fail} failed, {drawn} drawn by hand (npm run art:dice)."
+)

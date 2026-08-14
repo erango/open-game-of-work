@@ -134,12 +134,16 @@ for (const [id, file, size, subject, subjectNeon] of BOARD) {
   add({ kind: 'board', id, out: `${G}/forms/TMAINFORM/${file}.png`, size, subject, subjectNeon });
 }
 
-// Die faces. Generated models are poor at exact pip counts, so these are worth drawing by
-// hand — see the note in design/ART-PROMPTS.md. Included so the set is complete if you try.
+// Die faces are DRAWN, not generated: `npm run art:dice`. An image model will not give an
+// exact pip count — asked for three it returns a plausible die in perspective with pips on
+// every visible face — and at 81px the count is the only information a die face carries. The
+// jobs stay listed with `drawn: true` so the prompts are on record; the generator and the
+// cutout step both skip them, and a FORCE cutout cannot overwrite the drawn faces.
 for (let n = 1; n <= 6; n++) {
   add({
     kind: 'die',
     id: `die${n}`,
+    drawn: true,
     out: `${G}/forms/TMAINFORM/dieImageList/${n - 1}.png`,
     size: 81,
     subject: `a single die face showing exactly ${n} pip${n === 1 ? '' : 's'}, seen flat on, red rounded square with white circular pips, no perspective`,

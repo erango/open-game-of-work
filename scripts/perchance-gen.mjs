@@ -44,9 +44,11 @@ const filter = process.argv.slice(2);
 
 mkdirSync(RAW_DIR, { recursive: true });
 
-let jobs = FORCE ? allJobs.slice() : allJobs.filter((j) => !existsSync(resolve(ROOT, j.out)));
+// `drawn` jobs (the die faces) are produced by scripts/die-faces.py, never generated.
+const generatable = allJobs.filter((j) => !j.drawn);
+let jobs = FORCE ? generatable.slice() : generatable.filter((j) => !existsSync(resolve(ROOT, j.out)));
 if (filter.length) jobs = jobs.filter((j) => filter.some((f) => j.id.includes(f) || j.kind === f));
-console.log(`${jobs.length} ${FORCE ? "job(s) (FORCE — redoing existing)" : "pending job(s)"} of ${allJobs.length}. seed=${SEED}`);
+console.log(`${jobs.length} ${FORCE ? "job(s) (FORCE — redoing existing)" : "pending job(s)"} of ${generatable.length} generatable (${allJobs.length - generatable.length} drawn by npm run art:dice). seed=${SEED}`);
 if (!jobs.length) process.exit(0);
 
 // --- connect to / launch real Chrome ---

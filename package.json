@@ -14,7 +14,8 @@
     "check:contrast": "node test/contrast.mjs",
     "art:manifest": "node scripts/art-manifest.mjs",
     "art:gen": "node scripts/art-manifest.mjs && node scripts/perchance-gen.mjs",
-    "art:cutout": "node scripts/art-manifest.mjs && bash scripts/run-cutout.sh"
+    "art:cutout": "node scripts/art-manifest.mjs && bash scripts/run-cutout.sh",
+    "art:dice": "bash -c '\"${PY:-.cache/venv/bin/python}\" scripts/die-faces.py'"
   },
   "devDependencies": {
     "tsx": "^4.23.12",

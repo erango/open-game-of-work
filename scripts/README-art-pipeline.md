@@ -10,6 +10,7 @@ Three steps, all resumable — existing outputs are skipped, so stop and restart
 npm run art:manifest   # build the job list -> scripts/art-manifest.json (134 jobs)
 npm run art:gen        # drive perchance (HEADED) -> art/_raw/<style>/*.png
 npm run art:cutout     # cut, resize, place -> public/assets/graphics-gen/, rewrite manifest.txt
+npm run art:dice       # DRAW the six die faces (never generated — see below)
 ```
 
 **Two house styles.** `ART_STYLE=neon` (the default) matches the interface reskin;
@@ -93,8 +94,11 @@ reasoning and the tier ordering. Edit the `.mjs` and re-run `npm run art:manifes
 
 Two things worth keeping in mind:
 
-- **Draw the die faces by hand.** Six pips on a rounded square survive 81px; a generator's
-  attempt at an exact pip count will not. The jobs exist so the set is complete if you try.
+- **The die faces are drawn, not generated** — `npm run art:dice`. This is not a preference:
+  asked for three pips a model returns a plausible die in perspective with pips on every
+  visible face, and at 81px the count is the only information a die face carries. The jobs stay
+  in the manifest with `drawn: true` so the prompts are on record; `art:gen` and `art:cutout`
+  both skip them, and even `FORCE=1` cannot overwrite the drawn faces.
 - **The splash needs its upper third quiet**, because the game overlays its own title there.
 
 ## Output and licensing

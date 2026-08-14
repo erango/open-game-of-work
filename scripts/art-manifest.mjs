@@ -65,25 +65,43 @@ const { style: STYLE, negative: NEG } = STYLES[STYLE_NAME];
  * Six seats, each with a silhouette cue so a 32px avatar still reads. The neon set keeps the
  * same six silhouettes — a seat has to stay recognisable between its avatar, its party sprite
  * and its winner card — and adds the hardware.
+ *
+ * **Seat 4 is a dog.** `DEFAULT_NAMES[3]` is Spot, and Spot is the original's dog: seat avatars
+ * are fixed art, so a human in that seat mismatches the name every game. The neon set makes him
+ * a chromed robot dog rather than dropping the joke.
  */
-const SEATS =
+const SEATS = (
   STYLE_NAME === 'neon'
     ? [
-        'round mirrored glasses',
-        'long straight hair with a glowing dermal implant at the temple',
-        'a flat cap and a wired earpiece',
-        'a beard and a jawline plate',
-        'a high ponytail and a neck jack',
-        'a bald chromed head and a moustache',
+        { feature: 'round mirrored glasses' },
+        { feature: 'long straight hair with a glowing dermal implant at the temple' },
+        { feature: 'a flat cap and a wired earpiece' },
+        { feature: 'a chromed muzzle, pointed alloy ears and a glowing collar', dog: true },
+        { feature: 'a high ponytail and a neck jack' },
+        { feature: 'a bald chromed head and a moustache' },
       ]
     : [
-        'round glasses',
-        'long straight hair',
-        'a flat cap',
-        'a beard',
-        'a high ponytail',
-        'a bald head and a moustache',
-      ];
+        { feature: 'round glasses' },
+        { feature: 'long straight hair' },
+        { feature: 'a flat cap' },
+        { feature: 'a scruffy muzzle and a studded collar', dog: true },
+        { feature: 'a high ponytail' },
+        { feature: 'a bald head and a moustache' },
+      ]
+).map((s, i) => {
+  const dogBust = STYLE_NAME === 'neon' ? 'a chrome robot dog' : 'a scruffy dog';
+  const person = STYLE_NAME === 'neon' ? 'a corporate operative' : 'an office worker';
+  return {
+    ...s,
+    index: i,
+    // Two framings, because the same words do not work for both. A bust does not need to be
+    // told what its legs are doing, and a full-body sprite does.
+    bust: s.dog ? dogBust : person,
+    body: s.dog ? `${dogBust} wearing a company lanyard, standing on its hind legs` : person,
+    // Poses are written for people. A dog is not on its hands and knees.
+    pose: (p) => (s.dog ? p.replace('hands and knees', 'all fours').replace('arms out', 'front paws out') : p),
+  };
+});
 
 const jobs = [];
 const add = (j) => {
@@ -161,7 +179,7 @@ for (let n = 1; n <= 6; n++) {
 }
 
 // ---------------------------------------------------------------- tier 2: players and seats
-SEATS.forEach((feature, i) => {
+SEATS.forEach(({ bust, feature }, i) => {
   add({
     kind: 'player',
     id: `avatar${i + 1}`,
@@ -170,8 +188,8 @@ SEATS.forEach((feature, i) => {
     also: [{ out: `${G}/forms/TMAINFORM/playerSmallImageList/${i}.png`, size: 16 }],
     size: 32,
     cutout: true,
-    subject: `a simple flat portrait bust of an office worker, shoulders up, facing forward, distinct silhouette, ${feature}`,
-    subjectNeon: `a simple flat portrait bust of a corporate operative, shoulders up, facing forward, distinct silhouette, ${feature}, rim-lit in neon`,
+    subject: `a simple flat portrait bust of ${bust}, shoulders up, facing forward, distinct silhouette, ${feature}`,
+    subjectNeon: `a simple flat portrait bust of ${bust}, shoulders up, facing forward, distinct silhouette, ${feature}, rim-lit in neon`,
   });
 });
 
@@ -261,14 +279,14 @@ add({
 });
 
 // Winners: the same six faces, now behind an enormous desk.
-SEATS.forEach((feature, i) => {
+SEATS.forEach(({ bust, feature }, i) => {
   add({
     kind: 'winner',
     id: `president${i + 1}`,
     out: `${G}/res/PLAYER${i + 1}PRES.png`,
     size: 150,
-    subject: `an office worker with ${feature} seated behind an enormous executive desk in front of a city window, triumphant`,
-    subjectNeon: `a corporate operative with ${feature} seated behind an enormous executive desk in front of a neon skyline window, triumphant, rim-lit`,
+    subject: `${bust} with ${feature} seated behind an enormous executive desk in front of a city window, triumphant`,
+    subjectNeon: `${bust} with ${feature} seated behind an enormous executive desk in front of a neon skyline window, triumphant, rim-lit`,
   });
 });
 
@@ -284,15 +302,17 @@ const POSES = [
   ['playerImageList', 32, 'standing neutral'],
 ];
 for (const [list, size, pose] of POSES) {
-  SEATS.forEach((feature, i) => {
+  SEATS.forEach((seat, i) => {
+    const posed = seat.pose(pose);
     add({
       kind: 'party',
       id: `${list}-${i}`,
       out: `${G}/forms/TOFFICEPARTYFORM/${list}/${i}.png`,
       size,
       cutout: true,
-      subject: `a full-body office worker with ${feature}, ${pose}, at an office party`,
-      subjectNeon: `a full-body corporate operative with ${feature}, ${pose}, at an office party, rim-lit in neon`,
+      // The subject already carries its own article, so the framing goes after it.
+      subject: `${seat.body} with ${seat.feature}, full body, ${posed}, at an office party`,
+      subjectNeon: `${seat.body} with ${seat.feature}, full body, ${posed}, at an office party, rim-lit in neon`,
     });
   });
 }

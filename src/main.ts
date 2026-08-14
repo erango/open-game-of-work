@@ -1,11 +1,11 @@
 import * as AI from './ai';
 import { aboutImage, applyFavicon, eventArt, graphicsMode, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
-import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeDeck, themeLabel, themeName, type ThemeName } from './theme';
+import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeDeck, themeLabel, themeName, themeNames, type ThemeName } from './theme';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
-import { DEFAULT_NAMES } from './names';
+import { DEFAULT_NAMES, setNameStyle } from './names';
 import * as R from './rules';
 import { squareIcon } from './icons';
 import { PERSONALITIES, RANKS, type GameLength, type Modal, type PersonalityChoice, type Project, type SquareKind } from './types';
@@ -75,6 +75,12 @@ function applyTheme(next: ThemeName, after?: () => void): void {
     // The pack that goes with the look. setDeckMode falls back on its own when the original
     // deck is not installed, and New Game can still change it afterwards.
     setDeckMode(themeDeck(applied));
+    /*
+     * Project names follow the look too — Casual Postcard in the office themes, Cached Cronjob
+     * under cyberpunk. Names are drawn when a project is created, so this takes effect on the
+     * next game rather than renaming the board underneath a game in progress.
+     */
+    setNameStyle(themeNames(applied));
     applyFavicon();
     applySmoothing();
     void sound.retheme();
@@ -2010,6 +2016,7 @@ async function boot(): Promise<void> {
   // The deck follows the theme at launch too, not just on a switch — otherwise starting up in
   // the Original theme came with this port's own pack, which a theme change would then replace.
   setDeckMode(themeDeck(themeName()));
+  setNameStyle(themeNames(themeName()));
   applyFavicon();
   applySmoothing();
   // The original showed a borderless splash (TSPLASHFORM: one full-bleed TImage) at launch,

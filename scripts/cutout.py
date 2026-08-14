@@ -85,6 +85,35 @@ def square_pad(img: "Image.Image", transparent: bool) -> "Image.Image":
     return canvas
 
 
+def unlight(img: "Image.Image") -> "Image.Image":
+    """Drain the colour and the glow out of an image.
+
+    For the 'seat off' badge. The house style asks for one bright emissive highlight per image,
+    which is exactly what an off state must not have, and the model follows the style over any
+    instruction to the contrary — asked for an unlit power symbol it returned a glowing one.
+    Doing it here instead is deterministic: same shape, no light.
+    """
+    from PIL import ImageEnhance
+
+    has_alpha = img.mode == "RGBA"
+    alpha = img.split()[3] if has_alpha else None
+    grey = img.convert("L")
+    # A cool grey rather than a neutral one, so it still belongs to the neon set.
+    tinted = Image.merge(
+        "RGB",
+        (
+            grey.point(lambda v: int(v * 0.80)),
+            grey.point(lambda v: int(v * 0.86)),
+            grey.point(lambda v: min(255, int(v * 0.96))),
+        ),
+    )
+    tinted = ImageEnhance.Brightness(tinted).enhance(0.78)
+    if alpha is not None:
+        tinted = tinted.convert("RGBA")
+        tinted.putalpha(alpha)
+    return tinted
+
+
 def center_crop_square(img: "Image.Image") -> "Image.Image":
     w, h = img.size
     side = min(w, h)
@@ -145,6 +174,9 @@ for job in manifest:
             img = Image.open(raw).convert("RGB")
             if not keeps_aspect:
                 img = center_crop_square(img)
+
+        if job.get("unlit"):
+            img = unlight(img)
 
         write_variant(img, out, job["size"], shape)
         # Extra sizes derived from the same image, so variants can never drift apart.

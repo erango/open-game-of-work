@@ -180,11 +180,24 @@ const SEAT_TYPES = [
     'a simple face seen front on, one eye replaced by a glowing lens'],
   ['computer', 'NEWGAMECOMPUTER', 'a boxy desktop computer with a blank screen',
     'a server blade with a single glowing status light'],
+  // An empty chair is unreadable at 64px, and this label is a control: it has to be legible at
+  // a glance. A dark power symbol says 'this seat is switched off' and nothing else. It is also
+  // the one image in the set that must NOT glow — the house style's emissive highlight is
+  // exactly what an off state should lack.
   ['off', 'NEWGAMEOFF', 'an empty office chair seen from the side',
-    'an empty chair seen from the side, its light strip dark'],
+    'one single power on-off symbol seen straight on, a circle with a gap and a short vertical bar, unlit dark grey with a faint cold outline, no glow, nothing else in the frame, dark near-black background'],
 ];
 for (const [id, file, subject, subjectNeon] of SEAT_TYPES) {
-  add({ kind: 'seat', id: `seat-${id}`, out: `${G}/res/${file}.png`, size: 64, subject, subjectNeon });
+  add({
+    kind: 'seat',
+    id: `seat-${id}`,
+    out: `${G}/res/${file}.png`,
+    size: 64,
+    subject,
+    subjectNeon,
+    // The off badge has its light taken out at cutout — see unlight() in scripts/cutout.py.
+    unlit: id === 'off',
+  });
 }
 
 // ---------------------------------------------------------------- tier 3: event art

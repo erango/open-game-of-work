@@ -13,6 +13,25 @@ import type { Rng } from './rng';
  * and no amount of board scaling helps: the board is transform-scaled, so text grows with it.
  */
 
+/**
+ * Which word pack the names come from.
+ *
+ * Set from the theme (see `applyTheme` in main.ts), the same way the card pack is. Held here
+ * rather than passed through the engine so `engine.ts` stays free of anything theme-shaped;
+ * `autoplay.ts` and the suite use the default, so simulated games remain comparable.
+ */
+export type NameStyle = 'office' | 'cyber';
+
+let style: NameStyle = 'office';
+
+export function setNameStyle(next: NameStyle): void {
+  style = next;
+}
+
+export function nameStyle(): NameStyle {
+  return style;
+}
+
 const ADJECTIVES: Record<Profile, string[]> = {
   1: ['Tiny', 'Gentle', 'Napping', 'Casual', 'Beige', 'Snoozy', 'Mild', 'Placid'],
   2: ['Modest', 'Passable', 'Tepid', 'Semi', 'Chipper', 'Perky', 'Plain', 'Fussy'],
@@ -29,11 +48,37 @@ const NOUNS: Record<Profile, string[]> = {
   5: ['Deathstar', 'Cathedral', 'Vortex', 'Colossus', 'Titan', 'Obelisk', 'Behemoth', 'Pyramid'],
 };
 
+/**
+ * The cyberpunk pack. Same shape, same tiers, same nine-character ceiling — a project still
+ * telegraphs its difficulty, from a chore nobody will notice to something that will outlive
+ * the company.
+ */
+const CYBER_ADJECTIVES: Record<Profile, string[]> = {
+  1: ['Idle', 'Cached', 'Muted', 'Stubbed', 'Dormant', 'Trivial', 'Legacy', 'Quiet'],
+  2: ['Beta', 'Patched', 'Flaky', 'Throttled', 'Warm', 'Nightly', 'Staged', 'Tepid'],
+  3: ['Rogue', 'Encrypted', 'Ghosted', 'Hardened', 'Spliced', 'Volatile', 'Grafted', 'Wired'],
+  4: ['Runaway', 'Black', 'Cascading', 'Rampant', 'Hostile', 'Sprawling', 'Feral', 'Burning'],
+  5: ['Sovereign', 'Immortal', 'Absolute', 'Doomsday', 'Godlike', 'Terminal', 'Apex', 'Endless'],
+};
+
+const CYBER_NOUNS: Record<Profile, string[]> = {
+  1: ['Ticket', 'Cronjob', 'Sticker', 'Kiosk', 'Beacon', 'Widget', 'Toaster', 'Badge'],
+  2: ['Router', 'Chatbot', 'Dashboard', 'Turnstile', 'Vending', 'Printer', 'Drone', 'Terminal'],
+  3: ['Firewall', 'Datavault', 'Skiplift', 'Powerhub', 'Splicer', 'Server', 'Reactor', 'Uplink'],
+  4: ['Arcology', 'Mainframe', 'Refinery', 'Megagrid', 'Foundry', 'Orbital', 'Leviathan', 'Spire'],
+  5: ['Singular', 'Overmind', 'Godcore', 'Overseer', 'Ascendant', 'Obelisk', 'Colossus', 'Zenith'],
+};
+
 export function projectName(profile: Profile, rng: Rng): string {
-  const a = rng.pick(ADJECTIVES[profile]);
-  const n = rng.pick(NOUNS[profile]);
+  const adjectives = style === 'cyber' ? CYBER_ADJECTIVES : ADJECTIVES;
+  const nouns = style === 'cyber' ? CYBER_NOUNS : NOUNS;
+  const a = rng.pick(adjectives[profile]);
+  const n = rng.pick(nouns[profile]);
   return `${a} ${n}`;
 }
+
+/** Both packs, for the tests that police the nine-character ceiling. */
+export const WORD_POOLS = { ADJECTIVES, NOUNS, CYBER_ADJECTIVES, CYBER_NOUNS };
 
 /**
  * Default seat names, in seat order.

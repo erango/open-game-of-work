@@ -1,5 +1,6 @@
 import { graphicsMode, installedSets, setGraphicsMode, type GraphicsMode, type SetName } from './assets';
 import type { DeckMode } from './decks';
+import type { NameStyle } from './names';
 
 /**
  * A theme is the palette and the artwork chosen together.
@@ -31,6 +32,8 @@ interface Theme {
    * also a taste, so it is a default rather than a lock.
    */
   deck: DeckMode;
+  /** Which project-name word pack the look implies. */
+  names: NameStyle;
   /** An installed set this theme cannot be offered without. */
   requires?: SetName;
 }
@@ -42,6 +45,7 @@ const THEMES: Record<ThemeName, Theme> = {
     palette: 'original',
     graphics: 'original',
     deck: 'original',
+    names: 'office',
     requires: 'original',
   },
   openPlan: {
@@ -50,6 +54,7 @@ const THEMES: Record<ThemeName, Theme> = {
     palette: 'original',
     graphics: 'modern',
     deck: 'new',
+    names: 'office',
   },
   cyberpunk: {
     label: 'Cyberpunk',
@@ -57,6 +62,7 @@ const THEMES: Record<ThemeName, Theme> = {
     palette: 'neon',
     graphics: 'generated',
     deck: 'neon',
+    names: 'cyber',
   },
 };
 
@@ -124,6 +130,11 @@ export function themeBlurb(name: ThemeName): string {
 /** The card pack this theme comes with. `decks.ts` falls back if it is not installed. */
 export function themeDeck(name: ThemeName): DeckMode {
   return THEMES[name].deck;
+}
+
+/** The project-name word pack this theme comes with. */
+export function themeNames(name: ThemeName): NameStyle {
+  return THEMES[name].names;
 }
 
 /** The themes worth offering: every one whose artwork is actually present. */

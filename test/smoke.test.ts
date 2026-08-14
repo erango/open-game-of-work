@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { autoplay } from '../src/autoplay.ts';
 import { CHANCE, SCRUPLES, type ChanceCard, type ScruplesCard } from '../src/cards.ts';
+import { WORD_POOLS } from '../src/names.ts';
 import { CHANCE_NEON, SCRUPLES_NEON } from '../src/cardsNeon.ts';
 import { PROJECT_PROFILES, PROJECT_COUNT, SQUARES } from '../src/board.ts';
 import { Game } from '../src/engine.ts';
@@ -283,6 +284,21 @@ test('engine tracks the peak share price, not just the final one', () => {
     g.roll();
     g.finishMoveInstantly();
     assert.ok(g.state.stockPeak >= g.state.stock, 'peak must never fall below current');
+  }
+});
+
+test('every project-name word fits the tile', () => {
+  /*
+   * 9 characters, in both word packs. The label is 73x27 in the design space and the original's
+   * own pool tops out at 9 with a mean of 5.9; a longer word overflows, and board scaling does
+   * not help since the board is transform-scaled and the text grows with it.
+   */
+  for (const [pool, tiers] of Object.entries(WORD_POOLS)) {
+    for (const [profile, words] of Object.entries(tiers)) {
+      for (const w of words as string[]) {
+        assert.ok(w.length <= 9, `${pool} profile ${profile}: "${w}" is ${w.length} characters`);
+      }
+    }
   }
 });
 

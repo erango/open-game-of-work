@@ -88,6 +88,15 @@ Two things worth keeping in mind:
 
 ## Output and licensing
 
-Everything lands in `public/assets/graphics/`, which is gitignored because it normally holds
-material extracted from the original game. A set you generated is **your own work**, so if you
-want it committed, add a negative pattern for those paths rather than dropping the rule.
+Everything lands in `public/assets/graphics-gen/`, deliberately **separate** from the extracted
+originals in `public/assets/graphics/`. Sharing one directory would have made the generator's
+resume check see the extracted files and skip every job, and would have overwritten them on the
+way through.
+
+The game treats them as two independent sets and lists whichever are installed under
+**Options**, alongside the built-in vector set, so all three can be compared without moving
+files around.
+
+Both directories are gitignored. A generated set is **your own work**, so if you want it
+committed, add a negative pattern for `public/assets/graphics-gen/` rather than dropping the
+rule that protects the extracted material.

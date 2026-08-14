@@ -1,5 +1,5 @@
 import * as AI from './ai';
-import { aboutImage, applyFavicon, eventArt, graphicsMode, setGraphicsMode, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
+import { aboutImage, applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
@@ -411,7 +411,7 @@ async function askAutoClick(): Promise<void> {
 
 function stubHandlers() {
   return {
-    onToggleGraphics() {},
+    onGraphicsChanged() {},
     onToggleSmooth() {},
     smoothOn() {
       return false;
@@ -1579,9 +1579,9 @@ async function step(): Promise<void> {
 
 function handlers() {
   return {
-    onToggleGraphics() {
-      // Artwork only; the original card and help text are chosen separately.
-      setGraphicsMode(graphicsMode() === 'original' ? 'modern' : 'original');
+    onGraphicsChanged() {
+      // The set has already been switched; refresh what depends on it. Artwork only — the
+      // original card and help text are chosen separately.
       applyFavicon();
       ui.render(game);
     },

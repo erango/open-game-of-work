@@ -1,5 +1,5 @@
 import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
-import { assetsAvailable, assetsInstalled, centerImage, cursorUrl, dieFace, eventArt, graphicsMode, playerPortrait, playerToken, squareImage } from './assets';
+import { assetsAvailable, assetsInstalled, centerImage, cursorUrl, dieFace, eventArt, graphicsMode, installedSets, playerPortrait, playerToken, setGraphicsMode, squareImage, type GraphicsMode } from './assets';
 import { squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
@@ -17,7 +17,7 @@ const el = <K extends keyof HTMLElementTagNameMap>(
 };
 
 export interface UiHandlers {
-  onToggleGraphics(): void;
+  onGraphicsChanged(): void;
   onToggleSmooth(): void;
   smoothOn(): boolean;
   onToggleSound(): void;
@@ -218,12 +218,25 @@ export class Ui {
           { label: 'Sound', check: this.handlers.soundOn(), run: () => this.handlers.onToggleSound() },
           { label: 'AutoClicking\u2026', run: () => this.handlers.onAutoClick() },
           { label: '', sep: true },
+          // One entry per artwork set that is actually installed, plus the built-in vector
+          // set, chosen radio-style. Only shown when there is something to choose between.
           ...(assetsInstalled()
             ? ([
+                ...installedSets().map((name) => ({
+                  label: name === 'original' ? 'Original artwork' : 'Generated artwork',
+                  check: graphicsMode() === name,
+                  run: () => {
+                    setGraphicsMode(name);
+                    this.handlers.onGraphicsChanged();
+                  },
+                })),
                 {
-                  label: 'Original artwork',
-                  check: graphicsMode() === 'original',
-                  run: () => this.handlers.onToggleGraphics(),
+                  label: 'Modern artwork',
+                  check: graphicsMode() === ('modern' as GraphicsMode),
+                  run: () => {
+                    setGraphicsMode('modern');
+                    this.handlers.onGraphicsChanged();
+                  },
                 },
               ] as Item[])
             : []),

@@ -10,7 +10,8 @@ Adapted from the pipeline in dungeon-vengeance. The differences that matter here
   * A job may emit extra sizes. The 16px stats-panel portrait is a downscale of the 32px
     avatar rather than a separate generation, so the two always match.
   * Landscape jobs keep their aspect ratio instead of being squared.
-  * At the end it rewrites manifest.txt, which is what the game reads to discover the set.
+  * At the end it rewrites manifest.txt for the generated set, which is what the game reads
+    to discover it. Output is graphics-gen/, kept apart from any extracted originals.
 
 Install once:
     python3 -m venv .cache/venv
@@ -31,7 +32,7 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GRAPHICS = os.path.join(ROOT, "public", "assets", "graphics")
+GRAPHICS = os.path.join(ROOT, "public", "assets", "graphics-gen")
 FORCE = os.environ.get("FORCE") == "1"
 MODEL = os.environ.get("REMBG_MODEL", "birefnet-general")
 ALPHA_MATTING = os.environ.get("ALPHA_MATTING") == "1"

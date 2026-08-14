@@ -10,8 +10,20 @@
  * synchronous and no request is made per square.
  */
 
-const BASE = 'assets/graphics/';
-const MANIFEST = BASE + 'manifest.txt';
+/**
+ * The two illustrated sets, each with its own manifest.
+ *
+ * `original` is extracted from a local copy of the game. `generated` is produced by the
+ * pipeline in scripts/, and deliberately lives in its own directory: sharing one root would
+ * make the generator's resume check see the extracted files and skip every job, and would
+ * overwrite them on the way through.
+ */
+const SETS = {
+  original: 'assets/graphics/',
+  generated: 'assets/graphics-gen/',
+} as const;
+
+export type SetName = keyof typeof SETS;
 
 /**
  * Board square index -> TMAINFORM component name. Verified against the component
@@ -38,7 +50,7 @@ const CENTER_IMAGES = {
   resign: 'resignImage',
 } as const;
 
-let available = new Set<string>();
+const manifests: Record<SetName, Set<string>> = { original: new Set(), generated: new Set() };
 let loaded = false;
 
 /**
@@ -51,48 +63,62 @@ let loaded = false;
  * It gates artwork only. The original card text and help text are chosen separately, in the
  * New Game window and the How to Play window, and are unaffected.
  */
-export type GraphicsMode = 'original' | 'modern';
+export type GraphicsMode = SetName | 'modern';
 
+const STORED = localStorage.getItem('ogow:graphics');
 let mode: GraphicsMode =
-  localStorage.getItem('ogow:graphics') === 'modern' ? 'modern' : 'original';
+  STORED === 'modern' || STORED === 'generated' || STORED === 'original' ? STORED : 'original';
 
 export function graphicsMode(): GraphicsMode {
   return mode;
 }
 
 export function setGraphicsMode(next: GraphicsMode): void {
+  // Fall back rather than silently drawing nothing if a set was removed.
+  if (next !== 'modern' && manifests[next].size === 0) next = 'modern';
   mode = next;
   localStorage.setItem('ogow:graphics', next);
 }
 
-/** Whether an extraction exists on disk, regardless of which set is being drawn. */
+/** Which illustrated sets are actually present, regardless of which is being drawn. */
+export function installedSets(): SetName[] {
+  return (Object.keys(SETS) as SetName[]).filter((n) => manifests[n].size > 0);
+}
+
+/** Whether any illustrated set exists, i.e. whether there is a choice to offer. */
 export function assetsInstalled(): boolean {
-  return available.size > 0;
+  return installedSets().length > 0;
 }
 
 /** Reads the extractor's manifest. Safe to call when no assets are installed. */
 export async function loadAssets(): Promise<boolean> {
-  if (loaded) return available.size > 0;
+  if (loaded) return assetsInstalled();
   loaded = true;
-  try {
-    const res = await fetch(MANIFEST);
-    if (!res.ok) return false;
-    const text = await res.text();
-    available = new Set(
-      text
-        .split('\n')
-        .map((l) => l.trim())
-        .filter(Boolean),
-    );
-  } catch {
-    return false;
-  }
-  return available.size > 0;
+  await Promise.all(
+    (Object.keys(SETS) as SetName[]).map(async (name) => {
+      try {
+        const res = await fetch(`${SETS[name]}manifest.txt`);
+        if (!res.ok) return;
+        const text = await res.text();
+        manifests[name] = new Set(
+          text
+            .split('\n')
+            .map((l) => l.trim())
+            .filter(Boolean),
+        );
+      } catch {
+        // Absent set; leave its manifest empty.
+      }
+    }),
+  );
+  // Honour the stored preference only if that set turned up.
+  setGraphicsMode(mode);
+  return assetsInstalled();
 }
 
-/** Whether original artwork should actually be drawn right now. */
+/** Whether an illustrated set should actually be drawn right now. */
 export function assetsAvailable(): boolean {
-  return available.size > 0 && mode === 'original';
+  return mode !== 'modern' && manifests[mode].size > 0;
 }
 
 /**
@@ -118,7 +144,7 @@ export function applyFavicon(): void {
 
 function url(rel: string): string | null {
   if (mode === 'modern') return null;
-  return available.has(rel) ? BASE + rel : null;
+  return manifests[mode].has(rel) ? SETS[mode] + rel : null;
 }
 
 /** Original face for a board square, or null to fall back to the SVG icon. */
@@ -223,9 +249,10 @@ export function presidentArt(slot: number): string | null {
 
 /** Original mouse cursors, for CSS `cursor: url(...)`. */
 export function cursorUrl(which: 'Dice' | 'Hand' | 'Stock' | 'Trade'): string | null {
-  // Cursors are copied alongside the extraction rather than listed in the manifest.
-  if (mode === 'modern' || available.size === 0) return null;
-  return BASE + `cursors/Cursor${which}.cur`;
+  // Cursors ship only with the original extraction, and sit alongside it rather than in the
+  // manifest, so they apply to that set only.
+  if (mode !== 'original' || manifests.original.size === 0) return null;
+  return SETS.original + `cursors/Cursor${which}.cur`;
 }
 
 /** Which office-party sprite set a player is drawn from. */

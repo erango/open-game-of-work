@@ -9,3 +9,4 @@ __pycache__/
 art/_raw/
 .cache/
 scripts/art-manifest.json
+public/assets/graphics-gen/

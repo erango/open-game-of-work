@@ -14,7 +14,9 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const G = 'public/assets/graphics';
+// A SEPARATE root from the extracted originals. Sharing one would make the resume check see
+// the extracted files and skip every job, and would overwrite them on the way through.
+const G = 'public/assets/graphics-gen';
 
 // ---------------------------------------------------------------- house style
 // Keep this identical across the whole set. With a free model, consistency between images

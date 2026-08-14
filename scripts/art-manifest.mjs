@@ -47,10 +47,14 @@ const STYLES = {
       'and electric cyan accents with cold steel grey, one bright emissive highlight per image, ' +
       'simple geometric shapes, no gradients, no texture, centred single subject, generous ' +
       'margin around the subject, cyberpunk corporate iconography, high contrast',
+    // 'pile, heap, debris' earns its place: asked for several objects the model stacks them
+    // into rubbish. 'white background' likewise — a few generations came back on white, which
+    // is glaringly wrong on a dark board.
     negative:
       'photorealistic, 3d render, text, letters, words, watermark, signature, busy background, ' +
       'rain, fog, haze, crowd, city clutter, drop shadow, gradient mesh, clutter, cropped ' +
-      'subject, multiple subjects, warm sunlight, pastel',
+      'subject, multiple subjects, warm sunlight, pastel, pile, heap, stack of objects, ' +
+      'debris, junk, rubbish, white background, light background',
   },
 };
 
@@ -111,7 +115,9 @@ const BOARD = [
     'a floating holographic chart panel whose line falls sharply'],
   ['businesstrip', 'businessTripImage', 140,
     'a hard-shell suitcase beside a boarding pass with a small aeroplane above',
-    'a hard-shell case beside a transit chit with a small aircraft above'],
+    // One object, not three. Naming a case *and* a chit *and* an aircraft got all three
+    // merged into a heap on top of a suitcase — it read as an overflowing skip.
+    'one single hard-shell rolling travel case standing upright, seen straight on, telescopic handle extended and glowing cyan, nothing else in the frame, dark near-black background'],
   ['chance1', 'chanceImage1', 81, 'two dice mid-tumble', 'two dice mid-tumble, edges lit'],
   ['chance2', 'chanceImage2', 81, 'a single die resting on one corner',
     'a single die balanced on one corner, edges lit'],

@@ -86,6 +86,11 @@ jack, a chromed head.
 - Generate 4–6 candidates per slot and pick; free models vary wildly.
 - With the neon style, check that the **glow lands on the subject**, not on the background.
   A generator asked for neon will happily light the whole frame, which flattens the shape.
+- **Name one object.** The Business Trip tile originally asked for a case *and* a boarding pass
+  *and* an aeroplane, and came back as all three merged into a heap on top of a suitcase — it
+  read as an overflowing skip. `pile, heap, stack of objects, debris, junk, rubbish` are in the
+  negative prompt because of it, along with `white background`, which a few generations
+  returned despite the style asking for near-black.
 
 ---
 
@@ -96,7 +101,7 @@ jack, a chromed head.
 | `forms/TMAINFORM/homeImage.png` | 140² | a plain mid-century office block seen straight on, entrance at street level → **neon:** a corporate arcology tower, one lit lobby entrance |
 | `forms/TMAINFORM/officePartyImage.png` | 140² | two paper cups touching in a toast, a few streamers behind them |
 | `forms/TMAINFORM/meetingImage.png` | 140² | a presentation easel holding a chart whose line falls sharply |
-| `forms/TMAINFORM/businessTripImage.png` | 140² | a hard-shell suitcase beside a boarding pass, a small aeroplane above |
+| `forms/TMAINFORM/businessTripImage.png` | 140² | a hard-shell suitcase beside a boarding pass, a small aeroplane above → **neon:** one rolling case, upright, glowing handle, nothing else |
 | `forms/TMAINFORM/chanceImage1.png` | 81² | two dice mid-tumble |
 | `forms/TMAINFORM/chanceImage2.png` | 81² | a single die resting on its corner |
 | `forms/TMAINFORM/chanceImage3.png` | 81² | three dice stacked in a pyramid |

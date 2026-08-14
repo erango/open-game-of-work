@@ -137,6 +137,18 @@ matching the original (`Space` roll, `T` trade, `R` resign, `1`–`3` on Scruple
 Not implemented: high-score tables, the stock chart window as a separate view (the price
 history is charted inline instead), and the original's registration nag screens.
 
+## Licence
+
+The code, and everything else authored for this port — the inline SVG artwork, the Chance and
+Scruples decks in `src/cards.ts`, the project-name word pools, the help summaries, and the
+extraction tooling — is MIT licensed. See [LICENSE](./LICENSE).
+
+**That licence does not extend to the original game's material.** Its artwork, audio, card
+text and help text remain the property of their authors and are not distributed here. The port
+loads them from your own copy at runtime, or falls back to its own set. One file deserves a
+specific mention: `party.mid` carries its own copyright notice crediting a third party rather
+than the game's publisher, so permission from the publisher would not cover it.
+
 ## Credit
 
 Original design by **Hotpot Software** (2000). This reimplementation is an independent work

@@ -175,7 +175,11 @@ for (const [i, job] of jobs.entries()) {
 
     const buf = await captureResult(prev);
     if (!buf) throw new Error("no image (timeout / Cloudflare?)");
-    writeFileSync(resolve(ROOT, job.raw), buf);
+    // Raw output is per style (art/_raw/<style>/), so create the parent rather than assuming
+    // one flat directory.
+    const rawPath = resolve(ROOT, job.raw);
+    mkdirSync(dirname(rawPath), { recursive: true });
+    writeFileSync(rawPath, buf);
     console.log(`ok (${(buf.length / 1024) | 0}kb)`);
     ok++;
   } catch (e) {

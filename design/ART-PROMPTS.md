@@ -16,11 +16,40 @@ it would be entirely your work.
 
 ---
 
-## House style
+## Two house styles
 
-Prepend this to every prompt so the set holds together. Adjust the two bracketed choices once,
-then keep them identical across every generation — consistency matters far more than any single
-image.
+`ART_STYLE` picks one. Raw output is kept per style under `art/_raw/<style>/`, so switching
+does not resume on top of the other set's images.
+
+```bash
+npm run art:gen                   # neon (default)
+ART_STYLE=flat npm run art:gen    # the earlier retro-corporate set
+```
+
+**`neon`** — matches the interface reskin in `design/handoff/README.md`. Prepend to every
+prompt:
+
+```
+flat vector illustration, bold clean outlines, near-black slate background, neon magenta and
+electric cyan accents with cold steel grey, one bright emissive highlight per image, simple
+geometric shapes, no gradients, no texture, centred single subject, generous margin around the
+subject, cyberpunk corporate iconography, high contrast
+```
+
+Negative:
+
+```
+photorealistic, 3d render, text, letters, words, watermark, signature, busy background, rain,
+fog, haze, crowd, city clutter, drop shadow, gradient mesh, clutter, cropped subject, multiple
+subjects, warm sunlight, pastel
+```
+
+The negatives are the important half. The obvious cyberpunk reading — rain-slicked street,
+haze, dense signage — turns to mud at 81px, so this style is **graphic, not atmospheric**: a
+dark ground, simple shapes, and exactly one thing glowing. Rain and fog are excluded for that
+reason, not for taste.
+
+**`flat`** — the earlier set, kept because it is a complete, coherent alternative:
 
 ```
 flat vector illustration, bold clean outlines, limited palette of [teal, sand, dusty pink,
@@ -29,12 +58,22 @@ plain [off-white] background, generous margin around the subject, retro corporat
 feel, 1:1 square
 ```
 
-Negative prompt, every time:
-
 ```
 photorealistic, 3d render, text, letters, words, watermark, signature, busy background,
 drop shadow, gradient mesh, clutter, cropped subject, multiple subjects
 ```
+
+### Subjects differ where the register does
+
+Most subjects are shared; the ones naming something period-specific carry a neon variant in
+the manifest (`subjectNeon`). The tables below give the `flat` subject with the neon reading
+after an arrow where they diverge — a mid-century office block becomes a corporate arcology
+tower, a manila folder becomes a data shard, a boxy desktop becomes a server blade.
+
+Six seats keep the **same silhouettes** across both styles, because a seat has to stay
+recognisable between its avatar, its party sprite and its winner card. Neon adds the hardware:
+mirrored glasses, a dermal implant at the temple, a wired earpiece, a jawline plate, a neck
+jack, a chromed head.
 
 ### Practical notes
 
@@ -45,6 +84,8 @@ drop shadow, gradient mesh, clutter, cropped subject, multiple subjects
 - The tiles are **small**. A subject that needs fine detail will not survive 81px. Prefer one
   large, simple, high-contrast shape per image. Check every result downscaled before accepting.
 - Generate 4–6 candidates per slot and pick; free models vary wildly.
+- With the neon style, check that the **glow lands on the subject**, not on the background.
+  A generator asked for neon will happily light the whole frame, which flattens the shape.
 
 ---
 
@@ -52,7 +93,7 @@ drop shadow, gradient mesh, clutter, cropped subject, multiple subjects
 
 | Target file | Size | Prompt subject |
 |---|---|---|
-| `forms/TMAINFORM/homeImage.png` | 140² | a plain mid-century office block seen straight on, entrance at street level |
+| `forms/TMAINFORM/homeImage.png` | 140² | a plain mid-century office block seen straight on, entrance at street level → **neon:** a corporate arcology tower, one lit lobby entrance |
 | `forms/TMAINFORM/officePartyImage.png` | 140² | two paper cups touching in a toast, a few streamers behind them |
 | `forms/TMAINFORM/meetingImage.png` | 140² | a presentation easel holding a chart whose line falls sharply |
 | `forms/TMAINFORM/businessTripImage.png` | 140² | a hard-shell suitcase beside a boarding pass, a small aeroplane above |
@@ -63,7 +104,7 @@ drop shadow, gradient mesh, clutter, cropped subject, multiple subjects
 | `forms/TMAINFORM/scruplesImage2.png` | 81² | two arrows forking in opposite directions |
 | `forms/TMAINFORM/scruplesImage3.png` | 81² | a set of balance scales, one pan lower |
 | `forms/TMAINFORM/powerMongerImage.png` | 81² | a small crown resting on a desk in-tray |
-| `forms/TMAINFORM/makeTradeImage.png` | 81² | two hands exchanging identical manila folders |
+| `forms/TMAINFORM/makeTradeImage.png` | 81² | two hands exchanging identical manila folders → **neon:** identical glowing data shards |
 | `forms/TMAINFORM/resignImage.png` | 50² | a cardboard box holding a desk plant and a mug |
 
 **Die faces** — `forms/TMAINFORM/dieImageList/0.png` … `5.png`, 81² each, showing **1 through 6
@@ -96,7 +137,7 @@ same seat order.
 **Seat types** — 64² each, and these must read at a glance since they label a control:
 
 - `res/NEWGAMEHUMAN.png` — a simple smiling face, front on
-- `res/NEWGAMECOMPUTER.png` — a boxy desktop computer with a blank screen
+- `res/NEWGAMECOMPUTER.png` — a boxy desktop computer with a blank screen → **neon:** a server blade with one status light
 - `res/NEWGAMEOFF.png` — an empty chair seen from the side
 
 ## Tier 3 — event illustrations
@@ -151,7 +192,7 @@ set and entirely skippable — without it the party still works, just without sp
   window lit. The game overlays its own title text, so **leave the upper third clear**.
 - `forms/TABOUTFORM/Image1.png` — the same building in daylight, roughly 4:3.
 - `icon.png` — 32², one bold emblematic shape that survives a browser tab: a single manila
-  folder, or a die.
+  folder, or a die → **neon:** a single glowing data shard.
 - **Card art** for this port's own decks, if you want it: 30 Chance and 12 Scruples, 96² each,
   named `res/CHANCE0.png` … `CHANCE29.png` and `res/SCRUPLES0.png` … `SCRUPLES11.png`. Read the
   matching card in `src/cards.ts` and illustrate its situation. Lowest priority, highest volume.

@@ -19,57 +19,119 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const G = 'public/assets/graphics-gen';
 
 // ---------------------------------------------------------------- house style
-// Keep this identical across the whole set. With a free model, consistency between images
-// matters far more than the quality of any single one.
-const STYLE =
-  'flat vector illustration, bold clean outlines, limited palette of teal, sand, dusty pink ' +
-  'and slate blue, simple geometric shapes, no gradients, no texture, centred single subject, ' +
-  'plain off-white background, generous margin around the subject, retro corporate clip-art feel';
+// Two named styles, chosen with ART_STYLE. Keep whichever you pick identical across the whole
+// set: with a free model, consistency between images matters far more than the quality of any
+// single one.
+//
+//   ART_STYLE=neon   (default) matches the interface reskin — see design/handoff/README.md
+//   ART_STYLE=flat            the earlier retro-corporate clip-art set
+//
+// Raw output is kept per style, so switching styles regenerates rather than silently resuming
+// on top of the other one's images.
+const STYLES = {
+  flat: {
+    style:
+      'flat vector illustration, bold clean outlines, limited palette of teal, sand, dusty pink ' +
+      'and slate blue, simple geometric shapes, no gradients, no texture, centred single subject, ' +
+      'plain off-white background, generous margin around the subject, retro corporate clip-art feel',
+    negative:
+      'photorealistic, 3d render, text, letters, words, watermark, signature, busy background, ' +
+      'drop shadow, gradient mesh, clutter, cropped subject, multiple subjects',
+  },
+  neon: {
+    // Deliberately flat and graphic rather than atmospheric: these are 50-140px tiles, and a
+    // hazy rain-slicked street reads as mud at that size. The neon does the work, the shapes
+    // stay simple, and the ground is the dark slate the reskinned board sits on.
+    style:
+      'flat vector illustration, bold clean outlines, near-black slate background, neon magenta ' +
+      'and electric cyan accents with cold steel grey, one bright emissive highlight per image, ' +
+      'simple geometric shapes, no gradients, no texture, centred single subject, generous ' +
+      'margin around the subject, cyberpunk corporate iconography, high contrast',
+    negative:
+      'photorealistic, 3d render, text, letters, words, watermark, signature, busy background, ' +
+      'rain, fog, haze, crowd, city clutter, drop shadow, gradient mesh, clutter, cropped ' +
+      'subject, multiple subjects, warm sunlight, pastel',
+  },
+};
 
-const NEG =
-  'photorealistic, 3d render, text, letters, words, watermark, signature, busy background, ' +
-  'drop shadow, gradient mesh, clutter, cropped subject, multiple subjects';
+const STYLE_NAME = process.env.ART_STYLE === 'flat' ? 'flat' : 'neon';
+const { style: STYLE, negative: NEG } = STYLES[STYLE_NAME];
 
-/** Six seats, each with a silhouette cue so a 32px avatar still reads. */
-const SEATS = [
-  'round glasses',
-  'long straight hair',
-  'a flat cap',
-  'a beard',
-  'a high ponytail',
-  'a bald head and a moustache',
-];
+/**
+ * Six seats, each with a silhouette cue so a 32px avatar still reads. The neon set keeps the
+ * same six silhouettes — a seat has to stay recognisable between its avatar, its party sprite
+ * and its winner card — and adds the hardware.
+ */
+const SEATS =
+  STYLE_NAME === 'neon'
+    ? [
+        'round mirrored glasses',
+        'long straight hair with a glowing dermal implant at the temple',
+        'a flat cap and a wired earpiece',
+        'a beard and a jawline plate',
+        'a high ponytail and a neck jack',
+        'a bald chromed head and a moustache',
+      ]
+    : [
+        'round glasses',
+        'long straight hair',
+        'a flat cap',
+        'a beard',
+        'a high ponytail',
+        'a bald head and a moustache',
+      ];
 
 const jobs = [];
 const add = (j) => {
+  const { subject, subjectNeon, ...rest } = j;
+  // A subject may name a period-specific thing (a mid-century office block, a boxy desktop).
+  // Where the register matters, the neon set supplies its own.
+  const chosen = STYLE_NAME === 'neon' && subjectNeon ? subjectNeon : subject;
   jobs.push({
     negative: NEG,
     shape: 'square',
     cutout: false,
-    ...j,
-    raw: `art/_raw/${j.id}.png`,
-    prompt: `${j.subject}, ${STYLE}`,
+    ...rest,
+    subject: chosen,
+    raw: `art/_raw/${STYLE_NAME}/${j.id}.png`,
+    prompt: `${chosen}, ${STYLE}`,
   });
 };
 
 // ---------------------------------------------------------------- tier 1: board faces
 const BOARD = [
-  ['home', 'homeImage', 140, 'a plain mid-century office block seen straight on, entrance at street level'],
-  ['officeparty', 'officePartyImage', 140, 'two paper cups touching in a toast, a few streamers behind them'],
-  ['meeting', 'meetingImage', 140, 'a presentation easel holding a chart whose line falls sharply'],
-  ['businesstrip', 'businessTripImage', 140, 'a hard-shell suitcase beside a boarding pass with a small aeroplane above'],
-  ['chance1', 'chanceImage1', 81, 'two dice mid-tumble'],
-  ['chance2', 'chanceImage2', 81, 'a single die resting on one corner'],
-  ['chance3', 'chanceImage3', 81, 'three dice stacked in a pyramid'],
-  ['scruples1', 'scruplesImage1', 81, 'an oversized question mark inside a speech bubble'],
-  ['scruples2', 'scruplesImage2', 81, 'two arrows forking in opposite directions'],
-  ['scruples3', 'scruplesImage3', 81, 'a set of balance scales with one pan lower'],
-  ['powermonger', 'powerMongerImage', 81, 'a small crown resting in a desk in-tray'],
-  ['maketrade', 'makeTradeImage', 81, 'two hands exchanging identical manila folders'],
-  ['resign', 'resignImage', 50, 'a cardboard box holding a desk plant and a mug'],
+  ['home', 'homeImage', 140,
+    'a plain mid-century office block seen straight on, entrance at street level',
+    'a corporate arcology tower seen straight on, one lit lobby entrance at street level'],
+  ['officeparty', 'officePartyImage', 140,
+    'two paper cups touching in a toast, a few streamers behind them',
+    'two glowing drink capsules touching in a toast, light strips trailing behind them'],
+  ['meeting', 'meetingImage', 140,
+    'a presentation easel holding a chart whose line falls sharply',
+    'a floating holographic chart panel whose line falls sharply'],
+  ['businesstrip', 'businessTripImage', 140,
+    'a hard-shell suitcase beside a boarding pass with a small aeroplane above',
+    'a hard-shell case beside a transit chit with a small aircraft above'],
+  ['chance1', 'chanceImage1', 81, 'two dice mid-tumble', 'two dice mid-tumble, edges lit'],
+  ['chance2', 'chanceImage2', 81, 'a single die resting on one corner',
+    'a single die balanced on one corner, edges lit'],
+  ['chance3', 'chanceImage3', 81, 'three dice stacked in a pyramid',
+    'three dice stacked in a pyramid, edges lit'],
+  ['scruples1', 'scruplesImage1', 81, 'an oversized question mark inside a speech bubble',
+    'an oversized glowing question mark inside a hard-edged speech bubble'],
+  ['scruples2', 'scruplesImage2', 81, 'two arrows forking in opposite directions',
+    'two glowing arrows forking in opposite directions'],
+  ['scruples3', 'scruplesImage3', 81, 'a set of balance scales with one pan lower',
+    'a set of balance scales with one pan lower, the low pan glowing'],
+  ['powermonger', 'powerMongerImage', 81, 'a small crown resting in a desk in-tray',
+    'a small crown resting in a steel in-tray, crown glowing'],
+  ['maketrade', 'makeTradeImage', 81, 'two hands exchanging identical manila folders',
+    'two hands exchanging identical glowing data shards'],
+  ['resign', 'resignImage', 50, 'a cardboard box holding a desk plant and a mug',
+    'a crate holding a dying desk plant and a mug, one dead light strip'],
 ];
-for (const [id, file, size, subject] of BOARD) {
-  add({ kind: 'board', id, out: `${G}/forms/TMAINFORM/${file}.png`, size, subject });
+for (const [id, file, size, subject, subjectNeon] of BOARD) {
+  add({ kind: 'board', id, out: `${G}/forms/TMAINFORM/${file}.png`, size, subject, subjectNeon });
 }
 
 // Die faces. Generated models are poor at exact pip counts, so these are worth drawing by
@@ -81,6 +143,7 @@ for (let n = 1; n <= 6; n++) {
     out: `${G}/forms/TMAINFORM/dieImageList/${n - 1}.png`,
     size: 81,
     subject: `a single die face showing exactly ${n} pip${n === 1 ? '' : 's'}, seen flat on, red rounded square with white circular pips, no perspective`,
+    subjectNeon: `a single die face showing exactly ${n} pip${n === 1 ? '' : 's'}, seen flat on, dark rounded square with glowing magenta circular pips, no perspective`,
   });
 }
 
@@ -95,50 +158,81 @@ SEATS.forEach((feature, i) => {
     size: 32,
     cutout: true,
     subject: `a simple flat portrait bust of an office worker, shoulders up, facing forward, distinct silhouette, ${feature}`,
+    subjectNeon: `a simple flat portrait bust of a corporate operative, shoulders up, facing forward, distinct silhouette, ${feature}, rim-lit in neon`,
   });
 });
 
 const SEAT_TYPES = [
-  ['human', 'NEWGAMEHUMAN', 'a simple smiling face seen front on'],
-  ['computer', 'NEWGAMECOMPUTER', 'a boxy desktop computer with a blank screen'],
-  ['off', 'NEWGAMEOFF', 'an empty office chair seen from the side'],
+  ['human', 'NEWGAMEHUMAN', 'a simple smiling face seen front on',
+    'a simple face seen front on, one eye replaced by a glowing lens'],
+  ['computer', 'NEWGAMECOMPUTER', 'a boxy desktop computer with a blank screen',
+    'a server blade with a single glowing status light'],
+  ['off', 'NEWGAMEOFF', 'an empty office chair seen from the side',
+    'an empty chair seen from the side, its light strip dark'],
 ];
-for (const [id, file, subject] of SEAT_TYPES) {
-  add({ kind: 'seat', id: `seat-${id}`, out: `${G}/res/${file}.png`, size: 64, subject });
+for (const [id, file, subject, subjectNeon] of SEAT_TYPES) {
+  add({ kind: 'seat', id: `seat-${id}`, out: `${G}/res/${file}.png`, size: 64, subject, subjectNeon });
 }
 
 // ---------------------------------------------------------------- tier 3: event art
 const EVENTS = [
-  ['finishedproject', 'FINISHEDPROJECT', 'a document with a bold approval stamp across it'],
-  ['landown', 'LANDOWN', 'an office worker at a tidy desk, looking pleased'],
-  ['landother', 'LANDOTHER', 'an office worker carrying a tall stack of folders that are not theirs'],
-  ['setofprojects', 'SETOFPROJECTS', 'four matching folders fanned out in a row'],
-  ['stockbonus', 'STOCKBONUS', 'a small pay envelope with the edge of a banknote showing'],
-  ['trip', 'TRIP', 'a runway with an aeroplane lifting off'],
-  ['drink', 'DRINK', 'a tumbler tipping over with liquid arcing out'],
-  ['meetinggood', 'MEETINGGOOD', 'a chart line rising steeply with an approving thumb beside it'],
-  ['meetingbad', 'MEETINGBAD', 'a chart line collapsing with an empty chair beside it'],
-  ['disbanded1', 'COMPANYDISBANDED1', 'an office block with dark windows and a notice on the door'],
-  ['star', 'STAR', 'a single bold five-pointed star'],
-  ['scrupleschance', 'SCRUPLESCHANCE', 'a question mark and a die side by side'],
+  ['finishedproject', 'FINISHEDPROJECT', 'a document with a bold approval stamp across it',
+    'a data slab with a bold glowing approval sigil across it'],
+  ['landown', 'LANDOWN', 'an office worker at a tidy desk, looking pleased',
+    'an operative at a tidy terminal desk, lit from the screen, pleased'],
+  ['landother', 'LANDOTHER', 'an office worker carrying a tall stack of folders that are not theirs',
+    'an operative carrying a tall stack of glowing data slabs that are not theirs'],
+  ['setofprojects', 'SETOFPROJECTS', 'four matching folders fanned out in a row',
+    'four matching data shards fanned out in a row, all lit'],
+  ['stockbonus', 'STOCKBONUS', 'a small pay envelope with the edge of a banknote showing',
+    'a credit chip with its balance strip glowing'],
+  ['trip', 'TRIP', 'a runway with an aeroplane lifting off',
+    'a lit landing pad with a shuttle lifting off'],
+  ['drink', 'DRINK', 'a tumbler tipping over with liquid arcing out',
+    'a capsule tipping over with luminous liquid arcing out'],
+  ['meetinggood', 'MEETINGGOOD', 'a chart line rising steeply with an approving thumb beside it',
+    'a holographic chart line rising steeply, an approving thumb beside it'],
+  ['meetingbad', 'MEETINGBAD', 'a chart line collapsing with an empty chair beside it',
+    'a holographic chart line collapsing, an empty chair beside it'],
+  ['disbanded1', 'COMPANYDISBANDED1', 'an office block with dark windows and a notice on the door',
+    'an arcology tower with every window dark and a sealed door'],
+  ['star', 'STAR', 'a single bold five-pointed star', 'a single bold five-pointed star, emissive'],
+  ['scrupleschance', 'SCRUPLESCHANCE', 'a question mark and a die side by side',
+    'a glowing question mark and a die side by side'],
 ];
-for (const [id, file, subject] of EVENTS) {
-  add({ kind: 'event', id, out: `${G}/res/${file}.png`, size: 96, subject });
+for (const [id, file, subject, subjectNeon] of EVENTS) {
+  add({ kind: 'event', id, out: `${G}/res/${file}.png`, size: 96, subject, subjectNeon });
 }
 
 // Rank changes, escalating so the sequence reads as a promotion ladder.
 const PROMO = [
-  'a nameplate on a plain desk',
-  'a slightly larger private office',
-  'a corner office with two windows',
-  'an imposing boardroom chair at the head of a long table',
-  'a top-floor office window overlooking a city skyline',
+  ['a nameplate on a plain desk', 'a glowing nameplate on a plain steel desk'],
+  ['a slightly larger private office', 'a slightly larger private booth with its own light strip'],
+  ['a corner office with two windows', 'a corner office with two tall windows over a lit skyline'],
+  ['an imposing boardroom chair at the head of a long table',
+    'an imposing boardroom chair at the head of a long lit table'],
+  ['a top-floor office window overlooking a city skyline',
+    'a top-floor window overlooking a neon skyline from above the smog'],
 ];
-PROMO.forEach((subject, i) => {
-  add({ kind: 'rank', id: `promo${i + 1}`, out: `${G}/res/RANKPROMO${i + 1}.png`, size: 150, subject });
+PROMO.forEach(([subject, subjectNeon], i) => {
+  add({ kind: 'rank', id: `promo${i + 1}`, out: `${G}/res/RANKPROMO${i + 1}.png`, size: 150, subject, subjectNeon });
 });
-add({ kind: 'rank', id: 'demo', out: `${G}/res/RANKDEMO.png`, size: 150, subject: 'a lone desk pushed out into a bare corridor' });
-add({ kind: 'rank', id: 'demo-mailroom', out: `${G}/res/RANKDEMOMAILROOM.png`, size: 150, subject: 'a mail trolley in a windowless basement room' });
+add({
+  kind: 'rank',
+  id: 'demo',
+  out: `${G}/res/RANKDEMO.png`,
+  size: 150,
+  subject: 'a lone desk pushed out into a bare corridor',
+  subjectNeon: 'a lone desk pushed out into a bare corridor under one failing light',
+});
+add({
+  kind: 'rank',
+  id: 'demo-mailroom',
+  out: `${G}/res/RANKDEMOMAILROOM.png`,
+  size: 150,
+  subject: 'a mail trolley in a windowless basement room',
+  subjectNeon: 'a parcel trolley in a windowless sub-level, one dim light overhead',
+});
 
 // Winners: the same six faces, now behind an enormous desk.
 SEATS.forEach((feature, i) => {
@@ -148,6 +242,7 @@ SEATS.forEach((feature, i) => {
     out: `${G}/res/PLAYER${i + 1}PRES.png`,
     size: 150,
     subject: `an office worker with ${feature} seated behind an enormous executive desk in front of a city window, triumphant`,
+    subjectNeon: `a corporate operative with ${feature} seated behind an enormous executive desk in front of a neon skyline window, triumphant, rim-lit`,
   });
 });
 
@@ -171,6 +266,7 @@ for (const [list, size, pose] of POSES) {
       size,
       cutout: true,
       subject: `a full-body office worker with ${feature}, ${pose}, at an office party`,
+      subjectNeon: `a full-body corporate operative with ${feature}, ${pose}, at an office party, rim-lit in neon`,
     });
   });
 }
@@ -184,6 +280,8 @@ add({
   shape: 'landscape',
   // The game overlays its own title, so the top of the frame has to stay quiet.
   subject: 'an office block at dusk with a single lit window, wide establishing view, empty sky across the upper third',
+  subjectNeon:
+    'an arcology tower at night with a single lit window, wide establishing view, empty dark sky across the upper third',
 });
 add({
   kind: 'chrome',
@@ -192,6 +290,7 @@ add({
   size: 512,
   shape: 'landscape',
   subject: 'the same plain office block in flat daylight, wide establishing view',
+  subjectNeon: 'the same arcology tower under flat grey daylight, wide establishing view',
 });
 add({
   kind: 'chrome',
@@ -200,6 +299,7 @@ add({
   size: 32,
   cutout: true,
   subject: 'a single manila folder seen straight on, one bold emblematic shape',
+  subjectNeon: 'a single glowing data shard seen straight on, one bold emblematic shape',
 });
 
 // ---------------------------------------------------------------- card art (optional)
@@ -212,6 +312,7 @@ for (let i = 0; i < 30; i++) {
     out: `${G}/res/CHANCE${i}.png`,
     size: 96,
     subject: 'a wry vignette of an everyday office mishap, one clear subject',
+    subjectNeon: 'a wry vignette of an everyday mishap in a neon-lit office, one clear subject',
   });
 }
 for (let i = 0; i < 12; i++) {
@@ -221,13 +322,14 @@ for (let i = 0; i < 12; i++) {
     out: `${G}/res/SCRUPLES${i}.png`,
     size: 96,
     subject: 'a wry vignette of an office dilemma with two tempting paths, one clear subject',
+    subjectNeon: 'a wry vignette of a dilemma in a neon-lit office, two tempting paths, one clear subject',
   });
 }
 
 writeFileSync(resolve(ROOT, 'scripts/art-manifest.json'), `${JSON.stringify(jobs, null, 1)}\n`);
 
 const byKind = jobs.reduce((a, j) => ((a[j.kind] = (a[j.kind] || 0) + 1), a), {});
-console.log(`${jobs.length} jobs ->  scripts/art-manifest.json`);
+console.log(`${jobs.length} jobs (ART_STYLE=${STYLE_NAME})  ->  scripts/art-manifest.json`);
 console.log(
   Object.entries(byKind)
     .map(([k, n]) => `  ${k}: ${n}`)

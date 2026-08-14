@@ -8,8 +8,18 @@ Three steps, all resumable — existing outputs are skipped, so stop and restart
 
 ```bash
 npm run art:manifest   # build the job list -> scripts/art-manifest.json (134 jobs)
-npm run art:gen        # drive perchance (HEADED) -> art/_raw/*.png
+npm run art:gen        # drive perchance (HEADED) -> art/_raw/<style>/*.png
 npm run art:cutout     # cut, resize, place -> public/assets/graphics-gen/, rewrite manifest.txt
+```
+
+**Two house styles.** `ART_STYLE=neon` (the default) matches the interface reskin;
+`ART_STYLE=flat` is the earlier retro-corporate set. Raw output is per style, so switching
+regenerates rather than resuming on top of the other one's images — but both styles write to
+the *same* finished paths, so use `FORCE=1 npm run art:cutout` when replacing an installed set.
+Every command below takes it:
+
+```bash
+ART_STYLE=flat npm run art:gen
 ```
 
 ## One-time setup

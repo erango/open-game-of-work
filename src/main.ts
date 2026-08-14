@@ -232,27 +232,19 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     const rows: Array<{ kind: HTMLSelectElement; name: HTMLInputElement; pers: HTMLSelectElement }> = [];
 
     for (let i = 0; i < 6; i++) {
-      let seatRowTint = R.SEAT_ROW_COLORS[i];
       const seat = el('div', 'seat seat-with-face');
-      // The original's seat selector is a clickable image cycling three faces.
       const swatch = el('div', 'swatch');
       swatch.style.background = R.PLAYER_COLORS[i];
       // The original fills the whole seat row with its own tint; this dialog is dark, so it
-      // becomes a left-edge accent.
-      seatRowTint = R.SEAT_ROW_COLORS[i];
-      const faceImg = el('img', 'seat-face');
-      faceImg.draggable = false;
-      const paintFace = () => {
-        const src = seatFace(kind.value as 'human' | 'computer' | 'off');
-        faceImg.style.display = src ? '' : 'none';
-        if (src) faceImg.src = src;
-        faceImg.alt = kind.value;
-      };
+      // becomes a left-edge accent instead.
+      seat.style.borderLeft = `4px solid ${R.SEAT_ROW_COLORS[i]}`;
 
-      const name = el('input');
-      name.value = DEFAULT_NAMES[i];
-      name.maxLength = 14;
-
+      /**
+       * Seat type lives in a detached <select>, which stays the single source of truth and
+       * keeps the existing change-event plumbing, while the visible control is a button
+       * carrying the artwork and its word — the way the original presented it. The art is
+       * drawn at its native 64px, so nothing is resampled.
+       */
       const kind = el('select');
       (['human', 'computer', 'off'] as const).forEach((k) => {
         const o = el('option', undefined, k === 'off' ? 'Off' : k === 'human' ? 'Human' : 'Computer');
@@ -261,39 +253,59 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       });
       kind.value = i === 0 ? 'human' : i < 4 ? 'computer' : 'off';
 
+      const faceImg = el('img', 'seat-face');
+      faceImg.draggable = false;
+      const faceWord = el('span', 'seat-word');
+      const typeBtn = el('button', 'seat-type');
+      typeBtn.type = 'button';
+      typeBtn.append(faceImg, faceWord);
+
+      const name = el('input');
+      name.value = DEFAULT_NAMES[i];
+      name.maxLength = 14;
+
       const pers = el('select');
       const choices: PersonalityChoice[] = ['random', ...PERSONALITIES];
-      choices.forEach((p) => {
-        const o = el('option', undefined, p[0].toUpperCase() + p.slice(1));
-        o.value = p;
+      choices.forEach((pc) => {
+        const o = el('option', undefined, pc[0].toUpperCase() + pc.slice(1));
+        o.value = pc;
         pers.append(o);
       });
       // Random by default, so a fresh game is not the same four opponents every time.
       pers.value = 'random';
 
-      kind.addEventListener('change', () => {
-        sound.seatChanged(kind.value as 'human' | 'computer' | 'off');
-        paintFace();
-      });
+      const label = () =>
+        kind.value === 'off' ? 'Off' : kind.value === 'human' ? 'Human' : 'Computer';
+
       const sync = () => {
+        const src = seatFace(kind.value as 'human' | 'computer' | 'off');
+        faceImg.style.display = src ? '' : 'none';
+        if (src) faceImg.src = src;
+        faceImg.alt = '';
+        faceWord.textContent = label();
+        typeBtn.title = `${label()} — click to change`;
+        typeBtn.setAttribute('aria-label', `Seat ${i + 1}: ${label()}. Click to change.`);
         const off = kind.value === 'off';
         name.disabled = off;
         pers.disabled = off || kind.value === 'human';
         seat.style.opacity = off ? '0.45' : '1';
       };
-      kind.onchange = sync;
+
+      // One handler, so the order of side effects is explicit.
+      kind.addEventListener('change', () => {
+        sound.seatChanged(kind.value as 'human' | 'computer' | 'off');
+        sync();
+      });
       sync();
 
-      seat.style.borderLeft = `4px solid ${seatRowTint}`;
-      seat.style.paddingLeft = '8px';
-      paintFace();
-      // Clicking the face cycles Human -> Computer -> Off, as in the original.
-      faceImg.onclick = () => {
+      // Cycles Human -> Computer -> Off, as clicking the original's image does.
+      typeBtn.onclick = () => {
         const order = ['human', 'computer', 'off'];
         kind.value = order[(order.indexOf(kind.value) + 1) % order.length];
         kind.dispatchEvent(new Event('change'));
       };
-      seat.append(swatch, faceImg, name, kind, pers);
+
+      seat.append(swatch, typeBtn, name, pers);
       grid.append(seat);
       rows.push({ kind, name, pers });
     }

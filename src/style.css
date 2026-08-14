@@ -595,18 +595,45 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 .party-text { font-size: 14px; line-height: 1.45; }
 .party-delta { margin-top: 3px; font-size: 13px; }
 
-/* New Game seat selector: clickable face cycling human / computer / off. */
-.seat-with-face { grid-template-columns: 18px 34px 1fr 108px 130px; }
-
-.seat-face {
-  width: 34px;
-  height: 34px;
-  cursor: pointer;
-  border-radius: 4px;
-  image-rendering: pixelated;
+/* New Game seat selector: the artwork and its word in one clickable control, cycling
+   human / computer / off. Art is drawn at its native 64px so nothing is resampled — at 34px
+   the 64px source was downscaled by a non-integer factor and became illegible. */
+.seat-with-face {
+  grid-template-columns: 18px 152px minmax(0, 1fr) 140px;
+  align-items: center;
+  padding-left: 8px;
 }
 
-.seat-face:hover { outline: 2px solid var(--accent); }
+.seat-type {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 5px 10px 5px 5px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.seat-type:hover { border-color: var(--accent); background: #38404a; }
+
+.seat-face {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 4px;
+  image-rendering: pixelated;
+  background: #fff;
+}
+
+.art-smooth .seat-face { image-rendering: auto; }
+
+.seat-word { white-space: nowrap; }
 
 /* Original Chance / Scruples card artwork, shown when playing the original deck. */
 .card-art {

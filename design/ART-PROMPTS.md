@@ -1,5 +1,11 @@
 # Art prompts for an alternative illustration set
 
+**These prompts are automated.** `scripts/art-manifest.mjs` holds the same house style and
+subjects in machine-readable form, and `npm run art:gen` drives perchance through a real
+browser to produce the whole set — see `scripts/README-art-pipeline.md`. This document is the
+human-readable version: the reasoning, the tier ordering, and what to check. Edit the `.mjs`
+and re-run `npm run art:manifest` if you change a prompt.
+
 Prompts for a free image generator (Perchance, or anything similar). The goal is an **original**
 illustrated set for the same functional slots the game already has — not a reproduction of the
 2000 game's drawings. Never ask a generator to imitate, recreate or match the original's

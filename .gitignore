@@ -6,3 +6,6 @@ dist/
 public/assets/
 __pycache__/
 *.pyc
+art/_raw/
+.cache/
+scripts/art-manifest.json

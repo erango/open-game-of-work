@@ -1,0 +1,93 @@
+# Automated art pipeline
+
+Generates an alternative illustration set on [perchance.org](https://perchance.org) through a
+real browser, then post-processes each image into the exact slot the game loads. Adapted from
+the pipeline in `dungeon-vengeance`, which had already solved the awkward parts.
+
+Three steps, all resumable — existing outputs are skipped, so stop and restart freely.
+
+```bash
+npm run art:manifest   # build the job list -> scripts/art-manifest.json (134 jobs)
+npm run art:gen        # drive perchance (HEADED) -> art/_raw/*.png
+npm run art:cutout     # cut, resize, place -> public/assets/graphics/, rewrite manifest.txt
+```
+
+## One-time setup
+
+```bash
+npm i                                    # playwright (no browser download; uses real Chrome)
+python3 -m venv .cache/venv
+.cache/venv/bin/python -m pip install rembg pillow onnxruntime
+```
+
+`npm run art:cutout` picks up `.cache/venv` automatically and falls back to `python3`.
+
+## `art:gen` — read before the first run
+
+**Use real Chrome.** Playwright's bundled Chromium is fingerprinted as a bot and Cloudflare
+blocks it. Two modes:
+
+1. **Your own Chrome over CDP** (best, since the profile is trusted). Quit Chrome, then launch
+   it with a *dedicated* profile directory — Chrome 136+ refuses debugging on the default one —
+   clear Cloudflare once in that window, and connect:
+   ```bash
+   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+     --remote-debugging-port=9222 --user-data-dir="$HOME/.cache/ogow-chrome"
+   CDP=1 npm run art:gen
+   ```
+2. **Let the script launch Chrome** with a persistent profile in `.cache/chrome-perchance/`:
+   just `npm run art:gen`, and solve any Cloudflare challenge once in the window.
+
+Useful flags:
+
+```bash
+node scripts/perchance-gen.mjs board      # one kind: board die player seat event rank winner party chrome card
+node scripts/perchance-gen.mjs home       # one id, or any substring
+FORCE=1 node scripts/perchance-gen.mjs home
+SEED=123456 npm run art:gen               # default 770770, fixed so the set stays coherent
+```
+
+Per job it pins **style → No style** so the prompt drives the result, sets the shape from the
+job, sets the seed, types the prompt with real keystrokes, clicks generate, and waits for a
+*new* result in the embed frame, rejecting anything under 6 kB.
+
+If perchance changes its markup, re-probe the selectors — the ones in use are
+`textarea.paragraph-input[data-name="description"]` for the prompt (note: **not**
+`#positivePromptInput`, which is a decoy tag box), `#generateButtonEl`, `#imageSeed`, and the
+style/shape `<select>`s found by their option text.
+
+## `art:cutout`
+
+- **Per-job size.** Targets run from 16px portraits to 150px rank art, so the size comes from
+  the job, not one global setting.
+- **Per-job transparency.** Board tiles are drawn edge to edge and keep their background.
+  Anything drawn *over* something else — tokens, party sprites, the icon — is cut out with
+  `rembg`, trimmed to content and padded to a centred square so nothing clips.
+- **Derived sizes.** The 16px stats portrait is a downscale of the 32px avatar rather than its
+  own generation, so the two can never drift apart.
+- **Landscape jobs** (splash, about) keep their aspect ratio.
+- **Rewrites `manifest.txt`** from whatever is on disk, which is how the game discovers the set.
+
+```bash
+npm run art:cutout -- party        # filter by kind or id
+FORCE=1 npm run art:cutout         # redo existing
+REMBG_MODEL=u2net npm run art:cutout   # lighter model; default birefnet-general is ~1GB
+```
+
+## Where the prompts live
+
+`scripts/art-manifest.mjs` is the machine-readable source: a shared house-style string plus a
+subject per slot. `design/ART-PROMPTS.md` is the same thing written for a human, with the
+reasoning and the tier ordering. Edit the `.mjs` and re-run `npm run art:manifest`.
+
+Two things worth keeping in mind:
+
+- **Draw the die faces by hand.** Six pips on a rounded square survive 81px; a generator's
+  attempt at an exact pip count will not. The jobs exist so the set is complete if you try.
+- **The splash needs its upper third quiet**, because the game overlays its own title there.
+
+## Output and licensing
+
+Everything lands in `public/assets/graphics/`, which is gitignored because it normally holds
+material extracted from the original game. A set you generated is **your own work**, so if you
+want it committed, add a negative pattern for those paths rather than dropping the rule.

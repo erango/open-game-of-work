@@ -716,12 +716,16 @@ export class Ui {
         img.draggable = false;
         d.append(img);
       }
+      // Name and text share one wrapper. Without it they are separate grid items, and a bare
+      // text node becomes an anonymous item that wraps into the 44px art column.
+      const body = el('div', 'log-text');
       if (entry.playerId !== null) {
         const b = el('b', undefined, `${game.player(entry.playerId).name}: `);
         b.style.color = game.player(entry.playerId).color;
-        d.append(b);
+        body.append(b);
       }
-      d.append(document.createTextNode(entry.text));
+      body.append(document.createTextNode(entry.text));
+      d.append(body);
       log.append(d);
     }
     logCard.append(log);

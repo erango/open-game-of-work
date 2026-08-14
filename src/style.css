@@ -626,11 +626,14 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
    folding). Those appear beside the matching log entry instead of as extra dialogs. */
 .log-with-art {
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: 44px minmax(0, 1fr);
   gap: 8px;
   align-items: start;
   padding: 5px 0;
 }
+
+/* Name and message in one item, so the grid always has exactly two children. */
+.log-text { min-width: 0; overflow-wrap: anywhere; }
 
 .log-art {
   width: 44px;

@@ -812,8 +812,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   cursor: pointer;
 }
 
+/* `.menu-top:hover` outranks `.menu-open` on specificity, so hovering an open menu kept the
+   dark hover background while the open state's dark text still applied, and the label all but
+   vanished. The hovered case is stated explicitly: dark background, white label. */
 .menu-top:hover { background: var(--panel-2); }
 .menu-open { background: var(--accent); color: #1a1408; }
+.menu-open:hover { background: var(--panel-2); color: #fff; }
 
 .menu-drop {
   position: absolute;

@@ -814,6 +814,49 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 }
 /* The splash waits for a click, so give it an explicit affordance. */
 .splash-go { margin-top: 4px; padding: 10px 26px; font-size: 15px; }
+/* -------- theme change sweep. A band of light crossing the screen while the palette, the
+   artwork and the music all swap behind it. Screen blend, so it lifts what it passes over
+   rather than covering it.
+
+   Animated with a transform rather than background-position: percentage background positions
+   are relative to (background size - element size), so with an oversized gradient the bright
+   stripe spent most of the sweep off-screen. */
+.theme-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+.theme-wipe::after {
+  content: '';
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  left: 0;
+  width: 38vw;
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    rgb(255 255 255 / .05) 26%,
+    var(--accent-2) 45%,
+    rgb(255 255 255 / .95) 50%,
+    var(--accent-2) 55%,
+    rgb(255 255 255 / .05) 74%,
+    transparent 100%
+  );
+  animation: theme-wipe .52s cubic-bezier(.35, 0, .25, 1) forwards;
+  will-change: transform;
+}
+@keyframes theme-wipe {
+  from { transform: translateX(-45vw) skewX(-12deg); }
+  to { transform: translateX(125vw) skewX(-12deg); }
+}
+/* The sweep is decoration over a change that has already happened, so it is simply skipped. */
+@media (prefers-reduced-motion: reduce) {
+  .theme-wipe { display: none; }
+}
 /* ---------------------------------------------------------------- dialogs */
 
 .scrim {

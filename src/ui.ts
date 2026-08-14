@@ -1,6 +1,6 @@
 import { CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, PROJECT_TILE, SQUARES, tokenOffset } from './board';
 import { assetsAvailable, centerImage, cursorUrl, dieFace, eventArt, playerPortrait, playerToken, squareImage } from './assets';
-import { availableThemes, setTheme, themeLabel, themeName, type ThemeName } from './theme';
+import { availableThemes, themeLabel, themeName, type ThemeName } from './theme';
 import { RESIGN_ICON, TRADE_ICON, squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
@@ -75,6 +75,7 @@ function pipGrid(n: number): HTMLElement {
 
 export interface UiHandlers {
   onGraphicsChanged(): void;
+  onPickTheme(next: ThemeName): void;
   onToggleSound(): void;
   onToggleMusic(): void;
   musicOn(): boolean;
@@ -114,10 +115,10 @@ export class Ui {
    * assemble combinations nobody designed, like the original's light pixel tiles on the neon
    * surface.
    */
-  private pickTheme(next: ThemeName, game: Game): void {
-    setTheme(next);
-    this.handlers.onGraphicsChanged();
-    this.render(game);
+  private pickTheme(next: ThemeName): void {
+    // main.ts owns what applying a theme entails — palette, artwork, favicon, music and the
+    // sweep across the screen — and re-renders when the swap lands.
+    this.handlers.onPickTheme(next);
   }
   /**
    * How board text grows as the board scales up.
@@ -296,7 +297,7 @@ export class Ui {
           ...availableThemes().map((name) => ({
             label: `${themeLabel(name)} theme`,
             check: themeName() === name,
-            run: () => this.pickTheme(name, game),
+            run: () => this.pickTheme(name),
           })),
           { label: '', sep: true },
           {
@@ -383,7 +384,7 @@ export class Ui {
               name,
               themeLabel(name),
               themeName() === name,
-              () => this.pickTheme(name, game),
+              () => this.pickTheme(name),
             ] as [string, string, boolean, () => void],
         ),
       ),

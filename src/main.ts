@@ -36,18 +36,49 @@ function applySmoothing(): void {
 }
 
 /**
+ * A light sweep across the screen, to cover the moment the whole look changes.
+ *
+ * Every colour, every tile and the music all change at once, which is abrupt enough to read as
+ * a glitch. The swap happens mid-sweep, behind the bright part of the band, so what you see is
+ * one transition rather than a dozen simultaneous ones. Skipped under
+ * `prefers-reduced-motion`, where the swap is immediate instead.
+ */
+const WIPE_MS = 520;
+/** How far into the sweep the swap happens: just as the bright edge crosses the middle. */
+const WIPE_SWAP_MS = 190;
+
+function themeWipe(): boolean {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  const layer = el('div', 'theme-wipe');
+  document.body.append(layer);
+  const done = () => layer.remove();
+  layer.addEventListener('animationend', done, { once: true });
+  // Belt and braces: an interrupted animation must not leave the layer over the board.
+  window.setTimeout(done, WIPE_MS + 400);
+  return true;
+}
+
+/**
  * Applies a theme completely: palette, artwork, favicon, scaling mode and music.
  *
  * Everything that switches theme goes through here. It was three call sites doing three
  * different subsets — the New Game picker changed the palette and re-rendered but left the
  * music and the crisp-rendering class on the previous theme's settings.
+ *
+ * `after` runs once the swap has landed, since a caller that reflects the current theme in its
+ * own controls has to update after it changes, not before.
  */
-function applyTheme(next: ThemeName): void {
-  setTheme(next);
-  applyFavicon();
-  applySmoothing();
-  void sound.retheme();
-  ui.render(game);
+function applyTheme(next: ThemeName, after?: () => void): void {
+  const swap = () => {
+    setTheme(next);
+    applyFavicon();
+    applySmoothing();
+    void sound.retheme();
+    ui.render(game);
+    after?.();
+  };
+  if (themeWipe()) window.setTimeout(swap, WIPE_SWAP_MS);
+  else swap();
 }
 
 /** Guards against re-entrant AI stepping. */
@@ -274,10 +305,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       b.type = 'button';
       b.setAttribute('role', 'radio');
       b.title = themeBlurb(name);
-      b.onclick = () => {
-        applyTheme(name);
-        syncTheme();
-      };
+      b.onclick = () => applyTheme(name, syncTheme);
       themeSeg.append(b);
       return [name, b] as const;
     });
@@ -505,6 +533,7 @@ async function askAutoClick(): Promise<void> {
 function stubHandlers() {
   return {
     onGraphicsChanged() {},
+    onPickTheme() {},
     onToggleSound() {},
     onToggleMusic() {},
     musicOn() {
@@ -1710,6 +1739,9 @@ async function step(): Promise<void> {
 
 function handlers() {
   return {
+    onPickTheme(next: ThemeName) {
+      applyTheme(next);
+    },
     onGraphicsChanged() {
       /*
        * The Ui has already called setTheme; this finishes the job. Artwork, favicon, scaling

@@ -233,6 +233,15 @@ export class Ui {
         this.openMenu = this.openMenu === m.name ? null : m.name;
         this.renderMenu(game);
       };
+      // Windows menubar behaviour: once one menu is open, moving across its siblings opens
+      // them in turn without a further click. Hovering while nothing is open does nothing.
+      // The name guard also stops a loop, since re-rendering replaces the element under the
+      // cursor and the browser fires mouseenter again on the replacement.
+      top.onmouseenter = () => {
+        if (this.openMenu === null || this.openMenu === m.name) return;
+        this.openMenu = m.name;
+        this.renderMenu(game);
+      };
       wrap.append(top);
       if (this.openMenu === m.name) {
         const drop = el('div', 'menu-drop');

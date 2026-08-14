@@ -233,6 +233,11 @@ html, body {
 /* Open state stated for the hovered case too. Letting :hover outrank it is what made the
    label vanish before; a filled background also changed the label's advance width and shifted
    every button along the bar, so the open marker is an underline. */
+/* Handoff, menu bar: "Neon palette only: labels uppercase, letter-spacing .06em". */
+:root[data-palette="neon"] .menu-top {
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
 .menu-open,
 .menu-open:hover { color: var(--ink); border-bottom-color: var(--accent-2); font-weight: 600; }
 .menu-drop {
@@ -990,16 +995,19 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   top: -4px;
   box-shadow: -1px -1px 0 0 var(--panel-line);
 }
-/* Neon: a lit hairline and a chamfered corner, matching the tiles and the segmented controls. */
+/* Neon: a lit hairline. No chamfer — clipping the corner cost the arrow (clip-path applies to
+   the whole element) and read as a rendering fault rather than as a cut. */
 :root[data-palette="neon"] .tip {
   background: var(--inset);
   box-shadow:
     inset 0 0 0 1px var(--accent-2),
     0 0 18px rgb(0 0 0 / .7);
-  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
-/* clip-path would cut the arrow off, so under neon the box carries the point on its own. */
-:root[data-palette="neon"] .tip::after { display: none; }
+:root[data-palette="neon"] .tip::after {
+  background: var(--inset);
+  box-shadow: 1px 1px 0 0 var(--accent-2);
+}
+:root[data-palette="neon"] .tip-below::after { box-shadow: -1px -1px 0 0 var(--accent-2); }
 @media (prefers-reduced-motion: reduce) {
   .tip { transition: none; }
 }

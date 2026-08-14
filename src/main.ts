@@ -304,6 +304,12 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     const themeSeg = el('div', 'segmented theme-seg');
     themeSeg.setAttribute('role', 'radiogroup');
     themeSeg.setAttribute('aria-label', 'Theme');
+    /*
+     * A theme change swaps the seat artwork too, and these rows are built once when the dialog
+     * opens — so each row's sync is collected here and re-run. Without it the seat art stayed
+     * on the previous theme's set until the dialog was reopened.
+     */
+    const seatSyncs: Array<() => void> = [];
     const themeButtons = availableThemes().map((name) => {
       const b = el('button', 'segment', themeLabel(name));
       b.type = 'button';
@@ -323,6 +329,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       // A theme brings its own pack, so the select has to show what the theme just chose.
       // Changing it afterwards still wins — until the theme changes again.
       deckSel.value = deckMode();
+      for (const sync of seatSyncs) sync();
     };
     syncTheme();
     themeField.append(themeSeg, themeBlurbLine);
@@ -431,6 +438,8 @@ async function askNewGame(): Promise<NewGameConfig | null> {
         bar.style.opacity = off ? '0.35' : '1';
         updateCount();
       };
+
+      seatSyncs.push(sync);
 
       // One handler, so the order of side effects is explicit.
       kind.addEventListener('change', () => {

@@ -441,7 +441,9 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   font-weight: 600;
   letter-spacing: var(--track-adj);
   text-transform: uppercase;
-  line-height: 11px;
+  /* 11px against the design's 8.5px: kept as a ratio so it tracks --text-k. A fixed px
+     leading left the two lines too far apart whenever the multiplier was below 1. */
+  line-height: 1.294;
   color: var(--tile-ink-dim);
   white-space: nowrap;
 }
@@ -449,7 +451,8 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   font-size: calc(11.5px * var(--text-k, 1));
   font-weight: 600;
   letter-spacing: -.008em;
-  line-height: 14px;
+  /* 14px against the design's 11.5px, as a ratio for the same reason. */
+  line-height: 1.217;
   color: var(--tile-ink-dim);
   white-space: nowrap;
 }

@@ -125,7 +125,7 @@ export class Ui {
    * The board is transform-scaled, so text scales with it and stays proportionally faithful.
    * That reads heavy on a large display: the original was drawn for a 776px board on an
    * 800x600 screen, where its text was relatively much larger than it needs to be at 2.6x on
-   * a 27-inch monitor. 'comfortable' grows text by scale^0.6 rather than scale, applied as a
+   * a 27-inch monitor. 'comfortable' grows text by scale^0.8 rather than scale, applied as a
    * `--text-k` multiplier so no re-render is needed on resize. 'proportional' is the faithful
    * behaviour, kept as an option.
    */
@@ -221,12 +221,17 @@ export class Ui {
     this.boardWrap.style.width = `${Math.round(DESIGN_WIDTH * scale)}px`;
     this.boardWrap.style.height = `${Math.round(DESIGN_HEIGHT * scale)}px`;
 
-    // Counter-scale text so it grows by scale^0.6 overall. Floored so it never gets so small
-    // that a name stops fitting the label it was measured against.
+    /*
+     * Counter-scale text so it grows by scale^0.8 overall. The exponent was 0.6, which put
+     * board text ~12% under the sizes the design specifies at any ordinary window size — the
+     * design's numbers are for 1x, and the point of this multiplier is only to stop type
+     * ballooning on a very large display. Floored so a name never stops fitting the label it
+     * was measured against.
+     */
     const k =
       this.textMode === 'proportional' || scale <= 1
         ? 1
-        : Math.max(0.62, Math.pow(scale, -0.4));
+        : Math.max(0.7, Math.pow(scale, -0.2));
     this.board.style.setProperty('--text-k', k.toFixed(3));
   }
 

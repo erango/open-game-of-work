@@ -34,6 +34,9 @@ const PROFILE = resolve(ROOT, ".cache/chrome-perchance");
 const RAW_DIR = resolve(ROOT, "art/_raw");
 const CDP = process.env.CDP_URL || (process.env.CDP ? "http://127.0.0.1:9222" : null);
 const SEED = process.env.SEED || "770770"; // fixed → coherent set; numeric
+// One image per job. The generator defaults to four, and we keep exactly one of them, so the
+// other three are pure wasted wall-clock — the run is bound by generation time, not by choice.
+const COUNT = process.env.COUNT || "1";
 const FORCE = process.env.FORCE === "1"; // regenerate even if output exists
 const PER_JOB_MS = 110000;
 const MIN_BYTES = 6000;
@@ -96,6 +99,31 @@ const chooseOption = (identifyRe, wantRe) => frame.evaluate(({ identifyRe, wantR
   return "ok";
 }, { identifyRe, wantRe });
 
+/**
+ * Sets the "how many" control as low as it goes. The select is `[data-name="numImages"]` and
+ * its options are 4, 6, 8, 16, 32, 2 — in that order, with **no 1** and 4 preselected. We keep
+ * exactly one image per job, so the default wastes three generations per job; 2 is the floor.
+ * Asking for a value it does not offer falls back to the smallest option rather than leaving 4.
+ */
+const setCount = (n) => frame.evaluate((n) => {
+  const fire = (el) => {
+    for (const t of ["input", "change"]) el.dispatchEvent(new Event(t, { bubbles: true }));
+  };
+  const byName = document.querySelector('select[data-name="numImages"]');
+  const heuristic = [...document.querySelectorAll("select")].find((s) => {
+    const v = [...s.options].map((o) => o.value.trim());
+    return v.length >= 2 && v.every((x) => /^([1-9]|1[0-6]|32)$/.test(x));
+  });
+  const sel = byName || heuristic;
+  if (!sel) return "not-found";
+  const values = [...sel.options].map((o) => o.value.trim());
+  const want = values.includes(String(n))
+    ? String(n)
+    : String(Math.min(...values.map(Number).filter((x) => Number.isFinite(x))));
+  if (sel.value !== want) { sel.value = want; fire(sel); }
+  return `${want}${want === String(n) ? "" : ` (${n} not offered)`}`;
+}, n);
+
 const setSeed = (seed) => frame.evaluate((s) => {
   const set = (el) => { if (!el) return; el.value = s; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); };
   set(document.querySelector("#imageSeed"));
@@ -149,12 +177,14 @@ let ok = 0, fail = 0, aborted = false;
 await killDialogs();
 const styleRes = await chooseOption("painted anime", "no style");
 console.log("style → No style:", styleRes);
+console.log(`how many → ${COUNT}:`, await setCount(COUNT));
 
 for (const [i, job] of jobs.entries()) {
   process.stdout.write(`[${i + 1}/${jobs.length}] ${job.id} … `);
   try {
     await killDialogs();
     await chooseOption("painted anime", "no style"); // keep it pinned
+    await setCount(COUNT); // ditto: generating four and keeping one is three wasted images
     await chooseOption("512x512px|portrait\\(512|landscape", job.shape === "landscape" ? "landscape" : "square");
     await setSeed(SEED);
     await typeInto(POS, job.prompt);

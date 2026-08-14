@@ -1,4 +1,5 @@
 import { MidiPlayer } from './midiPlayer';
+import { Sfx, type Voice } from './sfx';
 import { themeName, type ThemeName } from './theme';
 /**
  * Optional audio.
@@ -167,6 +168,7 @@ export class Sound {
   /** What should be playing, so a theme change can restart the same track from the new set. */
   private trackName: MusicTrack | null = null;
   private duckTimer = 0;
+  private sfx = new Sfx();
   private cache = new Map<Cue, HTMLAudioElement | null>();
   private enabled: boolean;
   /**
@@ -371,13 +373,32 @@ export class Sound {
   play(cue: Cue): void {
     if (!this.enabled) return;
     this.duck();
+    /*
+     * Under the Original theme the extracted recordings are the point, so they come first.
+     * Under our own themes the synthesised voice in sfx.ts *is* the sound design — a theme's
+     * effects are then a handful of numbers rather than a second directory of files — so it
+     * wins for every cue it covers, and only speech falls through to a recording.
+     */
+    const voice = this.voice();
+    if (themeName() !== 'original' && this.sfx.covers(cue, voice)) {
+      this.sfx.play(cue, voice);
+      return;
+    }
     const cached = this.cache.get(cue);
-    if (cached === null) return; // known missing
+    if (cached === null) {
+      // Probed and absent: synthesise it rather than saying nothing.
+      this.sfx.play(cue, voice);
+      return;
+    }
     if (cached) {
       void this.fire(cached);
       return;
     }
     void this.resolve(cue);
+  }
+
+  private voice(): Voice {
+    return themeName() === 'cyberpunk' ? 'cyber' : 'office';
   }
 
   /** Filenames to try for a cue, expanding the parameterised forms. */
@@ -413,6 +434,9 @@ export class Sound {
       }
     }
     this.cache.set(cue, null);
+    // Nothing on disk for this cue, so the synth covers it if it can. Only reached on the first
+    // probe; later calls take the `cached === null` path in play().
+    if (autoplay) this.sfx.play(cue, this.voice());
   }
 
   /** Plays a clip and resolves when it ends, so speech can be sequenced. */

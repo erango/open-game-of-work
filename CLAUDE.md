@@ -98,7 +98,28 @@ rewrites only the generated one.
 `engine.ts` DOM-free state machine · `ai.ts` four personalities · `autoplay.ts` headless
 driver · `ui.ts` renderer · `main.ts` modal flow · `decks.ts`/`originalCards.ts` deck
 selection · `help.ts`/`highscores.ts` · `sound.ts`/`midi.ts`/`midiPlayer.ts` audio ·
-`assets.ts`/`icons.ts` art. Card text lives in `cards.ts` and `cardsNeon.ts`.
+`assets.ts`/`icons.ts` art · `sfx.ts` synthesised effects · `theme.ts` the one look choice ·
+`tooltip.ts` drawn tooltips. Card text lives in `cards.ts` and `cardsNeon.ts`.
+
+### Effects are synthesised, music and speech are files
+
+`sfx.ts` builds one-shots in Web Audio as they play, with one voice per theme. This is not
+squeamishness about assets:
+
+- **`move` fires once per square** — hundreds of times a game. The same recording that often is
+  what makes a game feel cheap; a voice built per call, with pitch and level nudged each time,
+  never quite repeats.
+- **A theme's sound is then a handful of numbers** rather than a second directory of files. The
+  office and cyberpunk voices share their *timing* exactly and differ in oscillator and filter,
+  which is what makes them read as one game in different clothes.
+- `Math.random` is used deliberately and only here. Presentation must not draw on the engine's
+  seeded stream.
+
+`Sound.play` picks the source by theme: under Original the extracted recordings come first,
+under our own themes the synth wins for every cue it covers, and **speech always falls through
+to a recording** — the per-name and per-seat clips are part of what makes the recovered game
+itself, and synthesising them would be worse than silence. A cue with no recording and no recipe
+is simply silent.
 
 ### Three card packs, interchangeable by design
 

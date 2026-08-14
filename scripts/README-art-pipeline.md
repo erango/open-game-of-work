@@ -9,7 +9,7 @@ Three steps, all resumable — existing outputs are skipped, so stop and restart
 ```bash
 npm run art:manifest   # build the job list -> scripts/art-manifest.json (134 jobs)
 npm run art:gen        # drive perchance (HEADED) -> art/_raw/*.png
-npm run art:cutout     # cut, resize, place -> public/assets/graphics/, rewrite manifest.txt
+npm run art:cutout     # cut, resize, place -> public/assets/graphics-gen/, rewrite manifest.txt
 ```
 
 ## One-time setup
@@ -66,7 +66,8 @@ style/shape `<select>`s found by their option text.
 - **Derived sizes.** The 16px stats portrait is a downscale of the 32px avatar rather than its
   own generation, so the two can never drift apart.
 - **Landscape jobs** (splash, about) keep their aspect ratio.
-- **Rewrites `manifest.txt`** from whatever is on disk, which is how the game discovers the set.
+- **Rewrites `graphics-gen/manifest.txt`** from what is on disk, which is how the game discovers
+  the set. The extracted originals have their own manifest and are never touched.
 
 ```bash
 npm run art:cutout -- party        # filter by kind or id

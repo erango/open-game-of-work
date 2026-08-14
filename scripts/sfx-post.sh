@@ -29,6 +29,7 @@ command -v ffmpeg >/dev/null || { echo "ffmpeg not found. brew install ffmpeg"; 
 node scripts/sfx-manifest.mjs >/dev/null
 
 written=0; skipped=0; missing=0; failed=0
+short=()
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -38,6 +39,8 @@ while IFS=$'\t' read -r id raw out; do
     for f in "${FILTER[@]}"; do [[ "$id" == *"$f"* ]] && match=1; done
     [ $match -eq 1 ] || continue
   fi
+  # The manifest module prints a summary when imported, so ignore anything that is not a row.
+  [[ "$raw" == art/* ]] || continue
   if [ ! -f "$raw" ]; then missing=$((missing+1)); continue; fi
   if [ -f "$out" ] && [ "$FORCE" != "1" ]; then skipped=$((skipped+1)); continue; fi
 
@@ -68,6 +71,11 @@ areverse" -ar 44100 -ac 1 "$trimmed" 2>/dev/null; then
     -af "volume=${gain}dB,afade=t=out:st=${fade_at}:d=0.05" \
     -ar 44100 -ac 1 -codec:a libmp3lame -q:a 4 "$out" 2>/dev/null; then
     printf 'ok   %-32s %5.2fs  peak %6s -> %s dB\n' "$id" "$dur" "$peak" "$PEAK_DB"
+    # A finished clip much shorter than asked for means the model produced a blip and padded it
+    # with silence, which the trim then removed. The file is fine; the generation is thin.
+    if awk "BEGIN{exit !(${dur} < 0.8)}"; then
+      short+=("$id ($(printf '%.2f' "$dur")s)")
+    fi
     written=$((written+1))
   else
     echo "FAIL $id (encode)"; failed=$((failed+1))
@@ -79,3 +87,8 @@ done < <(node --input-type=module -e '
 
 echo
 echo "done: $written written, $skipped already done, $missing awaiting generation, $failed failed."
+if [ ${#short[@]} -gt 0 ]; then
+  echo
+  echo "thin generations (under 0.8s after trimming) — worth a FORCE=1 sfx:gen on these:"
+  for s in "${short[@]}"; do echo "  $s"; done
+fi

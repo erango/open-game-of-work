@@ -1,5 +1,5 @@
 import { MidiPlayer } from './midiPlayer';
-import { sceneName } from './sceneCues';
+import { SCENE_CUES, sceneName } from './sceneCues';
 import { Sfx, type Voice } from './sfx';
 import { themeName, type ThemeName } from './theme';
 /**
@@ -157,6 +157,18 @@ const SCENE_DIR: Record<ThemeName, string> = {
   cyberpunk: 'cyberpunk',
 };
 
+/**
+ * Whether a HEAD response is really an audio file.
+ *
+ * A 200 is not proof: a dev server (and many SPA hosts) answer unknown paths with index.html, so
+ * probing for a file that does not exist returned OK and the game then tried to play a page of
+ * HTML. Checking the content type is what actually distinguishes the two.
+ */
+function isAudio(res: Response): boolean {
+  const type = res.headers.get('content-type') ?? '';
+  return res.ok && (type.startsWith('audio/') || type === 'application/octet-stream');
+}
+
 export class Sound {
   /**
    * Spoken cues are serialized through this chain.
@@ -289,7 +301,7 @@ export class Sound {
       const url = `${MUSIC_BASE}${key}.mp3`;
       try {
         const res = await fetch(url, { method: 'HEAD' });
-        if (!res.ok) return null;
+        if (!isAudio(res)) return null;
         const audio = new Audio(url);
         audio.preload = 'auto';
         return audio;
@@ -429,6 +441,21 @@ export class Sound {
     return themeName() === 'cyberpunk' ? 'cyber' : 'office';
   }
 
+  /**
+   * Probes every scene recording for the current theme up front.
+   *
+   * Without this the first occurrence of each cue plays the synth while its file is still being
+   * looked for, which is a per-session gap on the very moments that most want the recording.
+   * Twelve HEADs on a theme change is a fair price; results are cached per theme.
+   */
+  warmScenes(): void {
+    if (!this.enabled) return;
+    // The Original theme plays the recovered recordings and ships no scene set, so probing for
+    // one is twelve requests that can only fail.
+    if (themeName() === 'original') return;
+    for (const name of SCENE_CUES) void this.scene(name as Cue);
+  }
+
   /** Whether a recording for this cue is known present, known absent, or not yet probed. */
   private sceneReady(cue: Cue): 'yes' | 'no' | 'unknown' {
     const name = sceneName(cue);
@@ -454,7 +481,7 @@ export class Sound {
         (async () => {
           try {
             const res = await fetch(`${SCENE_BASE}${key}.mp3`, { method: 'HEAD' });
-            if (!res.ok) return null;
+            if (!isAudio(res)) return null;
             const audio = new Audio(`${SCENE_BASE}${key}.mp3`);
             audio.preload = 'auto';
             return audio;
@@ -495,7 +522,7 @@ export class Sound {
       const url = BASE + file;
       try {
         const res = await fetch(url, { method: 'HEAD' });
-        if (!res.ok) continue;
+        if (!isAudio(res)) continue;
         const audio = new Audio(url);
         audio.preload = 'auto';
         this.cache.set(cue, audio);

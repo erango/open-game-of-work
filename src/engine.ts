@@ -811,7 +811,10 @@ export class Game {
     p.personality = this.resolvePersonality('random');
     for (const q of this.state.players) if (q.id !== p.id) p.friendliness[q.id] = 0;
     this.cue('resign');
-    this.log(`${p.name} resigns. A ${p.personality} computer player takes over the seat.`, p.id);
+    // 'an ambitious computer player', not 'a ambitious' — personalities start with a vowel often
+    // enough for the wrong article to be the first thing you notice in the log.
+    const article = /^[aeiou]/i.test(p.personality ?? '') ? 'An' : 'A';
+    this.log(`${p.name} resigns. ${article} ${p.personality} computer player takes over the seat.`, p.id);
   }
 
   /** Ends the current turn and moves to the next player. */

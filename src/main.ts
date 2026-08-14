@@ -84,6 +84,7 @@ function applyTheme(next: ThemeName, after?: () => void): void {
     applyFavicon();
     applySmoothing();
     void sound.retheme();
+    sound.warmScenes();
     ui.render(game);
     after?.();
   };
@@ -500,6 +501,47 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     m.append(foot);
     return m;
   });
+}
+
+/**
+ * Confirms a resignation.
+ *
+ * This was a native `confirm()`, which is the one dialog the game did not draw: unstyled,
+ * unthemed, and blocking. It also cannot be dismissed like the others, which is how it went
+ * unnoticed — nothing else in the game behaves that way.
+ */
+async function askResign(): Promise<void> {
+  const p = game.active;
+  if (p.kind !== 'human' || game.state.rolled) return;
+  const go = await ui.modal<boolean>((done) => {
+    const d = Ui.modalShell('Resign', `${p.name} hands the seat to a computer player.`);
+    d.prepend(cardHead('home', 'Resign', whoLine(p.name)));
+    d.append(
+      el(
+        'p',
+        undefined,
+        'The seat keeps its projects, its Boss Rating and its rank — a computer player takes over ' +
+          'from here, and the game carries on without you.',
+      ),
+    );
+    const foot = el('div', 'foot');
+    const cancel = el('button', 'b', 'Keep playing');
+    cancel.onclick = () => done(false);
+    const yes = el('button', 'b primary', 'Resign');
+    yes.onclick = () => done(true);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      window.removeEventListener('keydown', onKey);
+      done(false);
+    };
+    window.addEventListener('keydown', onKey);
+    foot.append(cancel, yes);
+    d.append(foot);
+    return d;
+  });
+  if (!go) return;
+  game.resign(p.id);
+  void step();
 }
 
 /** Options -> Auto Click, mirroring the original's TAUTOCLICKFORM. */
@@ -1816,11 +1858,7 @@ function handlers() {
       void step();
     },
     onResign() {
-      const p = game.active;
-      if (p.kind !== 'human' || game.state.rolled) return;
-      if (!confirm(`${p.name} resigns and hands the seat to a computer player. Continue?`)) return;
-      game.resign(p.id);
-      void step();
+      void askResign();
     },
     onNewGame() {
       void newGame();
@@ -2013,6 +2051,7 @@ async function boot(): Promise<void> {
   await initDecks();
   await loadHelp();
   initTheme();
+  sound.warmScenes();
   // The deck follows the theme at launch too, not just on a switch — otherwise starting up in
   // the Original theme came with this port's own pack, which a theme change would then replace.
   setDeckMode(themeDeck(themeName()));

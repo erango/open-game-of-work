@@ -80,8 +80,9 @@ const CUES = [
     cue: 'resign',
     seconds: 3,
     'open-plan':
-      'Leaving a job: a cardboard box set down on a desk, a drawer closing, a badge dropped on a ' +
-      'hard surface. Dry, close, no music, no voices.',
+      'Leaving a job: a cardboard box set down on a desk, then a drawer closing, then a badge ' +
+      'dropped on a hard surface. Three distinct sounds one after another, continuous with no ' +
+      'gaps between them, dry, close, no music, no voices.',
     cyberpunk:
       'Access being revoked: a badge reader refusing with two flat tones, a lock disengaging, a ' +
       'light strip powering down. No voices, no music.',
@@ -102,8 +103,9 @@ const CUES = [
     cue: `promotion${rank}`,
     seconds: rank <= 2 ? 2.5 : rank === 5 ? 5 : 3.5,
     'open-plan': [
-      'A modest congratulation: two people saying well done, a light pat on the back, a chair ' +
-        'turning. Very short, dry, no music.',
+      // Not "very short": asked for that, the model returned a 0.3s blip padded with silence.
+      'A modest congratulation: one person says well done, a light pat on the back, then a chair ' +
+        'turning and a keyboard resuming. Three distinct sounds in sequence, dry, no music.',
       'A small congratulation in an office: three or four people giving a brief round of applause. ' +
         'Dry, close, no music.',
       'A promotion: a dozen people applauding warmly for three seconds in a carpeted room, one ' +
@@ -114,8 +116,9 @@ const CUES = [
         'chime, a heavy door opening onto it. Dry, no music.',
     ][rank - 1],
     cyberpunk: [
-      'A system acknowledging a small privilege upgrade: two soft ascending electronic tones and ' +
-        'a relay click. Very short, dry, no music.',
+      'A system acknowledging a small privilege upgrade: two soft ascending electronic tones, a ' +
+        'relay click, then a short data chirp. Four distinct sounds in sequence with no gaps, ' +
+        'dry, no music.',
       'A clearance level increasing: three ascending synth tones and a light data chirp. Dry, no ' +
         'music, no voices.',
       'A promotion in a corporate system: four ascending synth tones, a bright confirmation ' +

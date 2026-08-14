@@ -69,6 +69,9 @@
   /* Accent as *text*: --accent-2 is a ring colour, and at 4.4:1 it misses AA on the menu
      surface. Same hue, lifted until it clears 4.5:1 on every surface it appears over. */
   --link: #8494f0;
+  /* --danger-2 is a marker colour (dots, rules, sparklines) and misses AA as text at 3.72:1
+     on a card. Same hue, lifted until it clears every surface it labels. */
+  --danger-text: #ef7c66;
   --success: #5ec08e;
   --danger: #b0483a;
   --danger-2: #c0503c;
@@ -142,6 +145,7 @@
   --accent-soft: rgb(255 43 214 / .16);
   --accent-weak: #1d0f22;
   --link: #ff8ae8;
+  --danger-text: #ff7f9c;
   --success: #2bffb0;
   --danger: #ff3b6b;
   --danger-2: #ff5c7f;
@@ -354,7 +358,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .stock-delta { font-size: 13px; font-weight: 600; }
 .stock-peak { font-size: 12px; color: var(--ink-3); margin-left: auto; }
 .up { color: var(--success); }
-.down { color: var(--danger-2); }
+.down { color: var(--danger-text); }
 .hint { font-size: 12px; color: var(--ink-3); }
 .stock-chart { width: 100%; height: 56px; display: block; margin: 8px 0 6px; }
 .spark-base { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 4 4; }
@@ -605,7 +609,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .stat-band {
   left: 0;
   width: 100%;
-  height: 32px;
+  /* Height is set inline from the row's own extent — see renderStats in ui.ts. */
   background: var(--accent-soft);
   border-left: 2px solid var(--accent-2);
 }
@@ -914,7 +918,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   color: var(--ink);
 }
 .delta-pos { color: var(--success); font-weight: 600; }
-.delta-neg { color: var(--danger-2); font-weight: 600; }
+.delta-neg { color: var(--danger-text); font-weight: 600; }
 .hint-line { font-size: 12px; color: var(--ink-3); }
 /* -------- New Game seats */
 .setup-grid { display: grid; gap: 8px; }
@@ -938,6 +942,9 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 /* The art is 64px in the original and must never be resampled. */
 .seat-face { width: 64px; height: 64px; flex: none; border-radius: 3px; margin-left: 8px; display: block; }
 .seat-seg { width: 100%; }
+/* The theme switch in New Game spans the dialog, so the three names get equal room. */
+.theme-seg { display: flex; width: 100%; }
+.theme-seg .segment { flex: 1; padding: 7px 0; text-align: center; }
 .seat-seg .segment { flex: 1; padding: 5px 0; font-size: 12px; text-align: center; }
 /* -------- lists (trade, power monger) */
 .plist { border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); max-height: 200px; overflow-y: auto; background: var(--field); }
@@ -957,11 +964,17 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .empty { padding: 12px; color: var(--ink-3); font-size: 14px; }
 .trade-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 /* -------- the ? affordance on New Game */
-.help-mark {
+button.b.help-mark {
   width: 30px;
   height: 30px;
   border-radius: 50%;
   padding: 0;
+  /* A round button with padding:0 leaves the glyph on the button's baseline, which is low and
+     slightly left of centre. Centre it in both axes explicitly. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   font-size: 15px;
   font-weight: 700;
   background: var(--ctl-2);
@@ -969,7 +982,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   color: var(--ink-2);
   margin-right: auto;
 }
-.help-mark:hover:not(:disabled) { background: var(--ctl-hover-2); color: var(--ink); }
+button.b.help-mark:hover:not(:disabled) { background: var(--ctl-hover-2); color: var(--ink); }
 /* -------- Scruples header */
 .card-head-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .card-kicker { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--ink-2b); }

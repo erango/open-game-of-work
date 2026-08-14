@@ -236,16 +236,15 @@ const auditMenus = async (page, palette) => {
 const run = async (browser, palette) => {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.addInitScript(
-    ([p]) => {
-      localStorage.setItem('ogow:palette', p);
-      // The vector set has a computable background everywhere; installed artwork does not.
-      localStorage.setItem('ogow:graphics', 'modern');
-      localStorage.setItem('ogow:autoclick', JSON.stringify({ human: false, computer: true, humanSeconds: 0, computerSeconds: 0 }));
-    },
-    [palette],
-  );
-  await page.goto(BASE);
+  await page.addInitScript(() => {
+    localStorage.setItem('ogow:autoclick', JSON.stringify({ human: false, computer: true, humanSeconds: 0, computerSeconds: 0 }));
+  });
+  /*
+   * Theme and artwork are pinned through the query string, which does not touch the stored
+   * choice. `art=modern` overrides the theme's own set deliberately: the vector set is the one
+   * with a computable background everywhere, and the palette is what is under test.
+   */
+  await page.goto(`${BASE}?theme=${palette === 'neon' ? 'cyberpunk' : 'openPlan'}&art=modern`);
 
   console.log(`${palette} palette`);
 

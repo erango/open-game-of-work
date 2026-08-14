@@ -1,5 +1,6 @@
 import { CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, PROJECT_TILE, SQUARES, tokenOffset } from './board';
-import { assetsAvailable, assetsInstalled, centerImage, cursorUrl, dieFace, eventArt, graphicsMode, installedSets, playerPortrait, playerToken, setGraphicsMode, squareImage, type GraphicsMode } from './assets';
+import { assetsAvailable, centerImage, cursorUrl, dieFace, eventArt, playerPortrait, playerToken, squareImage } from './assets';
+import { availableThemes, setTheme, themeLabel, themeName, type ThemeName } from './theme';
 import { RESIGN_ICON, TRADE_ICON, squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
@@ -108,14 +109,15 @@ export class Ui {
    * every source pixel the same size, at the cost of leaving some space unused.
    */
   private snapScale = localStorage.getItem('ogow:snap') === 'on';
-  /** Palette choice, applied as data-palette on <html>. Persisted like ogow:snap. */
-  private palette: 'original' | 'neon' =
-    localStorage.getItem('ogow:palette') === 'neon' ? 'neon' : 'original';
-
-  private setPalette(next: 'original' | 'neon'): void {
-    this.palette = next;
-    localStorage.setItem('ogow:palette', next);
-    document.documentElement.setAttribute('data-palette', next);
+  /**
+   * Palette and artwork are one choice — see theme.ts. Switching one without the other let you
+   * assemble combinations nobody designed, like the original's light pixel tiles on the neon
+   * surface.
+   */
+  private pickTheme(next: ThemeName, game: Game): void {
+    setTheme(next);
+    this.handlers.onGraphicsChanged();
+    this.render(game);
   }
   /**
    * How board text grows as the board scales up.
@@ -283,28 +285,14 @@ export class Ui {
           { label: 'Sound', check: this.handlers.soundOn(), run: () => this.handlers.onToggleSound() },
           { label: 'AutoClicking\u2026', run: () => this.handlers.onAutoClick() },
           { label: '', sep: true },
-          // One entry per artwork set that is actually installed, plus the built-in vector
-          // set, chosen radio-style. Only shown when there is something to choose between.
-          ...(assetsInstalled()
-            ? ([
-                ...installedSets().map((name) => ({
-                  label: name === 'original' ? 'Original artwork' : 'Generated artwork',
-                  check: graphicsMode() === name,
-                  run: () => {
-                    setGraphicsMode(name);
-                    this.handlers.onGraphicsChanged();
-                  },
-                })),
-                {
-                  label: 'Modern artwork',
-                  check: graphicsMode() === ('modern' as GraphicsMode),
-                  run: () => {
-                    setGraphicsMode('modern');
-                    this.handlers.onGraphicsChanged();
-                  },
-                },
-              ] as Item[])
-            : []),
+          // Palette and artwork together, radio-style. Original only appears with an
+          // extraction installed; the other two always work.
+          ...availableThemes().map((name) => ({
+            label: `${themeLabel(name)} theme`,
+            check: themeName() === name,
+            run: () => this.pickTheme(name, game),
+          })),
+          { label: '', sep: true },
           {
             label: 'Snap board to whole pixels',
             check: this.snapScale,
@@ -315,14 +303,6 @@ export class Ui {
           },
           { label: 'Smooth artwork', check: this.handlers.smoothOn(), run: () => this.handlers.onToggleSmooth() },
           { label: '', sep: true },
-          {
-            label: 'Neon palette',
-            check: this.palette === 'neon',
-            run: () => {
-              this.setPalette(this.palette === 'neon' ? 'original' : 'neon');
-              this.render(game);
-            },
-          },
           {
             label: 'Proportional board text',
             check: this.textMode === 'proportional',
@@ -388,29 +368,21 @@ export class Ui {
     }
 
     const right = el('div', 'menubar-right');
+    // One control, since a theme is the palette and the artwork together.
     right.append(
-      this.segmentedGroup('Palette', [
-        ['original', 'Original', this.palette === 'original', () => { this.setPalette('original'); this.render(game); }],
-        ['neon', 'Neon', this.palette === 'neon', () => { this.setPalette('neon'); this.render(game); }],
-      ]),
+      this.segmentedGroup(
+        'Theme',
+        availableThemes().map(
+          (name) =>
+            [
+              name,
+              themeLabel(name),
+              themeName() === name,
+              () => this.pickTheme(name, game),
+            ] as [string, string, boolean, () => void],
+        ),
+      ),
     );
-    if (assetsInstalled()) {
-      const sets = installedSets();
-      right.append(
-        this.segmentedGroup('Artwork', [
-          ['modern', 'Vector', graphicsMode() === 'modern', () => { setGraphicsMode('modern'); this.handlers.onGraphicsChanged(); }],
-          ...sets.map(
-            (name) =>
-              [
-                name,
-                name === 'original' ? 'Original' : 'Generated',
-                graphicsMode() === name,
-                () => { setGraphicsMode(name); this.handlers.onGraphicsChanged(); },
-              ] as [string, string, boolean, () => void],
-          ),
-        ]),
-      );
-    }
     this.menubar.append(right);
   }
 
@@ -698,10 +670,22 @@ export class Ui {
       const barTop = G.barTops[row];
       const active = p.id === game.state.current;
 
-      // A band rather than a marker glyph, so the whole row reads as current.
+      /*
+       * A band rather than a marker glyph, so the whole row reads as current. It has to cover
+       * the row's *content*, which runs from the name down through the meter track — a fixed
+       * height clipped the meter off. Rows are only 32px apart while their content is 34px
+       * tall, so consecutive bands would overlap; that is harmless, since exactly one row is
+       * ever active. Snapped to the panel edge when it lands within a few pixels of it, or the
+       * first and last rows read as inset.
+       */
       if (active) {
         const band = el('div', 'stat-band');
-        band.style.top = `${barTop - 24}px`;
+        const top = G.nameTops[row] - 5;
+        const bottom = barTop + G.bar.height + 4;
+        const snapTop = top <= 6 ? 0 : top;
+        const snapBottom = bottom >= CENTER.stats.height - 6 ? CENTER.stats.height : bottom;
+        band.style.top = `${snapTop}px`;
+        band.style.height = `${snapBottom - snapTop}px`;
         panel.append(band);
       }
 

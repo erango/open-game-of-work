@@ -1,6 +1,7 @@
 import * as AI from './ai';
 import { aboutImage, applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
+import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeLabel, themeName } from './theme';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
@@ -234,6 +235,43 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     );
     topRow.append(deckField);
     m.append(topRow);
+
+    /*
+     * Theme belongs here as well as in Options: this is the window you are looking at before
+     * the board exists, and it is the one place someone starting their first game is certain
+     * to see. It applies immediately rather than on Start, so the choice can be judged against
+     * the dialog it is sitting in.
+     */
+    const themeField = el('div', 'field');
+    themeField.append(el('label', undefined, 'Theme'));
+    const themeBlurbLine = el('div', 'hint-line');
+    const themeSeg = el('div', 'segmented theme-seg');
+    themeSeg.setAttribute('role', 'radiogroup');
+    themeSeg.setAttribute('aria-label', 'Theme');
+    const themeButtons = availableThemes().map((name) => {
+      const b = el('button', 'segment', themeLabel(name));
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.title = themeBlurb(name);
+      b.onclick = () => {
+        setTheme(name);
+        ui.render(game);
+        syncTheme();
+      };
+      themeSeg.append(b);
+      return [name, b] as const;
+    });
+    const syncTheme = () => {
+      for (const [name, b] of themeButtons) {
+        const on = themeName() === name;
+        b.classList.toggle('segment-on', on);
+        b.setAttribute('aria-checked', String(on));
+      }
+      themeBlurbLine.textContent = themeBlurb(themeName());
+    };
+    syncTheme();
+    themeField.append(themeSeg, themeBlurbLine);
+    m.append(themeField);
 
     const seatsField = el('div', 'field');
     const seatsHead = el('div', 'seats-head');
@@ -1861,18 +1899,10 @@ async function showSplash(): Promise<void> {
   });
 }
 
-/**
- * Applies the stored palette to <html>. Bare :root is the original warm charcoal; the neon set
- * comes in under [data-palette="neon"]. The picker itself arrives with the shell.
- */
-function applyPalette(): void {
-  const stored = localStorage.getItem('ogow:palette');
-  const palette = stored === 'neon' ? 'neon' : 'original';
-  document.documentElement.setAttribute('data-palette', palette);
-}
-
 async function boot(): Promise<void> {
-  applyPalette();
+  // Palette first, before anything paints; the artwork half of the theme has to wait for the
+  // manifest, since assets.ts cannot resolve a set it has not read yet.
+  applyPaletteEarly();
   const root = document.getElementById('app')!;
   // Resolve original-artwork availability before the first render so the board does not
   // flash the SVG fallback and then swap.
@@ -1880,6 +1910,7 @@ async function boot(): Promise<void> {
   // Original decks live alongside the artwork and are equally optional.
   await initDecks();
   await loadHelp();
+  initTheme();
   setDeckMode(deckMode());
   applyFavicon();
   applySmoothing();

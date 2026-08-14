@@ -52,6 +52,24 @@ export class Ui {
    * every source pixel the same size, at the cost of leaving some space unused.
    */
   private snapScale = localStorage.getItem('ogow:snap') === 'on';
+  /**
+   * How board text grows as the board scales up.
+   *
+   * The board is transform-scaled, so text scales with it and stays proportionally faithful.
+   * That reads heavy on a large display: the original was drawn for a 776px board on an
+   * 800x600 screen, where its text was relatively much larger than it needs to be at 2.6x on
+   * a 27-inch monitor. 'comfortable' grows text by scale^0.6 rather than scale, applied as a
+   * `--text-k` multiplier so no re-render is needed on resize. 'proportional' is the faithful
+   * behaviour, kept as an option.
+   */
+  private textMode: 'proportional' | 'comfortable' =
+    localStorage.getItem('ogow:boardtext') === 'proportional' ? 'proportional' : 'comfortable';
+
+  private toggleTextMode(): void {
+    this.textMode = this.textMode === 'comfortable' ? 'proportional' : 'comfortable';
+    localStorage.setItem('ogow:boardtext', this.textMode);
+    this.scaleBoard();
+  }
   private cursorStyle: HTMLStyleElement | null = null;
   private menubar!: HTMLElement;
   private openMenu: string | null = null;
@@ -135,6 +153,14 @@ export class Ui {
     this.board.style.transform = `scale(${scale})`;
     this.boardWrap.style.width = `${Math.round(DESIGN_WIDTH * scale)}px`;
     this.boardWrap.style.height = `${Math.round(DESIGN_HEIGHT * scale)}px`;
+
+    // Counter-scale text so it grows by scale^0.6 overall. Floored so it never gets so small
+    // that a name stops fitting the label it was measured against.
+    const k =
+      this.textMode === 'proportional' || scale <= 1
+        ? 1
+        : Math.max(0.62, Math.pow(scale, -0.4));
+    this.board.style.setProperty('--text-k', k.toFixed(3));
   }
 
   /**
@@ -210,6 +236,14 @@ export class Ui {
             },
           },
           { label: 'Smooth artwork', check: this.handlers.smoothOn(), run: () => this.handlers.onToggleSmooth() },
+          {
+            label: 'Proportional board text',
+            check: this.textMode === 'proportional',
+            run: () => {
+              this.toggleTextMode();
+              this.render(game);
+            },
+          },
         ],
       },
       {
@@ -361,7 +395,9 @@ export class Ui {
     const label = this.attract ? 'project Name' : proj.name;
     const name = el('div', 'proj-name', label);
     // Recovered size, stepped down for the rare longest name so nothing ever clips.
-    name.style.fontSize = `${label.length > 17 ? FONTS.projectName - 2 : label.length > 14 ? FONTS.projectName - 1 : FONTS.projectName}px`;
+    const nameSize =
+      label.length > 17 ? FONTS.projectName - 2 : label.length > 14 ? FONTS.projectName - 1 : FONTS.projectName;
+    name.style.fontSize = `calc(${nameSize}px * var(--text-k, 1))`;
     name.style.left = `${T.name.left}px`;
     name.style.top = `${T.name.top}px`;
     name.style.width = `${T.name.width}px`;
@@ -402,7 +438,7 @@ export class Ui {
 
     const caption = (c: { left: number; top: number; width: number; height: number; text: string }) => {
       const n = el('div', 'center-caption', c.text);
-      n.style.fontSize = `${FONTS.centerCaption}px`;
+      n.style.fontSize = `calc(${FONTS.centerCaption}px * var(--text-k, 1))`;
       n.style.left = `${c.left}px`;
       n.style.top = `${c.top}px`;
       n.style.width = `${c.width}px`;
@@ -504,7 +540,7 @@ export class Ui {
     readout.style.width = `${V.width}px`;
     readout.style.height = `${V.height}px`;
     readout.classList.add(delta > 0 ? 'ticker-up' : delta < 0 ? 'ticker-down' : 'ticker-flat');
-    readout.style.fontSize = `${FONTS.tickerValue}px`;
+    readout.style.fontSize = `calc(${FONTS.tickerValue}px * var(--text-k, 1))`;
     readout.textContent = delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${delta}`;
     readout.title = `Share price ${game.state.stock} — last change ${delta >= 0 ? '+' : ''}${delta}`;
 
@@ -539,7 +575,7 @@ export class Ui {
       name.style.width = `${G.name.width}px`;
       name.style.height = `${G.name.height}px`;
       name.style.color = p.color;
-      name.style.fontSize = `${FONTS.playerName}px`;
+      name.style.fontSize = `calc(${FONTS.playerName}px * var(--text-k, 1))`;
 
       const portraitArt = playerPortrait(p.id);
       const portrait = el('div', 'stat-portrait');
@@ -585,7 +621,7 @@ export class Ui {
         `${game.projectsOf(p.id).length} project(s)`;
 
       const rank = el('div', 'stat-rankbadge', RANK_LETTERS[p.rank]);
-      rank.style.fontSize = `${FONTS.rankBadge}px`;
+      rank.style.fontSize = `calc(${FONTS.rankBadge}px * var(--text-k, 1))`;
       rank.style.left = `${G.rank.left}px`;
       rank.style.top = `${barTop - 1}px`;
       rank.style.width = `${G.rank.width}px`;

@@ -83,7 +83,7 @@ html, body { height: 100%; }
   align-items: center;
   justify-content: center;
   padding: 4px;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-k, 1));
   line-height: 1.15;
   text-align: center;
   overflow: hidden;
@@ -94,7 +94,7 @@ html, body { height: 100%; }
   background: #38404a;
   font-weight: 700;
   letter-spacing: 0.04em;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-k, 1));
   white-space: pre-line;
 }
 
@@ -103,7 +103,7 @@ html, body { height: 100%; }
 .sq-meeting { background: #3a4a5e; }
 .sq-businessTrip { background: #3a5e4a; }
 .sq-chance { background: #46424e; font-weight: 700; letter-spacing: .06em; }
-.sq-scruples { background: #4e4238; font-size: 26px; font-weight: 700; }
+.sq-scruples { background: #4e4238; font-size: calc(26px * var(--text-k, 1)); font-weight: 700; }
 .sq-powerMonger { background: #5e3a3a; font-weight: 700; white-space: pre-line; }
 
 /* Project squares position their parts absolutely in the tile's own 81x81 space, matching
@@ -159,7 +159,7 @@ html, body { height: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-k, 1));
   font-weight: 700;
   color: rgb(0 0 0 / 0.65);
 }
@@ -173,7 +173,7 @@ html, body { height: 100%; }
   background: var(--panel-2);
   color: var(--ink);
   font: inherit;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-k, 1));
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -411,7 +411,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 .sq-icon svg { display: block; }
 
 .sq-label {
-  font-size: 9px;
+  font-size: calc(9px * var(--text-k, 1));
   font-weight: 700;
   letter-spacing: .07em;
   white-space: pre-line;
@@ -419,7 +419,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   color: rgb(255 255 255 / 0.7);
 }
 
-.sq-corner .sq-label { font-size: 11px; color: rgb(255 255 255 / 0.85); }
+.sq-corner .sq-label { font-size: calc(11px * var(--text-k, 1)); color: rgb(255 255 255 / 0.85); }
 
 /* Scruples squares previously rendered a huge glyph; the icon carries it now. */
 .sq-scruples { font-size: inherit; font-weight: inherit; }

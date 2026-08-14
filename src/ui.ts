@@ -1,5 +1,5 @@
 import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
-import { assetsAvailable, centerImage, cursorUrl, dieFace, eventArt, playerPortrait, playerToken, squareImage } from './assets';
+import { assetsAvailable, assetsInstalled, centerImage, cursorUrl, dieFace, eventArt, graphicsMode, playerPortrait, playerToken, squareImage } from './assets';
 import { squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
@@ -17,6 +17,7 @@ const el = <K extends keyof HTMLElementTagNameMap>(
 };
 
 export interface UiHandlers {
+  onToggleGraphics(): void;
   onToggleSmooth(): void;
   smoothOn(): boolean;
   onToggleSound(): void;
@@ -51,7 +52,7 @@ export class Ui {
    * every source pixel the same size, at the cost of leaving some space unused.
    */
   private snapScale = localStorage.getItem('ogow:snap') === 'on';
-  private cursorsApplied = false;
+  private cursorStyle: HTMLStyleElement | null = null;
   private menubar!: HTMLElement;
   private openMenu: string | null = null;
   private lastGame: Game | null = null;
@@ -136,10 +137,18 @@ export class Ui {
     this.boardWrap.style.height = `${Math.round(DESIGN_HEIGHT * scale)}px`;
   }
 
-  /** Points the board's controls at the original's own cursors, when they are installed. */
-  private applyCursors(): void {
-    if (!assetsAvailable() || this.cursorsApplied) return;
-    this.cursorsApplied = true;
+  /**
+   * Points the board's controls at the original's own cursors while its artwork is in use.
+   * Reversible, since the artwork can be switched at any time.
+   */
+  private syncCursors(): void {
+    const want = assetsAvailable();
+    if (!want) {
+      this.cursorStyle?.remove();
+      this.cursorStyle = null;
+      return;
+    }
+    if (this.cursorStyle) return;
     const rules: Array<[string, ReturnType<typeof cursorUrl>]> = [
       ['.board .center-btn[title*="Roll"]', cursorUrl('Dice')],
       ['.board .center-btn[title*="Trade"]', cursorUrl('Trade')],
@@ -154,6 +163,7 @@ export class Ui {
     const style = document.createElement('style');
     style.textContent = css;
     document.head.append(style);
+    this.cursorStyle = style;
   }
 
   /**
@@ -182,6 +192,15 @@ export class Ui {
           { label: 'Sound', check: this.handlers.soundOn(), run: () => this.handlers.onToggleSound() },
           { label: 'AutoClicking\u2026', run: () => this.handlers.onAutoClick() },
           { label: '', sep: true },
+          ...(assetsInstalled()
+            ? ([
+                {
+                  label: 'Original artwork',
+                  check: graphicsMode() === 'original',
+                  run: () => this.handlers.onToggleGraphics(),
+                },
+              ] as Item[])
+            : []),
           {
             label: 'Snap board to whole pixels',
             check: this.snapScale,
@@ -249,7 +268,7 @@ export class Ui {
   render(game: Game): void {
     this.lastGame = game;
     this.renderMenu(game);
-    this.applyCursors();
+    this.syncCursors();
     // With the original art installed, use the original's board colour so the opaque tile
     // artwork sits on the background it was drawn for rather than on the fallback felt.
     this.boardWrap.style.background = assetsAvailable() ? BOARD_COLOR : '';

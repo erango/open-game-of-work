@@ -1,5 +1,5 @@
 import * as AI from './ai';
-import { aboutImage, applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
+import { aboutImage, applyFavicon, eventArt, graphicsMode, setGraphicsMode, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
@@ -382,6 +382,7 @@ async function askAutoClick(): Promise<void> {
 
 function stubHandlers() {
   return {
+    onToggleGraphics() {},
     onToggleSmooth() {},
     smoothOn() {
       return false;
@@ -1549,6 +1550,12 @@ async function step(): Promise<void> {
 
 function handlers() {
   return {
+    onToggleGraphics() {
+      // Artwork only; the original card and help text are chosen separately.
+      setGraphicsMode(graphicsMode() === 'original' ? 'modern' : 'original');
+      applyFavicon();
+      ui.render(game);
+    },
     onToggleSmooth() {
       smoothArt = !smoothArt;
       localStorage.setItem('ogow:smooth', smoothArt ? 'on' : 'off');

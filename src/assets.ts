@@ -41,6 +41,35 @@ const CENTER_IMAGES = {
 let available = new Set<string>();
 let loaded = false;
 
+/**
+ * Which artwork to draw when both sets exist.
+ *
+ * Having an extraction installed should not force it on: the inline SVG set is a deliberate
+ * piece of work, and a light pixel-art board is a very different thing to look at from the
+ * dark vector one. So this is a preference, not a consequence of what happens to be on disk.
+ *
+ * It gates artwork only. The original card text and help text are chosen separately, in the
+ * New Game window and the How to Play window, and are unaffected.
+ */
+export type GraphicsMode = 'original' | 'modern';
+
+let mode: GraphicsMode =
+  localStorage.getItem('ogow:graphics') === 'modern' ? 'modern' : 'original';
+
+export function graphicsMode(): GraphicsMode {
+  return mode;
+}
+
+export function setGraphicsMode(next: GraphicsMode): void {
+  mode = next;
+  localStorage.setItem('ogow:graphics', next);
+}
+
+/** Whether an extraction exists on disk, regardless of which set is being drawn. */
+export function assetsInstalled(): boolean {
+  return available.size > 0;
+}
+
 /** Reads the extractor's manifest. Safe to call when no assets are installed. */
 export async function loadAssets(): Promise<boolean> {
   if (loaded) return available.size > 0;
@@ -61,8 +90,9 @@ export async function loadAssets(): Promise<boolean> {
   return available.size > 0;
 }
 
+/** Whether original artwork should actually be drawn right now. */
 export function assetsAvailable(): boolean {
-  return available.size > 0;
+  return available.size > 0 && mode === 'original';
 }
 
 /**
@@ -73,15 +103,21 @@ export function assetsAvailable(): boolean {
  * this upgrade only fires on a machine with a local extraction.
  */
 export function applyFavicon(): void {
-  const png = url('icon.png');
-  if (!png) return;
   const link = document.getElementById('favicon') as HTMLLinkElement | null;
   if (!link) return;
-  link.type = 'image/png';
-  link.href = png;
+  const png = url('icon.png');
+  if (png) {
+    link.type = 'image/png';
+    link.href = png;
+  } else {
+    // Back to the mark this repo ships, so the tab follows the chosen artwork.
+    link.type = 'image/svg+xml';
+    link.href = '/favicon.svg';
+  }
 }
 
 function url(rel: string): string | null {
+  if (mode === 'modern') return null;
   return available.has(rel) ? BASE + rel : null;
 }
 
@@ -187,9 +223,9 @@ export function presidentArt(slot: number): string | null {
 
 /** Original mouse cursors, for CSS `cursor: url(...)`. */
 export function cursorUrl(which: 'Dice' | 'Hand' | 'Stock' | 'Trade'): string | null {
-  const rel = `cursors/Cursor${which}.cur`;
   // Cursors are copied alongside the extraction rather than listed in the manifest.
-  return available.size > 0 ? BASE + rel : null;
+  if (mode === 'modern' || available.size === 0) return null;
+  return BASE + `cursors/Cursor${which}.cur`;
 }
 
 /** Which office-party sprite set a player is drawn from. */

@@ -1,7 +1,7 @@
 import * as AI from './ai';
 import { aboutImage, applyFavicon, eventArt, graphicsMode, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
-import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeLabel, themeName } from './theme';
+import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeLabel, themeName, type ThemeName } from './theme';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
@@ -33,6 +33,21 @@ let scores: HighScores = loadScores();
  */
 function applySmoothing(): void {
   document.documentElement.classList.toggle('art-crisp', graphicsMode() === 'original');
+}
+
+/**
+ * Applies a theme completely: palette, artwork, favicon, scaling mode and music.
+ *
+ * Everything that switches theme goes through here. It was three call sites doing three
+ * different subsets — the New Game picker changed the palette and re-rendered but left the
+ * music and the crisp-rendering class on the previous theme's settings.
+ */
+function applyTheme(next: ThemeName): void {
+  setTheme(next);
+  applyFavicon();
+  applySmoothing();
+  void sound.retheme();
+  ui.render(game);
 }
 
 /** Guards against re-entrant AI stepping. */
@@ -260,8 +275,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       b.setAttribute('role', 'radio');
       b.title = themeBlurb(name);
       b.onclick = () => {
-        setTheme(name);
-        ui.render(game);
+        applyTheme(name);
         syncTheme();
       };
       themeSeg.append(b);
@@ -1697,11 +1711,13 @@ async function step(): Promise<void> {
 function handlers() {
   return {
     onGraphicsChanged() {
-      // The set has already been switched; refresh what depends on it. Artwork only — the
-      // original card and help text are chosen separately.
+      /*
+       * The Ui has already called setTheme; this finishes the job. Artwork, favicon, scaling
+       * mode and music all follow the theme — the card and help text do not, since those are
+       * chosen separately in New Game and How to Play.
+       */
       applyFavicon();
       applySmoothing();
-      // A theme carries its own music, so whatever is playing restarts from the new set.
       void sound.retheme();
       ui.render(game);
     },

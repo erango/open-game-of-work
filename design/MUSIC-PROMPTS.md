@@ -1,7 +1,8 @@
 # Music prompts
 
 Three tracks per theme, for a generative music tool (written against Google Flow; they work
-anywhere that takes a text prompt).
+anywhere that takes a text prompt). A generated set is installed and wired — see **Where the
+files live** at the end.
 
 | track | where it plays | length |
 |---|---|---|
@@ -134,26 +135,31 @@ lights left on.
 
 ---
 
-## Using the results
+## Where the files live
 
-`src/sound.ts` loads background music from a single path (`assets/sounds/party.mid`), parses it
-with the own-written MIDI parser in `src/midi.ts` and plays it through `src/midiPlayer.ts` — the
-original shipped a `.mid`, which no browser plays natively.
-
-Generated audio is a **recording**, not a MIDI file, so it does not go through that path. Wiring
-it up means giving `sound.ts` a per-theme set of ordinary audio files and preferring them when
-present:
+Wired and in use. `src/sound.ts` prefers a recorded track and keeps the MIDI path as the party
+fallback:
 
 ```
-public/assets/music/<theme>/theme.ogg
-public/assets/music/<theme>/play.ogg
-public/assets/music/<theme>/party.ogg
+public/assets/music/original/{theme,play,party}.mp3
+public/assets/music/open-plan/{theme,play,party}.mp3
+public/assets/music/cyberpunk/{theme,play,party}.mp3
 ```
 
-with `<theme>` one of `original`, `open-plan`, `cyberpunk`, matching `ThemeName` in
-`src/theme.ts`. Follow the pattern every other asset here uses: probe once, degrade silently,
-and fall back to the parsed `.mid` where an extraction is installed and to no music otherwise.
-A fresh clone has to stay fully playable.
+The directory name matches `ThemeName` in `src/theme.ts` (`openPlan` → `open-plan`). Absent
+files leave the game silent, except the party, which falls back to the original's own parsed
+`.mid` where an extraction is installed — so a fresh clone stays fully playable.
+
+- **theme** starts when the splash is dismissed, not at load: that click is the gesture that
+  unblocks audio, and a rejected `play()` would silently be the whole music system. It plays on
+  through the New Game window.
+- **play** starts when a game begins and loops.
+- **party** takes over for the Office Party scene, then the play loop resumes.
+- Switching theme restarts whatever is playing from the new set (`Sound.retheme()`).
+- Music sits at 0.3 and ducks to 0.1 under spoken clips, on a timer that restarts rather than
+  stacking.
+
+`public/assets/` is gitignored, so these are not committed — same as every other asset here.
 
 Two practical notes on the files themselves:
 

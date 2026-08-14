@@ -1,4 +1,5 @@
 import { MidiPlayer } from './midiPlayer';
+import { themeName, type ThemeName } from './theme';
 /**
  * Optional audio.
  *
@@ -117,6 +118,30 @@ const BASE = 'assets/sounds/';
  */
 const MUSIC = 'assets/sounds/party.mid';
 
+/**
+ * Recorded music, three tracks per theme. These are ordinary audio files rather than MIDI, so
+ * they cannot go through the parser — this is a second, simpler player alongside it.
+ *
+ * - `theme` once, from the moment the splash is dismissed through the New Game window
+ * - `play`  looping under the game
+ * - `party` looping for the Office Party scene, then back to `play`
+ *
+ * Optional like everything else here: absent files leave the game silent, except for the party,
+ * which falls back to the original's own .mid where an extraction is installed.
+ */
+export type MusicTrack = 'theme' | 'play' | 'party';
+
+const MUSIC_DIR: Record<ThemeName, string> = {
+  original: 'original',
+  openPlan: 'open-plan',
+  cyberpunk: 'cyberpunk',
+};
+
+const MUSIC_BASE = 'assets/music/';
+const MUSIC_VOLUME = 0.3;
+/** What the music drops to while a spoken clip plays over it. */
+const MUSIC_DUCKED = 0.1;
+
 export class Sound {
   /**
    * Spoken cues are serialized through this chain.
@@ -130,6 +155,18 @@ export class Sound {
   private voiceChain: Promise<void> = Promise.resolve();
   private music = new MidiPlayer();
   private musicLoaded: boolean | null = null;
+  /**
+   * Recorded tracks, keyed `<theme>/<track>`, resolving to null when absent.
+   *
+   * The *promise* is cached, not the element. Boot and the New Game window both ask for the
+   * theme track within a frame of each other; caching only the finished element let both probes
+   * run and build two elements for the same file, which then played over each other.
+   */
+  private trackCache = new Map<string, Promise<HTMLAudioElement | null>>();
+  private track: HTMLAudioElement | null = null;
+  /** What should be playing, so a theme change can restart the same track from the new set. */
+  private trackName: MusicTrack | null = null;
+  private duckTimer = 0;
   private cache = new Map<Cue, HTMLAudioElement | null>();
   private enabled: boolean;
   /** True once any cue has successfully resolved a file. */
@@ -146,8 +183,12 @@ export class Sound {
   toggle(): boolean {
     this.enabled = !this.enabled;
     localStorage.setItem('ogow:sound', this.enabled ? 'on' : 'off');
-    if (!this.enabled) this.music.stop();
-    else this.play('soundOn');
+    if (!this.enabled) this.stopMusic();
+    else {
+      this.play('soundOn');
+      // Muting stops the track; unmuting puts back whatever should have been playing.
+      if (this.trackName) void this.playTrack(this.trackName);
+    }
     return this.enabled;
   }
 
@@ -157,7 +198,66 @@ export class Sound {
   }
 
   get musicPlaying(): boolean {
-    return this.music.playing;
+    return this.music.playing || (this.track !== null && !this.track.paused);
+  }
+
+  /**
+   * Starts one of the recorded tracks for the current theme.
+   *
+   * Autoplay policy means this can only succeed after a user gesture, which is why the theme
+   * track starts when the splash is dismissed rather than at load: a rejected play() would
+   * otherwise be the whole music system, silently.
+   */
+  async playTrack(name: MusicTrack, loop = name !== 'theme'): Promise<void> {
+    this.trackName = name;
+    if (!this.enabled) return;
+    const audio = await this.resolveTrack(themeName(), name);
+    /*
+     * Identity, not playing state: boot and the New Game window both ask for the theme track
+     * within a frame, and a `paused` check still reads true while the first play() is pending —
+     * so the second call stopped and restarted the clip audibly. `this.track` is assigned
+     * before play() is awaited, which makes it the record of intent.
+     */
+    if (audio && audio === this.track) return;
+    if (!audio) {
+      // The original only ever had party music, so that is the one with something to fall
+      // back to. Anything else simply stays quiet.
+      if (name === 'party') await this.startMusic(loop);
+      return;
+    }
+    this.stopMusic();
+    this.track = audio;
+    audio.loop = loop;
+    audio.volume = MUSIC_VOLUME;
+    audio.currentTime = 0;
+    // Blocked until the first gesture, or the file went away between the probe and now.
+    await audio.play().catch(() => {});
+  }
+
+  /** Restarts the current track from the new theme's set. Called when the theme changes. */
+  async retheme(): Promise<void> {
+    if (this.trackName) await this.playTrack(this.trackName);
+  }
+
+  /** Probes `<theme>/<track>` once, returning the same element to every caller. */
+  private resolveTrack(theme: ThemeName, name: MusicTrack): Promise<HTMLAudioElement | null> {
+    const key = `${MUSIC_DIR[theme]}/${name}`;
+    const cached = this.trackCache.get(key);
+    if (cached) return cached;
+    const probe = (async () => {
+      const url = `${MUSIC_BASE}${key}.mp3`;
+      try {
+        const res = await fetch(url, { method: 'HEAD' });
+        if (!res.ok) return null;
+        const audio = new Audio(url);
+        audio.preload = 'auto';
+        return audio;
+      } catch {
+        return null;
+      }
+    })();
+    this.trackCache.set(key, probe);
+    return probe;
   }
 
   /** Starts the background track, loading it on first use. No-op when absent or muted. */
@@ -170,13 +270,28 @@ export class Sound {
 
   stopMusic(): void {
     this.music.stop();
+    if (this.track) {
+      this.track.pause();
+      this.track = null;
+    }
   }
 
-  /** Ducks the music while a one-shot cue plays over it. */
+  /**
+   * Ducks the music while a one-shot cue plays over it. Both players, and on a timer that
+   * restarts rather than stacking: several cues in a row used to each schedule their own
+   * restore, so the first one to fire brought the level back up mid-clip.
+   */
   private duck(): void {
-    if (!this.music.playing) return;
-    this.music.setVolume(0.14);
-    window.setTimeout(() => this.music.setVolume(0.32), 900);
+    const midi = this.music.playing;
+    const rec = this.track !== null && !this.track.paused;
+    if (!midi && !rec) return;
+    if (midi) this.music.setVolume(MUSIC_DUCKED);
+    if (rec) this.track!.volume = MUSIC_DUCKED;
+    window.clearTimeout(this.duckTimer);
+    this.duckTimer = window.setTimeout(() => {
+      if (this.music.playing) this.music.setVolume(0.32);
+      if (this.track) this.track.volume = MUSIC_VOLUME;
+    }, 900);
   }
 
 /**

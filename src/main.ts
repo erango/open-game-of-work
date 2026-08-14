@@ -565,10 +565,11 @@ async function resolveModal(): Promise<void> {
       break;
     case 'officeParty':
       sound.play('officeParty');
-      // The original shipped a .mid for the party; play it for the duration of the modal.
-      void sound.startMusic(true);
+      // The original shipped a .mid for the party and nothing else; playTrack prefers the
+      // theme's own party recording and falls back to that .mid.
+      void sound.playTrack('party');
       await handleOfficeParty(m);
-      sound.stopMusic();
+      void sound.playTrack('play');
       break;
     case 'powerMonger':
       sound.play('powerMonger');
@@ -1693,6 +1694,8 @@ function handlers() {
       // The set has already been switched; refresh what depends on it. Artwork only — the
       // original card and help text are chosen separately.
       applyFavicon();
+      // A theme carries its own music, so whatever is playing restarts from the new set.
+      void sound.retheme();
       ui.render(game);
     },
     onToggleSmooth() {
@@ -1783,7 +1786,8 @@ async function newGame(): Promise<void> {
   // Hold on to a game in progress: Cancel has to return to it, so it must not be replaced by
   // the pre-game board before the dialog is answered.
   const previous = hasGame ? game : null;
-  sound.stopMusic();
+  // The New Game window belongs to the theme track, not to the game's own loop.
+  void sound.playTrack('theme', false);
   announced = '';
   if (!previous) {
     // Nothing to go back to, so paint the pre-game board behind the dialog.
@@ -1797,12 +1801,16 @@ async function newGame(): Promise<void> {
     if (previous) game = previous;
     ui.setAttract(!previous);
     ui.render(game);
-    if (previous) void step();
+    if (previous) {
+      void sound.playTrack('play');
+      void step();
+    }
     return;
   }
   ui.setAttract(false);
   game = new Game(config);
   hasGame = true;
+  void sound.playTrack('play');
   game.state.log.push({
     turn: 1,
     playerId: null,
@@ -1919,6 +1927,9 @@ async function boot(): Promise<void> {
   // so the first turn announcement waits for it instead of talking over it.
   void sound.speak('gameStart');
   await showSplash();
+  // The splash click is the gesture that unblocks audio, so the theme track starts here rather
+  // than at load, where play() would simply be rejected.
+  void sound.playTrack('theme', false);
   ui = new Ui(root, handlers());
   bindKeys();
   void newGame();

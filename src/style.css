@@ -171,6 +171,254 @@ html, body {
   min-height: 100%;
 }
 
+/* ---------------------------------------------------------------- shell */
+
+#app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 16px;
+  padding: 16px;
+  height: 100vh;
+  align-items: stretch;
+  background: var(--bg);
+}
+
+.left-col {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Measured to size the board, so it must never be driven by the board's own dimensions. */
+.board-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.side { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
+
+@media (max-width: 1020px) {
+  #app { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .board-col { height: min(70vh, 80vw); }
+}
+
+/* -------- menu bar */
+.menubar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 38px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  position: relative;
+  z-index: 20;
+}
+
+.menu { position: relative; }
+
+.menu-top {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 12px 7px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+:root[data-palette="neon"] .menu-top { text-transform: uppercase; letter-spacing: .06em; }
+
+.menu-top:hover { color: var(--ink); }
+
+/* Open state stated for the hovered case too. Letting :hover outrank it is what made the
+   label vanish before; a filled background also changed the label's advance width and shifted
+   every button along the bar, so the open marker is an underline. */
+.menu-open,
+.menu-open:hover { color: var(--ink); border-bottom-color: var(--accent-2); font-weight: 600; }
+
+.menu-drop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 232px;
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--line), 0 14px 36px rgb(0 0 0 / .55);
+  border-radius: 7px;
+  padding: 4px;
+  z-index: 30;
+}
+
+.menu-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 8px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.menu-item:hover { background: var(--panel-3); color: var(--ink); }
+.menu-check { color: var(--accent-2); font-weight: 700; }
+.menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
+
+/* Segmented controls sit at the right-hand end of the bar. */
+.menubar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; padding-right: 4px; }
+.menubar-group { display: flex; align-items: center; gap: 7px; }
+
+.menubar-label,
+.field-label,
+.card h2 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--ink-3);
+}
+
+.menubar-label { letter-spacing: .12em; }
+
+/* -------- shared controls */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--ctl-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  gap: 2px;
+}
+
+.segment {
+  background: none;
+  border: none;
+  color: var(--ink-2b);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segment:hover:not(.segment-on):not(:disabled) { color: var(--ink); }
+.segment-on,
+.segment-on:hover { background: var(--accent); color: var(--accent-ink); }
+.segment:disabled { background: var(--ctl); color: var(--ink-3); cursor: default; }
+
+/* Disabled buttons change colour rather than taking opacity, which is what made locked
+   controls unreadable. */
+button.b {
+  background: var(--ctl-2);
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  border: none;
+  color: var(--ink-2);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.b:hover:not(:disabled) { background: var(--ctl-hover-2); color: var(--ink); }
+button.b:disabled { background: var(--ctl); color: var(--ink-3); cursor: default; }
+
+button.b.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  padding: 10px 20px;
+  box-shadow: none;
+}
+
+button.b.primary:hover:not(:disabled) { background: var(--accent-hover); }
+button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* -------- sidebar cards */
+.card {
+  background: var(--panel);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  padding: 14px;
+}
+
+.card h2 { margin: 0 0 10px; }
+
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.turn-now { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--accent-2); }
+
+.turn-line { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.turn-name { font-size: 19px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
+.turn-rank { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+
+.metric-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--ink-3); }
+.metric-value { font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.metric-track {
+  height: 6px;
+  border-radius: 1px;
+  background: var(--trough);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  margin: 5px 0 10px;
+  overflow: hidden;
+}
+
+.metric-track > i { display: block; height: 100%; transition: width .25s ease; }
+
+.stock-num { font-size: 30px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.stock-delta { font-size: 13px; font-weight: 600; }
+.stock-peak { font-size: 12px; color: var(--ink-3); margin-left: auto; }
+.up { color: var(--success); }
+.down { color: var(--danger-2); }
+.hint { font-size: 12px; color: var(--ink-3); }
+
+.stock-chart { width: 100%; height: 56px; display: block; margin: 8px 0 6px; }
+.spark-base { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 4 4; }
+.spark-line { fill: none; stroke-width: 1.5; }
+.spark-up { stroke: var(--success); }
+.spark-down { stroke: var(--danger-2); }
+
+/* -------- log */
+.log { max-height: 300px; overflow-y: auto; }
+
+.log-entry {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-2);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.log-entry:last-child { border-bottom: none; }
+.log-who { font-weight: 600; }
+.log-system { color: var(--ink-3); }
+
+.log-with-art { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; }
+.log-text { min-width: 0; overflow-wrap: anywhere; }
+.log-art { width: 40px; height: 30px; object-fit: cover; border-radius: 2px; display: block; image-rendering: pixelated; }
+.art-smooth .log-art { image-rendering: auto; }
+
 /* ---------------------------------------------------------------- board
  *
  * Geometry (positions, sizes, font sizes) comes from src/board.ts and is applied inline by
@@ -185,7 +433,6 @@ html, body {
   box-shadow: inset 0 0 0 1px var(--panel-line), inset 0 40px 90px rgb(0 0 0 / .35);
   overflow: hidden;
 }
-
 /* Everything inside is positioned in the original 776x535 design space. */
 .board {
   position: absolute;
@@ -194,7 +441,6 @@ html, body {
   height: 535px;
   transform-origin: top left;
 }
-
 /* NB: never set `position` on .sq or any descendant selector — .sq is absolute in the design
    space and an override scatters the board. A test in test/ parses this file and enforces it. */
 .sq {
@@ -208,15 +454,12 @@ html, body {
   user-select: none;
   text-align: center;
 }
-
 /* -------- project squares. Tile colour is set inline from --tile-1..5. */
 .sq-project { padding: 0; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .28); }
-
 /* Bars fill upward out of a dark trough. The original drew a full bar masked from the top by
    a white shape; equivalent, minus a white rectangle that read as an object of its own. */
 .proj-track { position: absolute; background: rgb(0 0 0 / .34); }
 .proj-fill { position: absolute; transition: height .25s ease; }
-
 .proj-name {
   position: absolute;
   display: flex;
@@ -226,7 +469,6 @@ html, body {
   padding: 0 2px;
   overflow: hidden;
 }
-
 /* Two lines, adjective over noun: names.ts pools words up to 9 characters, so one line at a
    legible size elides most generated names. Owned names are dark ink rather than the owner's
    colour — the pale player colours measure 2-3:1 on a pastel tile; the bar carries ownership. */
@@ -239,7 +481,6 @@ html, body {
   color: var(--tile-ink-dim);
   white-space: nowrap;
 }
-
 .proj-noun {
   font-size: calc(11.5px * var(--text-k, 1));
   font-weight: 600;
@@ -248,9 +489,7 @@ html, body {
   color: var(--tile-ink-dim);
   white-space: nowrap;
 }
-
 .proj-owned .proj-noun { font-weight: 700; color: var(--tile-ink); }
-
 /* New: difficulty survives when illustrated artwork fills the tile. */
 .proj-num {
   position: absolute;
@@ -260,14 +499,12 @@ html, body {
   font-weight: 700;
   color: var(--tile-ink-dim);
 }
-
 .proj-shoddy-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: repeating-linear-gradient(135deg, rgb(0 0 0 / .10) 0 3px, transparent 3px 8px);
 }
-
 .proj-shoddy-dot {
   position: absolute;
   left: 11px;
@@ -278,17 +515,14 @@ html, body {
   background: var(--danger-2);
   box-shadow: 0 0 0 1.5px rgb(0 0 0 / .3);
 }
-
 /* -------- special squares */
 .sq-corner {
   background: var(--sq-corner);
   box-shadow: inset 0 0 0 1px var(--line-sq);
   gap: 10px;
 }
-
 .sq-chance { background: var(--sq-chance); box-shadow: inset 0 0 0 1px var(--line-sq); gap: 6px; }
 .sq-scruples { background: var(--sq-scruples); box-shadow: inset 0 0 0 1px var(--line-sq); gap: 6px; }
-
 /* The only special square that carries colour, because it is the only one that lets a player
    act on someone else's work. */
 .sq-powerMonger {
@@ -296,12 +530,10 @@ html, body {
   box-shadow: inset 0 0 0 1px var(--sq-power-line);
   gap: 6px;
 }
-
 .sq-icon { display: flex; align-items: center; justify-content: center; flex: none; color: var(--icon-2); }
 .sq-icon svg { display: block; }
 .sq-corner .sq-icon { color: var(--icon); }
 .sq-powerMonger .sq-icon { color: var(--sq-power-icon); }
-
 .sq-title {
   font-size: calc(12px * var(--text-k, 1));
   font-weight: 600;
@@ -310,14 +542,12 @@ html, body {
   color: var(--ink-2);
   white-space: pre-line;
 }
-
 .sq-sub {
   font-size: calc(9.5px * var(--text-k, 1));
   font-weight: 400;
   letter-spacing: .06em;
   color: var(--ink-3);
 }
-
 .sq-label {
   font-size: calc(9.5px * var(--text-k, 1));
   font-weight: 600;
@@ -326,9 +556,7 @@ html, body {
   color: var(--ink-2b);
   white-space: pre-line;
 }
-
 .sq-powerMonger .sq-label { color: var(--sq-power-label); letter-spacing: .14em; }
-
 /* -------- centre cluster */
 .center-btn {
   position: absolute;
@@ -342,20 +570,16 @@ html, body {
   justify-content: center;
   color: var(--ctl-icon);
 }
-
 /* The only filled control on the board. */
 .center-roll {
   background: var(--accent);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14), 0 4px 14px rgb(0 0 0 / .4);
 }
-
 .center-roll:hover:not(:disabled) { background: var(--accent-hover); }
 .center-roll:disabled { opacity: .4; }
-
 .center-ctl { background: var(--ctl); box-shadow: inset 0 0 0 1px var(--ctl-line); }
 .center-ctl:hover:not(:disabled) { background: var(--ctl-hover); }
 .center-ctl:disabled { color: var(--ink-3); }
-
 /* Die face as a 3x3 pip grid when no artwork is installed. */
 .die-grid {
   display: grid;
@@ -366,10 +590,8 @@ html, body {
   width: 100%;
   height: 100%;
 }
-
 .pip { border-radius: 50%; background: var(--accent-ink); align-self: center; justify-self: center; width: 9px; height: 9px; }
 .pip-off { visibility: hidden; }
-
 /* Captions sit in their transcribed boxes. "Resign" measures ~50px in a 48px box: a deliberate
    1px spill per side, left visible, since the geometry is from the original. */
 .center-caption {
@@ -384,19 +606,16 @@ html, body {
   pointer-events: none;
   color: var(--icon);
 }
-
 .cap-roll { font-size: calc(13px * var(--text-k, 1)); letter-spacing: .12em; color: var(--caption); }
 .cap-trade { font-size: calc(13px * var(--text-k, 1)); letter-spacing: .12em; }
 .cap-resign { font-size: calc(12px * var(--text-k, 1)); letter-spacing: .1em; }
 .cap-ticker { font-size: calc(11px * var(--text-k, 1)); letter-spacing: .14em; }
-
 .ticker-frame {
   position: absolute;
   background: var(--inset);
   border-radius: 4px;
   box-shadow: inset 0 0 0 1px var(--inset-line), inset 0 2px 6px rgb(0 0 0 / .6);
 }
-
 /* Sans with tabular figures is steadier at 29px than a monospace face, and needs no glow. */
 .ticker {
   position: absolute;
@@ -408,11 +627,9 @@ html, body {
   font-variant-numeric: tabular-nums;
   letter-spacing: -.01em;
 }
-
 .ticker-up { color: var(--success); }
 .ticker-down { color: var(--danger-2); }
 .ticker-flat { color: var(--ink-3); }
-
 /* -------- player panel. Nothing else may occupy it: a six-seat game uses every row. */
 .stats-panel {
   position: absolute;
@@ -421,9 +638,7 @@ html, body {
   box-shadow: inset 0 0 0 1px var(--panel-line);
   overflow: hidden;
 }
-
 .stats-panel > * { position: absolute; }
-
 /* Replaces the amber dot that used to mark the active row. */
 .stat-band {
   left: 0;
@@ -432,7 +647,6 @@ html, body {
   background: var(--accent-soft);
   border-left: 2px solid var(--accent-2);
 }
-
 .stat-name {
   display: flex;
   align-items: center;
@@ -443,9 +657,7 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
 }
-
 .stat-name.active { color: var(--ink); }
-
 .stat-portrait {
   border-radius: 2px;
   display: flex;
@@ -455,7 +667,6 @@ html, body {
   font-weight: 700;
   overflow: hidden;
 }
-
 .stat-track {
   border-radius: 2px;
   background: var(--trough);
@@ -465,11 +676,9 @@ html, body {
   flex-direction: column;
   gap: 2px;
 }
-
 .meter { border-radius: 1px; transition: width .25s ease; }
 .meter-boss { height: 6px; }
 .meter-load { height: 5px; background: var(--danger); }
-
 .stat-rankbadge {
   border-radius: 2px;
   background: var(--ctl);
@@ -480,9 +689,7 @@ html, body {
   font-weight: 700;
   color: var(--ink-2b);
 }
-
 .stat-rankbadge.active { color: var(--caption); }
-
 /* -------- tokens. A field-coloured ring rather than a black border, so they read on both
    the pastel tiles and the field. */
 .token {
@@ -497,33 +704,21 @@ html, body {
   font-size: calc(11px * var(--text-k, 1));
   font-weight: 700;
 }
-
 .token-parked { transition: none; }
 .token-art { background: none; box-shadow: none; filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6)); }
-
 /* -------- installed artwork fills its slot; era art stays crisp unless smoothing is on. */
 .sq-art { width: 100%; height: 100%; object-fit: fill; display: block; user-select: none; }
 .sq-hasart { padding: 0; }
 .btn-art { width: 100%; height: 100%; object-fit: contain; display: block; }
 .portrait-art { width: 100%; height: 100%; display: block; }
 .token-art > img { width: 100%; height: 100%; display: block; }
-
 .sq-art, .btn-art, .portrait-art, .token-art > img, .seat-face { image-rendering: pixelated; }
 .art-smooth .sq-art,
 .art-smooth .btn-art,
 .art-smooth .portrait-art,
 .art-smooth .token-art > img,
 .art-smooth .seat-face { image-rendering: auto; }
-
 html, body { height: 100%; }
-#app {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 16px;
-  padding: 16px;
-  height: 100vh;
-  align-items: stretch;
-}
 /* The board column is measured to size the board, so it must never be driven by the
    board's own dimensions — otherwise resizing feeds back on itself. */
 .board-col {
@@ -533,7 +728,6 @@ html, body { height: 100%; }
   align-items: center;
   justify-content: center;
 }
-.side { overflow-y: auto; min-height: 0; }
 @media (max-width: 1020px) {
   #app {
     grid-template-columns: minmax(0, 1fr);
@@ -623,45 +817,9 @@ html, body { height: 100%; }
    colour, workload beneath it in red. */
 
 .stats-panel > * { position: absolute; }
-.stat-rank { color: var(--ink-dim); font-size: 12px; }
 /* ---------------------------------------------------------------- sidebar */
 
 .side { display: flex; flex-direction: column; gap: 12px; }
-.card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px;
-}
-.card h2 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--ink-dim);
-}
-.turn-line { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-.stock-num { font-size: 26px; font-weight: 700; }
-.stock-chart { width: 100%; height: 60px; display: block; margin-top: 6px; }
-.log { max-height: 260px; overflow-y: auto; font-size: 13px; line-height: 1.5; }
-.log div { padding: 2px 0; border-bottom: 1px solid rgb(255 255 255 / .04); }
-.log b { font-weight: 700; }
-.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
-button.b {
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-radius: 6px;
-  padding: 9px 14px;
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
-button.b:hover:not(:disabled) { background: #38404a; }
-button.b:disabled { opacity: .45; cursor: default; }
-button.b.primary { background: var(--accent); color: #1a1408; border-color: transparent; font-weight: 700; }
-button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 /* ---------------------------------------------------------------- modal */
 
 .scrim {
@@ -756,7 +914,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 /* ---------------------------------------------------------------- sound toggle */
 
 .sound-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-.sound-row .hint { font-size: 12px; color: var(--ink-dim); }
 /* AI decisions are shown but not editable: the picked option is highlighted, the rest
    are disabled, and only the confirm button stays live. */
 .choice:disabled { opacity: .55; cursor: default; }
@@ -937,14 +1094,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 }
 /* Name and message in one item, so the grid always has exactly two children. */
 .log-text { min-width: 0; overflow-wrap: anywhere; }
-.log-art {
-  width: 44px;
-  height: auto;
-  border-radius: 3px;
-  image-rendering: pixelated;
-  display: block;
-}
-.art-smooth .log-art { image-rendering: auto; }
 /* Full-size art heading a dialog (meeting outcome, party, endings). */
 .event-art {
   display: block;
@@ -1068,68 +1217,10 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   min-width: 0;
   min-height: 0;
 }
-.menubar {
-  display: flex;
-  gap: 2px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 3px;
-  position: relative;
-  z-index: 20;
-  flex-wrap: wrap;
-}
-.menu { position: relative; }
-.menu-top {
-  background: none;
-  border: none;
-  color: var(--ink);
-  font: inherit;
-  font-size: 13px;
-  /* Constant weight: switching to bold on open widens the label and shifts every button
-     along the bar. Open state is carried by colour alone. */
-  font-weight: 600;
-  padding: 7px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-}
 /* `.menu-top:hover` outranks `.menu-open` on specificity, so hovering an open menu kept the
    dark hover background while the open state's dark text still applied, and the label all but
    vanished. The hovered case is stated explicitly: dark background, white label. */
 .menu-top:hover { background: var(--panel-2); }
-.menu-open { background: var(--accent); color: #1a1408; }
-.menu-open:hover { background: var(--panel-2); color: #fff; }
-.menu-drop {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 232px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 4px;
-  box-shadow: 0 14px 36px rgb(0 0 0 / .55);
-  z-index: 30;
-}
-.menu-item {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  background: none;
-  border: none;
-  color: var(--ink);
-  font: inherit;
-  font-size: 13px;
-  text-align: left;
-  padding: 8px 9px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-.menu-item:hover { background: #3f4854; }
-.menu-check { color: var(--accent); font-weight: 700; }
-.menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
 /* Stock Chart window */
 .chart-big {
   width: 100%;
@@ -1167,31 +1258,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   letter-spacing: .07em;
   color: var(--ink-dim);
 }
-.segmented {
-  display: inline-flex;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 2px;
-  gap: 2px;
-}
-.segment {
-  background: none;
-  border: none;
-  color: var(--ink-dim);
-  font: inherit;
-  font-size: 13px;
-  padding: 6px 14px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-.segment:hover { color: var(--ink); }
-.segment-on {
-  background: var(--accent);
-  color: #1a1408;
-  font-weight: 700;
-}
-.segment-on:hover { color: #1a1408; }
 /* ---------------------------------------------------------------- splash credit */
 
 .splash-inner {

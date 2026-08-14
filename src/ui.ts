@@ -108,6 +108,15 @@ export class Ui {
    * every source pixel the same size, at the cost of leaving some space unused.
    */
   private snapScale = localStorage.getItem('ogow:snap') === 'on';
+  /** Palette choice, applied as data-palette on <html>. Persisted like ogow:snap. */
+  private palette: 'original' | 'neon' =
+    localStorage.getItem('ogow:palette') === 'neon' ? 'neon' : 'original';
+
+  private setPalette(next: 'original' | 'neon'): void {
+    this.palette = next;
+    localStorage.setItem('ogow:palette', next);
+    document.documentElement.setAttribute('data-palette', next);
+  }
   /**
    * How board text grows as the board scales up.
    *
@@ -305,6 +314,15 @@ export class Ui {
             },
           },
           { label: 'Smooth artwork', check: this.handlers.smoothOn(), run: () => this.handlers.onToggleSmooth() },
+          { label: '', sep: true },
+          {
+            label: 'Neon palette',
+            check: this.palette === 'neon',
+            run: () => {
+              this.setPalette(this.palette === 'neon' ? 'original' : 'neon');
+              this.render(game);
+            },
+          },
           {
             label: 'Proportional board text',
             check: this.textMode === 'proportional',
@@ -368,6 +386,54 @@ export class Ui {
       }
       this.menubar.append(wrap);
     }
+
+    const right = el('div', 'menubar-right');
+    right.append(
+      this.segmentedGroup('Palette', [
+        ['original', 'Original', this.palette === 'original', () => { this.setPalette('original'); this.render(game); }],
+        ['neon', 'Neon', this.palette === 'neon', () => { this.setPalette('neon'); this.render(game); }],
+      ]),
+    );
+    if (assetsInstalled()) {
+      const sets = installedSets();
+      right.append(
+        this.segmentedGroup('Artwork', [
+          ['modern', 'Vector', graphicsMode() === 'modern', () => { setGraphicsMode('modern'); this.handlers.onGraphicsChanged(); }],
+          ...sets.map(
+            (name) =>
+              [
+                name,
+                name === 'original' ? 'Original' : 'Generated',
+                graphicsMode() === name,
+                () => { setGraphicsMode(name); this.handlers.onGraphicsChanged(); },
+              ] as [string, string, boolean, () => void],
+          ),
+        ]),
+      );
+    }
+    this.menubar.append(right);
+  }
+
+  /** A labelled segmented control for the menu bar. */
+  private segmentedGroup(
+    label: string,
+    options: Array<[string, string, boolean, () => void]>,
+  ): HTMLElement {
+    const group = el('div', 'menubar-group');
+    group.append(el('span', 'menubar-label', label));
+    const seg = el('div', 'segmented');
+    seg.setAttribute('role', 'radiogroup');
+    seg.setAttribute('aria-label', label);
+    for (const [, text, on, run] of options) {
+      const b = el('button', 'segment' + (on ? ' segment-on' : ''), text);
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(on));
+      b.onclick = (e) => { e.stopPropagation(); run(); };
+      seg.append(b);
+    }
+    group.append(seg);
+    return group;
   }
 
   /** Closes any open menu. */
@@ -755,53 +821,77 @@ export class Ui {
   private renderSide(game: Game): void {
     const s = game.state;
     this.side.textContent = '';
+    const p = game.active;
 
-    // Turn card
+    // -------- turn card
     const turnCard = el('div', 'card');
-    turnCard.append(el('h2', undefined, `Turn ${s.turn}`));
+    const head = el('div', 'card-head');
+    head.append(el('h2', undefined, `Turn ${s.turn}`));
+    if (p.kind === 'human' && s.phase !== 'gameOver') head.append(el('div', 'turn-now', 'Your move'));
+    turnCard.append(head);
+
     const line = el('div', 'turn-line');
     const dot = el('span', 'dot');
-    dot.style.background = game.active.color;
-    line.append(dot, el('span', undefined, game.active.name));
-    turnCard.append(line);
+    dot.style.background = p.color;
+    line.append(dot, el('span', 'turn-name', p.name));
+    turnCard.append(line, el('div', 'turn-rank', `${RANKS[p.rank]}${p.kind === 'computer' ? ` · ${p.personality}` : ''}`));
+
+    const meter = (label: string, value: number, max: number, colour: string) => {
+      const row = el('div', 'metric-row');
+      row.append(el('span', 'metric-label', label), el('span', 'metric-value', `${value} / ${max}`));
+      const track = el('div', 'metric-track');
+      const fill = el('i');
+      fill.style.width = `${Math.max(0, Math.min(100, (value / max) * 100))}%`;
+      fill.style.background = colour;
+      track.append(fill);
+      return [row, track] as const;
+    };
+    const stress = game.stress(p.id);
     turnCard.append(
-      el('div', 'stat-rank', `${RANKS[game.active.rank]} · Boss Rating ${game.active.bossRating}`),
+      ...meter('Boss rating', p.bossRating, R.PRESIDENT_THRESHOLD, meterColor(p.color)),
+      ...meter('Workload', stress, R.STRESS_BAR_MAX, 'var(--danger)'),
     );
 
     const row = el('div', 'btn-row');
-    row.style.marginTop = '10px';
-    const newBtn = el('button', 'b', 'New game');
-    newBtn.onclick = () => this.handlers.onNewGame();
-    row.append(newBtn);
+    const rollBtn = el('button', 'b primary', 'Roll');
+    rollBtn.style.flex = '1';
+    rollBtn.disabled = !game.canRoll() || p.kind !== 'human' || !!s.modal;
+    rollBtn.onclick = () => this.handlers.onRoll();
+    const tradeBtn = el('button', 'b', 'Trade');
+    tradeBtn.disabled = s.rolled || p.kind !== 'human' || !!s.modal || s.phase === 'gameOver';
+    tradeBtn.onclick = () => this.handlers.onTrade();
+    row.append(rollBtn, tradeBtn);
     turnCard.append(row);
-
-
     this.side.append(turnCard);
 
-    // Stock card
+    // -------- share price card
     const stockCard = el('div', 'card');
     stockCard.append(el('h2', undefined, 'Share price'));
-    const num = el('div', 'stock-num', String(s.stock));
-    num.style.color = s.stock >= R.STOCK_START ? '#63c47a' : '#e07a6a';
-    stockCard.append(num);
-    stockCard.append(this.stockChart(s));
+    const priceRow = el('div', 'turn-line');
+    priceRow.append(el('span', 'stock-num', String(s.stock)));
+    const delta = s.lastStockDelta;
+    if (delta !== 0) {
+      priceRow.append(
+        el('span', `stock-delta ${delta > 0 ? 'up' : 'down'}`, `${delta > 0 ? '+' : ''}${delta}`),
+      );
+    }
+    priceRow.append(el('span', 'stock-peak', `peak ${s.stockPeak}`));
+    stockCard.append(priceRow, this.stockChart(s));
     stockCard.append(
       el(
         'div',
-        'stat-rank',
+        'hint',
         s.stock <= 20 ? 'Danger: the company disbands at zero.' : 'Rises when projects ship.',
       ),
     );
     this.side.append(stockCard);
 
-    // Log
+    // -------- log
     const logCard = el('div', 'card');
     logCard.append(el('h2', undefined, 'Log'));
     const log = el('div', 'log');
     for (const entry of [...s.log].reverse().slice(0, 60)) {
-      const d = el('div');
-      // The original illustrated these moments; show its art beside the entry rather than
-      // interrupting play with another dialog.
+      const d = el('div', 'log-entry');
       const art = entry.art ? eventArt(entry.art) : null;
       if (art) {
         d.classList.add('log-with-art');
@@ -811,13 +901,15 @@ export class Ui {
         img.draggable = false;
         d.append(img);
       }
-      // Name and text share one wrapper. Without it they are separate grid items, and a bare
-      // text node becomes an anonymous item that wraps into the 44px art column.
+      // Name and message share one wrapper: separate grid items would push a bare text node
+      // into the 40px art column.
       const body = el('div', 'log-text');
       if (entry.playerId !== null) {
-        const b = el('b', undefined, `${game.player(entry.playerId).name}: `);
-        b.style.color = game.player(entry.playerId).color;
-        body.append(b);
+        const who = el('b', 'log-who', `${game.player(entry.playerId).name}: `);
+        who.style.color = game.player(entry.playerId).color;
+        body.append(who);
+      } else {
+        d.classList.add('log-system');
       }
       body.append(document.createTextNode(entry.text));
       d.append(body);
@@ -830,24 +922,31 @@ export class Ui {
   private stockChart(s: GameState): SVGSVGElement {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'stock-chart');
-    svg.setAttribute('viewBox', '0 0 200 60');
+    svg.setAttribute('viewBox', '0 0 200 56');
     svg.setAttribute('preserveAspectRatio', 'none');
     const pts = s.stockHistory.slice(-60);
+    const max = Math.max(...pts.map((q) => q.price), R.STOCK_START);
+    const y = (v: number) => 54 - (v / max) * 52;
+
+    // Dashed baseline at the starting price, so a slide below it is legible at a glance.
+    const base = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    base.setAttribute('x1', '0');
+    base.setAttribute('x2', '200');
+    base.setAttribute('y1', String(y(R.STOCK_START)));
+    base.setAttribute('y2', String(y(R.STOCK_START)));
+    base.setAttribute('class', 'spark-base');
+    svg.append(base);
+
     if (pts.length > 1) {
-      const max = Math.max(...pts.map((p) => p.price), R.STOCK_START);
-      const path = pts
-        .map((p, i) => {
-          const x = (i / (pts.length - 1)) * 200;
-          const y = 58 - (p.price / max) * 56;
-          return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-        })
-        .join(' ');
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      line.setAttribute('d', path);
-      line.setAttribute('fill', 'none');
-      line.setAttribute('stroke', s.stock >= R.STOCK_START ? '#63c47a' : '#e07a6a');
-      line.setAttribute('stroke-width', '1.5');
-      svg.append(line);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute(
+        'd',
+        pts
+          .map((q, i) => `${i === 0 ? 'M' : 'L'}${((i / (pts.length - 1)) * 200).toFixed(1)},${y(q.price).toFixed(1)}`)
+          .join(' '),
+      );
+      path.setAttribute('class', `spark-line ${s.stock >= R.STOCK_START ? 'spark-up' : 'spark-down'}`);
+      svg.append(path);
     }
     return svg;
   }

@@ -19,6 +19,7 @@ npm run dev        # Vite dev server
 npm test           # geometry, rules tables, engine invariants, high scores, 75 simulated games
 npm run typecheck  # tsc --noEmit
 npm run build      # typecheck + production bundle
+npm run check:contrast  # WCAG AA audit of the running UI in real Chrome (see below)
 
 npm run art:manifest  # build the art job list  -> scripts/art-manifest.json
 npm run art:gen       # drive perchance in real Chrome -> art/_raw/
@@ -26,7 +27,10 @@ npm run art:cutout    # cut/resize/place -> public/assets/graphics-gen/
 ```
 
 The art pipeline is documented in `scripts/README-art-pipeline.md`; all three steps are
-resumable and skip existing outputs.
+resumable and skip existing outputs. `ART_STYLE` picks the house style — `neon` (default,
+matching the reskin) or `flat`. Raw output is per style under `art/_raw/<style>/`, but both
+styles write to the **same** finished paths, so replacing an installed set needs
+`FORCE=1 npm run art:cutout`.
 
 There is no test framework — `test/smoke.test.ts` is one script with a local `test()` helper
 that tallies failures and exits non-zero. For a focused check or a balance experiment, drive
@@ -60,7 +64,7 @@ public/assets/sounds  ->  symlink to the original's sounds/ directory
 Every consumer resolves availability once at boot and **degrades silently**:
 
 - `assets.ts` reads `manifest.txt`; without it the board draws `icons.ts` inline SVG.
-- `decks.ts` falls back to the newly-written decks in `cards.ts`.
+- `decks.ts` falls back to the newly-written decks in `cards.ts` / `cardsNeon.ts`.
 - `help.ts` falls back to summaries written for this port.
 - `sound.ts` probes per cue and stays quiet when a file is missing.
 
@@ -88,7 +92,20 @@ rewrites only the generated one.
 `engine.ts` DOM-free state machine · `ai.ts` four personalities · `autoplay.ts` headless
 driver · `ui.ts` renderer · `main.ts` modal flow · `decks.ts`/`originalCards.ts` deck
 selection · `help.ts`/`highscores.ts` · `sound.ts`/`midi.ts`/`midiPlayer.ts` audio ·
-`assets.ts`/`icons.ts` art.
+`assets.ts`/`icons.ts` art. Card text lives in `cards.ts` and `cardsNeon.ts`.
+
+### Three card packs, interchangeable by design
+
+`DeckMode` is `new | neon | original | both`. `cards.ts` and `cardsNeon.ts` are both ours and
+deliberately identical in size (30 chance, 12 scruples) and numeric range, so the choice is one
+of voice, not balance. The suite asserts that: size, three answers per card, `{rival}`/`{project}`
+only on cards gated with `needsRival`/`needsProject`, and magnitudes inside the shared bounds.
+
+**A pack can retune the game without touching `rules.ts`.** The neon pack's first draft netted
++35 immediate stock against only -14 delayed, where the existing pack runs +25 against -25. The
+share price then only climbed and the price-zero ending became unreachable — 40 presidencies and
+zero crashes over 40 games. Compare a new pack against the existing one with `autoplay` before
+believing it is neutral.
 
 ### The engine is DOM-free, and that is load-bearing
 
@@ -175,6 +192,44 @@ Two things that look like bugs and are not: owned project names are dark ink rat
 owner's colour (the pale player colours measure 2–3:1 on pastel tiles, and the bar already
 carries ownership), and project names wrap to two lines because `names.ts` generates mid-teens
 names that a 73×27 label cannot hold on one.
+
+### Contrast is checked against the running UI, not by eye
+
+`npm run check:contrast` drives the real interface in real Chrome, walks every rendered text
+node, composites its colour over the nearest opaque ancestor background and asserts WCAG AA
+(4.5:1, or 3:1 for large text) across **both palettes** — about 5,600 text nodes a run. It is
+deliberately outside `npm test`, which stays DOM-free and instant.
+
+Notes for changing it:
+
+- It forces the **vector** artwork set. Text over an installed illustration has no computable
+  background, and the illustrations are not ours to constrain.
+- The menu pass runs on the **pre-game board**. Once six human seats are playing, every square
+  opens a dialog that waits for a click, so a dialog is back over the menu bar within a second
+  of closing the last one.
+- Interact through **locators, not element handles**: every render rebuilds the controls it
+  touches, so a handle taken before a render is detached by the time it is clicked.
+- Gradients are treated as translucent overlays and walked through; only `url(` backgrounds
+  make a pair uncomputable.
+
+It has already paid for itself twice over, and not only on colour: writing it surfaced two
+hangs (below). The colour findings were the same trap in a new place — **the recovered player
+colours are not text colours**. Blue measures 3.75:1 and dark green 3.68:1 on the sidebar card,
+so log entries carry ownership as a coloured edge, exactly as owned project names on the board
+are dark ink rather than the owner's colour. `--accent-2` is likewise a ring colour: as text it
+misses AA at 4.4:1, which is why `--link` exists.
+
+### The turn loop must re-enter after every await
+
+`step()` in `main.ts` parks on `sound.announceTurn()`, which runs 1.1-1.9s. A click on the die
+during that await sets `moving`, and the loop then fell through to the human branch and
+`return`ed without re-examining state: the roll was swallowed and the turn hung with the die
+disabled forever. **After any await inside that loop, `continue` rather than falling through** —
+the state you decided on before the await may no longer be the state you are in.
+
+Relatedly, `Sound.fire()` arms its stall guard *before* calling `play()`. A `play()` promise can
+stay pending indefinitely, and arming the timeout inside `.then()` meant that case hung the
+speech chain — and therefore the turn loop — permanently.
 
 ### CSS hazard: never set `position` on `.sq` or its descendants
 

@@ -169,15 +169,35 @@ export class Sound {
   private duckTimer = 0;
   private cache = new Map<Cue, HTMLAudioElement | null>();
   private enabled: boolean;
+  /**
+   * Music has its own switch. The sound toggle covers speech and effects, which carry
+   * information — who is up, what a square did — while music carries none, so wanting one
+   * without the other is an ordinary thing to want.
+   */
+  private musicEnabled: boolean;
   /** True once any cue has successfully resolved a file. */
   available = false;
 
   constructor() {
     this.enabled = localStorage.getItem('ogow:sound') !== 'off';
+    this.musicEnabled = localStorage.getItem('ogow:music') !== 'off';
   }
 
   get on(): boolean {
     return this.enabled;
+  }
+
+  get musicOn(): boolean {
+    return this.musicEnabled;
+  }
+
+  /** Stops or resumes background music without touching speech and effects. */
+  toggleMusic(): boolean {
+    this.musicEnabled = !this.musicEnabled;
+    localStorage.setItem('ogow:music', this.musicEnabled ? 'on' : 'off');
+    if (!this.musicEnabled) this.stopMusic();
+    else if (this.trackName) void this.playTrack(this.trackName);
+    return this.musicEnabled;
   }
 
   toggle(): boolean {
@@ -187,7 +207,7 @@ export class Sound {
     else {
       this.play('soundOn');
       // Muting stops the track; unmuting puts back whatever should have been playing.
-      if (this.trackName) void this.playTrack(this.trackName);
+      if (this.musicEnabled && this.trackName) void this.playTrack(this.trackName);
     }
     return this.enabled;
   }
@@ -209,8 +229,9 @@ export class Sound {
    * otherwise be the whole music system, silently.
    */
   async playTrack(name: MusicTrack, loop = name !== 'theme'): Promise<void> {
+    // Recorded even when muted, so unmuting resumes whatever should have been playing.
     this.trackName = name;
-    if (!this.enabled) return;
+    if (!this.enabled || !this.musicEnabled) return;
     const audio = await this.resolveTrack(themeName(), name);
     /*
      * Identity, not playing state: boot and the New Game window both ask for the theme track
@@ -262,7 +283,7 @@ export class Sound {
 
   /** Starts the background track, loading it on first use. No-op when absent or muted. */
   async startMusic(loop = true): Promise<void> {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.musicEnabled) return;
     if (this.musicLoaded === null) this.musicLoaded = await this.music.load(MUSIC);
     if (!this.musicLoaded) return;
     await this.music.start(loop);

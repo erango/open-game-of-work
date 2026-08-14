@@ -75,9 +75,9 @@ function pipGrid(n: number): HTMLElement {
 
 export interface UiHandlers {
   onGraphicsChanged(): void;
-  onToggleSmooth(): void;
-  smoothOn(): boolean;
   onToggleSound(): void;
+  onToggleMusic(): void;
+  musicOn(): boolean;
   onAutoClick(): void;
   onHighScores(): void;
   onHelp(topic?: string): void;
@@ -288,6 +288,7 @@ export class Ui {
         name: 'Options',
         items: [
           { label: 'Sound', check: this.handlers.soundOn(), run: () => this.handlers.onToggleSound() },
+          { label: 'Music', check: this.handlers.musicOn(), run: () => this.handlers.onToggleMusic() },
           { label: 'AutoClicking\u2026', run: () => this.handlers.onAutoClick() },
           { label: '', sep: true },
           // Palette and artwork together, radio-style. Original only appears with an
@@ -306,7 +307,6 @@ export class Ui {
               this.render(game);
             },
           },
-          { label: 'Smooth artwork', check: this.handlers.smoothOn(), run: () => this.handlers.onToggleSmooth() },
           { label: '', sep: true },
           {
             label: 'Proportional board text',
@@ -685,10 +685,15 @@ export class Ui {
        */
       if (active) {
         const band = el('div', 'stat-band');
-        const top = G.nameTops[row] - 5;
-        const bottom = barTop + G.bar.height + 4;
+        /*
+         * The transcribed rows overlap: a bar runs to barTop+16, which is 2px past the next
+         * row's nameTop. So the band stops 2px short of its own bar rather than covering the
+         * next name — board.ts is the recovered geometry and does not move to suit a highlight.
+         */
+        const top = G.nameTops[row] - 4;
+        const bottom = barTop + G.bar.height - 2;
         const snapTop = top <= 6 ? 0 : top;
-        const snapBottom = bottom >= CENTER.stats.height - 6 ? CENTER.stats.height : bottom;
+        const snapBottom = bottom >= CENTER.stats.height - 8 ? CENTER.stats.height : bottom;
         band.style.top = `${snapTop}px`;
         band.style.height = `${snapBottom - snapTop}px`;
         panel.append(band);

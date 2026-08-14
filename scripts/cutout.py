@@ -35,6 +35,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GRAPHICS = os.path.join(ROOT, "public", "assets", "graphics-gen")
 FORCE = os.environ.get("FORCE") == "1"
 MODEL = os.environ.get("REMBG_MODEL", "birefnet-general")
+# Write above the CSS size. Every slot is sized by layout (`width: 100%`), so the intrinsic
+# resolution is free detail: the board is transform-scaled and routinely lands at 1.4-2.6x, and
+# writing a 140px tile from a 768px generation threw away everything above 1x and then upscaled
+# it. Clamped per image so nothing is enlarged past what was generated.
+SCALE = max(1, int(os.environ.get("ART_SCALE", "3")))
 ALPHA_MATTING = os.environ.get("ALPHA_MATTING") == "1"
 FILTER = sys.argv[1:]
 
@@ -89,12 +94,14 @@ def center_crop_square(img: "Image.Image") -> "Image.Image":
 
 def write_variant(img: "Image.Image", out: str, size: int, landscape: bool) -> None:
     os.makedirs(os.path.dirname(out), exist_ok=True)
+    w, h = img.size
+    # Never upscale: SCALE is a ceiling on how much detail to keep, not a resize target.
+    target = min(size * SCALE, w if landscape else min(w, h))
+    target = max(size, target)
     if landscape:
-        # Keep the aspect ratio; size is the target width.
-        w, h = img.size
-        img = img.resize((size, max(1, round(h * size / w))), Image.LANCZOS)
+        img = img.resize((target, max(1, round(h * target / w))), Image.LANCZOS)
     else:
-        img = img.resize((size, size), Image.LANCZOS)
+        img = img.resize((target, target), Image.LANCZOS)
     img.save(out)
 
 
@@ -134,7 +141,7 @@ for job in manifest:
         for extra in job.get("also", []):
             write_variant(img, os.path.join(ROOT, extra["out"]), extra["size"], landscape)
 
-        print(f"ok   {job['id']} -> {job['out']} ({job['size']}px)")
+        print(f"ok   {job['id']} -> {job['out']} ({job['size']}px slot, {SCALE}x source)")
         done += 1
     except Exception as exc:  # noqa: BLE001 - report and continue
         print(f"FAIL {job['id']}: {exc}")

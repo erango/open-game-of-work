@@ -71,7 +71,7 @@ Every consumer resolves availability once at boot and **degrades silently**:
 A fresh clone is fully playable. When adding a feature that uses original material, follow
 this pattern — never make the game depend on assets being present.
 
-### There are three artwork sets, not two
+### There are three artwork sets, not two — bundled into three themes
 
 `assets.ts` has a `GraphicsMode` of `original | generated | modern`, and `installedSets()`
 lists whichever image sets are actually on disk:
@@ -81,7 +81,13 @@ public/assets/graphics/      extracted from the original    (never committable)
 public/assets/graphics-gen/  produced by the art pipeline   (your own work)
 ```
 
-The generated set has a **separate root deliberately**. Pointing the pipeline at the same
+Two things about the generated set that are not obvious:
+
+- **It is written at 3x the slot size** and rendered *smoothed*. `image-rendering: pixelated` is
+  bound to the original set alone (`.art-crisp`, set by `applySmoothing()` from the graphics
+  mode) — era pixel art blurs when smoothed, and 3x illustrations go blocky when they are not.
+  Neither is a user preference, so the old Smooth artwork toggle is gone.
+- The generated set has a **separate root deliberately**. Pointing the pipeline at the same
 directory made its resume check see the extracted files and skip every job, and it would have
 overwritten them on the way through. Each set carries its own `manifest.txt`; `art:cutout`
 rewrites only the generated one.

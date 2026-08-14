@@ -1,5 +1,5 @@
 import * as AI from './ai';
-import { aboutImage, applyFavicon, eventArt, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
+import { aboutImage, applyFavicon, eventArt, graphicsMode, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
 import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeLabel, themeName } from './theme';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
@@ -23,10 +23,16 @@ let scores: HighScores = loadScores();
  * pixels crisp when the board is scaled up; smoothing suits very large displays where the
  * blocks get distracting.
  */
-let smoothArt = localStorage.getItem('ogow:smooth') === 'on';
-
+/**
+ * Nearest-neighbour scaling belongs to the original artwork and to nothing else.
+ *
+ * It was a user setting, which was the wrong shape for it: the original's tiles are 81px era
+ * pixel art and blur when smoothed, while the generated illustrations are drawn at 3x and go
+ * blocky when they are *not*. Neither is a preference — each set has one correct answer, so
+ * this follows the artwork.
+ */
 function applySmoothing(): void {
-  document.documentElement.classList.toggle('art-smooth', smoothArt);
+  document.documentElement.classList.toggle('art-crisp', graphicsMode() === 'original');
 }
 
 /** Guards against re-entrant AI stepping. */
@@ -485,11 +491,11 @@ async function askAutoClick(): Promise<void> {
 function stubHandlers() {
   return {
     onGraphicsChanged() {},
-    onToggleSmooth() {},
-    smoothOn() {
-      return false;
-    },
     onToggleSound() {},
+    onToggleMusic() {},
+    musicOn() {
+      return sound.musicOn;
+    },
     onAutoClick() {},
     onHighScores() {},
     onHelp() {},
@@ -1694,22 +1700,21 @@ function handlers() {
       // The set has already been switched; refresh what depends on it. Artwork only — the
       // original card and help text are chosen separately.
       applyFavicon();
+      applySmoothing();
       // A theme carries its own music, so whatever is playing restarts from the new set.
       void sound.retheme();
       ui.render(game);
     },
-    onToggleSmooth() {
-      smoothArt = !smoothArt;
-      localStorage.setItem('ogow:smooth', smoothArt ? 'on' : 'off');
-      applySmoothing();
-      ui.render(game);
-    },
-    smoothOn() {
-      return smoothArt;
-    },
     onToggleSound() {
       sound.toggle();
       ui.render(game);
+    },
+    onToggleMusic() {
+      sound.toggleMusic();
+      ui.render(game);
+    },
+    musicOn() {
+      return sound.musicOn;
     },
     onAutoClick() {
       void askAutoClick();

@@ -381,8 +381,8 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .log-system { color: var(--ink-3); }
 .log-with-art { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; }
 .log-text { min-width: 0; overflow-wrap: anywhere; }
-.log-art { width: 40px; height: 30px; object-fit: cover; border-radius: 2px; display: block; image-rendering: pixelated; }
-.art-smooth .log-art { image-rendering: auto; }
+.log-art { width: 40px; height: 30px; object-fit: cover; border-radius: 2px; display: block; }
+.art-crisp .log-art { image-rendering: pixelated; }
 /* ---------------------------------------------------------------- board
  *
  * Geometry (positions, sizes, font sizes) comes from src/board.ts and is applied inline by
@@ -614,6 +614,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   width: 100%;
   /* Height is set inline from the row's own extent — see renderStats in ui.ts. */
   background: var(--accent-soft);
+  border-radius: 0 4px 4px 0;
   border-left: 2px solid var(--accent-2);
 }
 .stat-name {
@@ -709,10 +710,15 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   border-right: 2px solid rgb(0 0 0 / 0.35);
   border-bottom: 2px solid rgb(0 0 0 / 0.4);
   pointer-events: none;
-}/* Smoothed scaling for the original art, for very large displays where nearest-neighbour
-   blocks become distracting. Default is crisp. */
-.art-smooth .sq-art,
-.art-smooth .btn-art { image-rendering: auto; }
+}
+/* Nearest-neighbour is for the original's era pixel art and nothing else — see applySmoothing
+   in main.ts. The generated set is drawn at 3x and goes blocky when it is not smoothed. */
+.art-crisp .sq-art,
+.art-crisp .btn-art,
+.art-crisp .portrait-art,
+.art-crisp .token-art > img,
+.art-crisp .seat-face,
+.art-crisp .splash img { image-rendering: pixelated; }
 /* ---------------------------------------------------------------- extracted sprites */
 
 .portrait-art,
@@ -720,7 +726,6 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   width: 100%;
   height: 100%;
   display: block;
-  image-rendering: pixelated;
 }/* New Game seat selector: the artwork and its word in one clickable control, cycling
    human / computer / off. Art is drawn at its native 64px so nothing is resampled — at 34px
    the 64px source was downscaled by a non-integer factor and became illegible. */
@@ -733,7 +738,6 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   display: block;
   margin: 0 auto 12px;
   max-width: 100%;
-  image-rendering: pixelated;
   border-radius: 6px;
 }
 /* Startup splash, shown once while the intro clip plays. */
@@ -750,7 +754,6 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .splash img {
   max-width: 92vw;
   max-height: 92vh;
-  image-rendering: pixelated;
   box-shadow: 0 20px 70px rgb(0 0 0 / .8);
 }
 .splash-hint {
@@ -1041,16 +1044,15 @@ button.b.help-mark:hover:not(:disabled) { background: var(--ctl-hover-2); color:
   margin: 0 auto 12px;
   max-width: 100%;
   border-radius: 6px;
-  image-rendering: pixelated;
 }
 .rank-art { width: 150px; height: 150px; }
 .card-art { width: 120px; height: 120px; box-shadow: inset 0 0 0 1px var(--line); }
-.art-smooth .event-art, .art-smooth .rank-art, .art-smooth .card-art { image-rendering: auto; }
+.art-crisp .event-art, .art-crisp .rank-art, .art-crisp .card-art { image-rendering: pixelated; }
 /* -------- office party */
 .party-list { display: flex; flex-direction: column; gap: 10px; }
 .party-row { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 12px; align-items: center; }
-.party-sprite { width: 50px; height: 50px; display: block; image-rendering: pixelated; }
-.art-smooth .party-sprite { image-rendering: auto; }
+.party-sprite { width: 50px; height: 50px; display: block; }
+.art-crisp .party-sprite { image-rendering: pixelated; }
 .party-who { font-weight: 600; font-size: 14px; }
 .party-text { font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .party-delta { margin-top: 3px; font-size: 13px; }

@@ -71,6 +71,12 @@ style/shape `<select>`s found by their option text.
 
 - **Per-job size.** Targets run from 16px portraits to 150px rank art, so the size comes from
   the job, not one global setting.
+- **Written at 3x the slot** (`ART_SCALE`, clamped so nothing is ever upscaled past what was
+  generated). Every slot is sized by layout, so the intrinsic resolution is free detail: the
+  board is transform-scaled and routinely renders at 1.4-2.6x, and writing a 140px tile out of a
+  768px generation threw the rest away and then upscaled what was left. That, plus the
+  nearest-neighbour rendering the original art needs, was what made the generated set look
+  pixelated.
 - **Per-job transparency.** Board tiles are drawn edge to edge and keep their background.
   Anything drawn *over* something else — tokens, party sprites, the icon — is cut out with
   `rembg`, trimmed to content and padded to a centred square so nothing clips.
@@ -83,6 +89,7 @@ style/shape `<select>`s found by their option text.
 ```bash
 npm run art:cutout -- party        # filter by kind or id
 FORCE=1 npm run art:cutout         # redo existing
+ART_SCALE=1 npm run art:cutout     # write at the slot size exactly, no headroom
 REMBG_MODEL=u2net npm run art:cutout   # lighter model; default birefnet-general is ~1GB
 ```
 

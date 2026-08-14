@@ -1,4 +1,4 @@
-import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
+import { CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, PROJECT_TILE, SQUARES, tokenOffset } from './board';
 import { assetsAvailable, assetsInstalled, centerImage, cursorUrl, dieFace, eventArt, graphicsMode, installedSets, playerPortrait, playerToken, setGraphicsMode, squareImage, type GraphicsMode } from './assets';
 import { RESIGN_ICON, TRADE_ICON, squareIcon } from './icons';
 import type { Game } from './engine';
@@ -447,10 +447,8 @@ export class Ui {
     this.lastGame = game;
     this.renderMenu(game);
     this.syncCursors();
-    // With the original art installed, use the original's board colour so the opaque tile
-    // artwork sits on the background it was drawn for rather than on the fallback felt.
-    this.boardWrap.style.background = assetsAvailable() ? BOARD_COLOR : '';
-    this.boardWrap.classList.toggle('board-original', assetsAvailable());
+    // The field surface is constant now: installed tile artwork is opaque, so the old
+    // light-board override only fought the redesign's own background.
     this.renderBoard(game);
     this.renderSide(game);
     this.scaleBoard();
@@ -690,7 +688,6 @@ export class Ui {
   private paintStats(game: Game): void {
     const G = CENTER.statRows;
     const panel = el('div', 'stats-panel');
-    if (assetsAvailable()) panel.style.background = STATS_PANEL_COLOR;
     panel.style.left = `${CENTER.stats.left}px`;
     panel.style.top = `${CENTER.stats.top}px`;
     panel.style.width = `${CENTER.stats.width}px`;

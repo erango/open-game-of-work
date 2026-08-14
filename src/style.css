@@ -170,7 +170,6 @@ html, body {
   color: var(--ink);
   min-height: 100%;
 }
-
 /* ---------------------------------------------------------------- shell */
 
 #app {
@@ -182,7 +181,6 @@ html, body {
   align-items: stretch;
   background: var(--bg);
 }
-
 .left-col {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -190,7 +188,6 @@ html, body {
   min-width: 0;
   min-height: 0;
 }
-
 /* Measured to size the board, so it must never be driven by the board's own dimensions. */
 .board-col {
   min-width: 0;
@@ -199,14 +196,11 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-
 .side { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
-
 @media (max-width: 1020px) {
   #app { grid-template-columns: minmax(0, 1fr); height: auto; }
   .board-col { height: min(70vh, 80vw); }
 }
-
 /* -------- menu bar */
 .menubar {
   display: flex;
@@ -220,9 +214,7 @@ html, body {
   position: relative;
   z-index: 20;
 }
-
 .menu { position: relative; }
-
 .menu-top {
   background: none;
   border: none;
@@ -235,17 +227,13 @@ html, body {
   white-space: nowrap;
   cursor: pointer;
 }
-
 :root[data-palette="neon"] .menu-top { text-transform: uppercase; letter-spacing: .06em; }
-
 .menu-top:hover { color: var(--ink); }
-
 /* Open state stated for the hovered case too. Letting :hover outrank it is what made the
    label vanish before; a filled background also changed the label's advance width and shifted
    every button along the bar, so the open marker is an underline. */
 .menu-open,
 .menu-open:hover { color: var(--ink); border-bottom-color: var(--accent-2); font-weight: 600; }
-
 .menu-drop {
   position: absolute;
   top: calc(100% + 4px);
@@ -257,7 +245,6 @@ html, body {
   padding: 4px;
   z-index: 30;
 }
-
 .menu-item {
   display: grid;
   grid-template-columns: 18px 1fr;
@@ -274,15 +261,12 @@ html, body {
   border-radius: 5px;
   cursor: pointer;
 }
-
 .menu-item:hover { background: var(--panel-3); color: var(--ink); }
 .menu-check { color: var(--accent-2); font-weight: 700; }
 .menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
-
 /* Segmented controls sit at the right-hand end of the bar. */
 .menubar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; padding-right: 4px; }
 .menubar-group { display: flex; align-items: center; gap: 7px; }
-
 .menubar-label,
 .field-label,
 .card h2 {
@@ -292,9 +276,7 @@ html, body {
   letter-spacing: .14em;
   color: var(--ink-3);
 }
-
 .menubar-label { letter-spacing: .12em; }
-
 /* -------- shared controls */
 .segmented {
   display: inline-flex;
@@ -304,7 +286,6 @@ html, body {
   box-shadow: inset 0 0 0 1px var(--line);
   gap: 2px;
 }
-
 .segment {
   background: none;
   border: none;
@@ -317,12 +298,10 @@ html, body {
   cursor: pointer;
   white-space: nowrap;
 }
-
 .segment:hover:not(.segment-on):not(:disabled) { color: var(--ink); }
 .segment-on,
 .segment-on:hover { background: var(--accent); color: var(--accent-ink); }
 .segment:disabled { background: var(--ctl); color: var(--ink-3); cursor: default; }
-
 /* Disabled buttons change colour rather than taking opacity, which is what made locked
    controls unreadable. */
 button.b {
@@ -336,10 +315,8 @@ button.b {
   font-size: 14px;
   cursor: pointer;
 }
-
 button.b:hover:not(:disabled) { background: var(--ctl-hover-2); color: var(--ink); }
 button.b:disabled { background: var(--ctl); color: var(--ink-3); cursor: default; }
-
 button.b.primary {
   background: var(--accent);
   color: var(--accent-ink);
@@ -347,12 +324,9 @@ button.b.primary {
   padding: 10px 20px;
   box-shadow: none;
 }
-
 button.b.primary:hover:not(:disabled) { background: var(--accent-hover); }
 button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
-
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
 /* -------- sidebar cards */
 .card {
   background: var(--panel);
@@ -360,21 +334,16 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   box-shadow: inset 0 0 0 1px var(--panel-line);
   padding: 14px;
 }
-
 .card h2 { margin: 0 0 10px; }
-
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .turn-now { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--accent-2); }
-
 .turn-line { display: flex; align-items: center; gap: 8px; }
 .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
 .turn-name { font-size: 19px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
 .turn-rank { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
-
 .metric-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--ink-3); }
 .metric-value { font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
-
 .metric-track {
   height: 6px;
   border-radius: 1px;
@@ -383,25 +352,20 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   margin: 5px 0 10px;
   overflow: hidden;
 }
-
 .metric-track > i { display: block; height: 100%; transition: width .25s ease; }
-
 .stock-num { font-size: 30px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--ink); }
 .stock-delta { font-size: 13px; font-weight: 600; }
 .stock-peak { font-size: 12px; color: var(--ink-3); margin-left: auto; }
 .up { color: var(--success); }
 .down { color: var(--danger-2); }
 .hint { font-size: 12px; color: var(--ink-3); }
-
 .stock-chart { width: 100%; height: 56px; display: block; margin: 8px 0 6px; }
 .spark-base { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 4 4; }
 .spark-line { fill: none; stroke-width: 1.5; }
 .spark-up { stroke: var(--success); }
 .spark-down { stroke: var(--danger-2); }
-
 /* -------- log */
 .log { max-height: 300px; overflow-y: auto; }
-
 .log-entry {
   padding: 8px 0;
   border-bottom: 1px solid var(--rule-2);
@@ -409,16 +373,13 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   line-height: 1.5;
   color: var(--ink-2);
 }
-
 .log-entry:last-child { border-bottom: none; }
 .log-who { font-weight: 600; }
 .log-system { color: var(--ink-3); }
-
 .log-with-art { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; }
 .log-text { min-width: 0; overflow-wrap: anywhere; }
 .log-art { width: 40px; height: 30px; object-fit: cover; border-radius: 2px; display: block; image-rendering: pixelated; }
 .art-smooth .log-art { image-rendering: auto; }
-
 /* ---------------------------------------------------------------- board
  *
  * Geometry (positions, sizes, font sizes) comes from src/board.ts and is applied inline by
@@ -712,13 +673,6 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .btn-art { width: 100%; height: 100%; object-fit: contain; display: block; }
 .portrait-art { width: 100%; height: 100%; display: block; }
 .token-art > img { width: 100%; height: 100%; display: block; }
-.sq-art, .btn-art, .portrait-art, .token-art > img, .seat-face { image-rendering: pixelated; }
-.art-smooth .sq-art,
-.art-smooth .btn-art,
-.art-smooth .portrait-art,
-.art-smooth .token-art > img,
-.art-smooth .seat-face { image-rendering: auto; }
-html, body { height: 100%; }
 /* The board column is measured to size the board, so it must never be driven by the
    board's own dimensions — otherwise resizing feeds back on itself. */
 .board-col {
@@ -763,12 +717,6 @@ html, body { height: 100%; }
   position: absolute;
   border: 1px solid rgb(0 0 0 / .55);
 }
-/* projectStatusShape: white shape masking the work still outstanding, from the top down. */
-.proj-empty {
-  position: absolute;
-  background: #fff;
-  transition: height .25s ease;
-}
 /* projectNameLabel: centred, clear of the bar. Size is set from FONTS in ui.ts. */
 .proj-name {
   position: absolute;
@@ -789,7 +737,7 @@ html, body { height: 100%; }
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #e0451f;
+  background: var(--danger-2);
   box-shadow: 0 0 0 1px rgb(0 0 0 / .55);
 }
 /* center cluster */
@@ -832,74 +780,9 @@ html, body { height: 100%; }
   padding: 20px;
   z-index: 100;
 }
-.modal {
-  position: relative;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 20px;
-  max-width: 620px;
-  width: 100%;
-  max-height: 86vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgb(0 0 0 / .6);
-}
-.modal h3 { margin: 0 0 6px; font-size: 21px; }
-.modal .sub { color: var(--ink-dim); font-size: 14px; margin-bottom: 14px; }
-.modal p { line-height: 1.6; font-size: 16px; }
-.modal ul { padding-left: 20px; line-height: 1.65; font-size: 15px; }
-.modal .foot { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
-.choice {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-radius: 8px;
-  padding: 11px 13px;
-  margin-bottom: 8px;
-  font: inherit;
-  font-size: 15px;
-  cursor: pointer;
-  line-height: 1.5;
-}
-.choice:hover { background: #38404a; border-color: #5a626c; }
-.choice b { color: var(--accent); margin-right: 6px; }
-.delta-pos { color: #63c47a; font-weight: 700; }
-.delta-neg { color: #e07a6a; font-weight: 700; }
 /* setup */
 
 .setup-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
-.seat {
-  display: grid;
-  grid-template-columns: 26px 1fr 108px 130px;
-  gap: 8px;
-  align-items: center;
-}
-.seat input, .seat select {
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-radius: 5px;
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 14px;
-  min-width: 0;
-}
-.seat .swatch { width: 18px; height: 18px; border-radius: 4px; }
-.field { margin-bottom: 14px; }
-.field > label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-dim); margin-bottom: 6px; }
-.trade-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.plist { border: 1px solid var(--line); border-radius: 6px; max-height: 200px; overflow-y: auto; }
-.plist label {
-  display: flex; gap: 7px; align-items: flex-start;
-  padding: 8px 10px; font-size: 14px; cursor: pointer;
-  border-bottom: 1px solid rgb(255 255 255 / .05);
-}
-.plist label:hover { background: var(--panel-2); }
-.plist input { margin-top: 2px; }
-.empty { padding: 12px; color: var(--ink-dim); font-size: 14px; }
 /* ---------------------------------------------------------------- square art */
 
 .sq-icon {
@@ -917,26 +800,6 @@ html, body { height: 100%; }
 /* AI decisions are shown but not editable: the picked option is highlighted, the rest
    are disabled, and only the confirm button stays live. */
 .choice:disabled { opacity: .55; cursor: default; }
-.choice-chosen {
-  opacity: 1 !important;
-  border-color: var(--accent) !important;
-  background: #33302a !important;
-}
-.choice-tag {
-  float: right;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--accent);
-  font-weight: 700;
-}
-.ai-verdict {
-  background: rgb(216 161 60 / .12);
-  border-left: 3px solid var(--accent);
-  padding: 8px 11px;
-  border-radius: 0 5px 5px 0;
-  font-weight: 600;
-}
 /* ---------------------------------------------------------------- centre cluster */
 
 /* Raised frames, standing in for the original's bsRaised TBevels. */
@@ -969,7 +832,7 @@ html, body { height: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #05070a;
+  background: var(--inset);
   border-radius: 3px;
   box-shadow: inset 0 2px 5px rgb(0 0 0 / .9);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
@@ -988,8 +851,6 @@ html, body { height: 100%; }
   image-rendering: pixelated; /* 1bpp/4bpp era art, keep it crisp rather than blurred */
   user-select: none;
 }
-/* The original board is light, so its captions and project text need dark ink. */
-.board-original .center-caption { color: #10171f; text-shadow: 0 1px 0 rgb(255 255 255 / .45); }
 /* Smoothed scaling for the original art, for very large displays where nearest-neighbour
    blocks become distracting. Default is crisp. */
 .art-smooth .sq-art,
@@ -1021,22 +882,6 @@ html, body { height: 100%; }
 }
 /* Office party: one row per player, sprite plus outcome. */
 .party-list { display: flex; flex-direction: column; gap: 10px; }
-.party-row {
-  display: grid;
-  grid-template-columns: 50px 1fr;
-  gap: 12px;
-  align-items: center;
-}
-.party-sprite {
-  width: 50px;
-  height: 50px;
-  display: block;
-  image-rendering: pixelated;
-}
-.art-smooth .party-sprite, .art-smooth .rank-art { image-rendering: auto; }
-.party-who { font-weight: 700; font-size: 14px; }
-.party-text { font-size: 14px; line-height: 1.45; }
-.party-delta { margin-top: 3px; font-size: 13px; }
 /* New Game seat selector: the artwork and its word in one clickable control, cycling
    human / computer / off. Art is drawn at its native 64px so nothing is resampled — at 34px
    the 64px source was downscaled by a non-integer factor and became illegible. */
@@ -1045,32 +890,6 @@ html, body { height: 100%; }
   align-items: center;
   padding-left: 8px;
 }
-.seat-type {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 5px 10px 5px 5px;
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-}
-.seat-type:hover { border-color: var(--accent); background: #38404a; }
-.seat-face {
-  width: 64px;
-  height: 64px;
-  flex: none;
-  border-radius: 4px;
-  image-rendering: pixelated;
-  background: #fff;
-}
-.art-smooth .seat-face { image-rendering: auto; }
-.seat-word { white-space: nowrap; }
 /* Original Chance / Scruples card artwork, shown when playing the original deck. */
 .card-art {
   display: block;
@@ -1080,7 +899,6 @@ html, body { height: 100%; }
   border-radius: 5px;
   border: 1px solid var(--line);
 }
-.art-smooth .card-art { image-rendering: auto; }
 /* ---------------------------------------------------------------- event art */
 
 /* The original illustrated several moments (a finished project, a full set, the company
@@ -1102,13 +920,12 @@ html, body { height: 100%; }
   image-rendering: pixelated;
   border-radius: 6px;
 }
-.art-smooth .event-art { image-rendering: auto; }
 /* Startup splash, shown once while the intro clip plays. */
 .splash {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: #000;
+  background: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1130,31 +947,6 @@ html, body { height: 100%; }
 /* ---------------------------------------------------------------- high scores */
 
 .hs-wrap { display: grid; gap: 18px; }
-.hs-table h4 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  color: var(--accent);
-  letter-spacing: .02em;
-}
-.hs-grid {
-  display: grid;
-  grid-template-columns: 42px 1fr auto;
-  gap: 2px 10px;
-  align-items: baseline;
-  font-size: 14px;
-}
-.hs-h {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  color: var(--ink-dim);
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--line);
-}
-.hs-c { padding: 3px 0; }
-.hs-num { text-align: right; font-variant-numeric: tabular-nums; }
-.hs-new { color: var(--accent); font-weight: 700; }
-.hs-note { font-size: 11px; color: var(--ink-dim); grid-column: 2 / 4; }
 /* ---------------------------------------------------------------- how to play */
 
 /* THELPFORM: topics down the left, a scrolling body on the right. */
@@ -1164,35 +956,6 @@ html, body { height: 100%; }
   gap: 14px;
   align-items: start;
 }
-.help-topics { display: flex; flex-direction: column; gap: 5px; }
-.help-topic {
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-radius: 5px;
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-}
-.help-topic:hover { background: #38404a; }
-.help-topic-on {
-  border-color: var(--accent);
-  background: #33302a;
-  font-weight: 700;
-}
-.help-body {
-  max-height: 52vh;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  font-size: 14px;
-  line-height: 1.6;
-  background: rgb(0 0 0 / .2);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 12px 14px;
-}
 /* The original puts a round red ? in the corner of its New Game window. */
 .help-mark {
   border-radius: 50%;
@@ -1201,12 +964,11 @@ html, body { height: 100%; }
   padding: 0;
   font-size: 18px;
   font-weight: 700;
-  background: #c8342c;
+  background: var(--danger);
   border-color: transparent;
-  color: #fff;
+  color: var(--accent-ink);
   margin-right: auto;
 }
-.help-mark:hover { background: #d94a41; }
 /* ---------------------------------------------------------------- menu bar */
 
 /* Mirrors TMAINFORM's TMainMenu, and keeps the sidebar from filling up with buttons. */
@@ -1231,11 +993,6 @@ html, body { height: 100%; }
   border-radius: 6px;
   margin-bottom: 12px;
 }
-.chart-big path { fill: none; stroke-width: 2; }
-.chart-up { stroke: #63c47a; }
-.chart-down { stroke: #e07a6a; }
-.chart-base { stroke: rgb(255 255 255 / .22); stroke-dasharray: 4 4; stroke-width: 1; }
-.chart-zero { stroke: rgb(224 122 106 / .5); stroke-width: 1; }
 /* Avatars parked in their pre-game grid, with no disc behind them. */
 .token-parked { transition: none; }
 /* Only the help window reserves room for the switch; every other dialog keeps a full-width
@@ -1252,12 +1009,6 @@ html, body { height: 100%; }
   align-items: center;
   gap: 8px;
 }
-.help-source-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  color: var(--ink-dim);
-}
 /* ---------------------------------------------------------------- splash credit */
 
 .splash-inner {
@@ -1272,13 +1023,13 @@ html, body { height: 100%; }
   padding: 44px 60px;
   border: 2px solid rgb(255 255 255 / .14);
   border-radius: 12px;
-  background: linear-gradient(160deg, #26405c, #16202c);
+  background: linear-gradient(160deg, var(--panel-3), var(--panel));
 }
 .splash-title {
   font-size: 40px;
   font-weight: 800;
   letter-spacing: -.01em;
-  color: #f2f6fa;
+  color: var(--ink);
 }
 .splash-sub {
   margin-top: 6px;
@@ -1308,13 +1059,236 @@ html, body { height: 100%; }
   border-radius: 999px;
   background: rgb(216 161 60 / .1);
 }
-.splash-hint {
-  position: static;
-  margin-top: 2px;
-  color: rgb(255 255 255 / .45);
-  font-size: 13px;
-  letter-spacing: .05em;
-}
-.about-credit { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
 /* The splash waits for a click, so give it an explicit affordance. */
 .splash-go { margin-top: 4px; padding: 10px 26px; font-size: 15px; }
+/* ---------------------------------------------------------------- dialogs */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(10 9 8 / .72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+.modal {
+  position: relative;
+  background: var(--panel);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--line), 0 24px 60px rgb(0 0 0 / .6);
+  padding: 22px;
+  max-width: 620px;
+  width: 100%;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+.modal h3 { margin: 0 0 6px; font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
+.modal .sub { font-size: 14px; line-height: 1.5; color: var(--ink-2); margin-bottom: 14px; }
+.modal p { font-size: 17px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
+.modal ul { padding-left: 20px; line-height: 1.65; font-size: 15px; color: var(--ink-2); }
+.modal .foot { margin-top: 18px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+.field { margin-bottom: 14px; }
+.field > label { display: block; margin-bottom: 6px; }
+.two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal input[type="text"],
+.modal input[type="number"],
+.modal select,
+.seat input,
+.seat select {
+  background: var(--field-input);
+  box-shadow: inset 0 0 0 1px var(--line);
+  border: none;
+  color: var(--ink);
+  border-radius: 5px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  min-width: 0;
+  width: 100%;
+}
+.modal select:disabled, .seat select:disabled, .seat input:disabled { color: var(--ink-3); }
+/* -------- answer / choice buttons.
+ * Locked AI choices keep full opacity and gain an accent ring; only the text dims. Putting
+ * opacity on the whole button is what made the old locked dialogs unreadable. */
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--row);
+  box-shadow: inset 0 0 0 1px var(--row-line);
+  border: none;
+  color: var(--ink-2);
+  border-radius: 7px;
+  padding: 13px 14px;
+  margin-bottom: 8px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.choice:hover:not(:disabled) { background: var(--row-hover); box-shadow: inset 0 0 0 1px var(--accent-2); color: var(--ink); }
+.choice:disabled { cursor: default; color: var(--ink-3); }
+.choice-chosen,
+.choice-chosen:disabled {
+  background: var(--accent-weak);
+  box-shadow: inset 0 0 0 1px var(--accent-2);
+  color: var(--ink);
+}
+.choice-num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--ctl);
+  box-shadow: inset 0 0 0 1px var(--line-sq);
+  color: var(--ink-2b);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.choice:hover:not(:disabled) .choice-num { color: var(--ink); }
+.choice:disabled .choice-num { color: var(--ink-3); }
+.choice-chosen .choice-num,
+.choice-chosen:disabled .choice-num { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+.choice-tag { margin-left: auto; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--accent-2); font-weight: 700; }
+.ai-verdict {
+  background: var(--accent-soft);
+  border-left: 2px solid var(--accent-2);
+  padding: 10px 12px;
+  border-radius: 0 5px 5px 0;
+  font-size: 15px;
+  color: var(--ink);
+}
+.delta-pos { color: var(--success); font-weight: 600; }
+.delta-neg { color: var(--danger-2); font-weight: 600; }
+.hint-line { font-size: 12px; color: var(--ink-3); }
+/* -------- New Game seats */
+.setup-grid { display: grid; gap: 8px; }
+.seats-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.seats-count { font-size: 12px; color: var(--ink-3); }
+.seat {
+  display: grid;
+  grid-template-columns: 80px 132px minmax(0, 1fr) 128px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 10px 7px 0;
+  border-radius: 7px;
+  background: var(--row);
+  box-shadow: inset 0 0 0 1px var(--row-line);
+}
+/* Off seats stay readable; off-ness is carried by the dimmer row and the filled Off segment. */
+.seat-off { background: var(--row-off); box-shadow: inset 0 0 0 1px var(--row-off-line); }
+.seat-off .seat-name-input, .seat-off select { color: var(--ink-3); }
+.seat-id { display: flex; align-items: center; gap: 8px; }
+.seat-bar { width: 4px; height: 64px; border-radius: 0 2px 2px 0; flex: none; }
+/* The art is 64px in the original and must never be resampled. */
+.seat-face { width: 64px; height: 64px; flex: none; border-radius: 3px; margin-left: 8px; display: block; }
+.seat-seg { width: 100%; }
+.seat-seg .segment { flex: 1; padding: 5px 0; font-size: 12px; text-align: center; }
+/* -------- lists (trade, power monger) */
+.plist { border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); max-height: 200px; overflow-y: auto; background: var(--field); }
+.plist label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--ink-2);
+  cursor: pointer;
+  border-bottom: 1px solid var(--rule-2);
+}
+.plist label:last-child { border-bottom: none; }
+.plist label:hover { background: var(--row-hover); color: var(--ink); }
+.plist input { width: auto; margin-top: 3px; }
+.empty { padding: 12px; color: var(--ink-3); font-size: 14px; }
+.trade-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* -------- the ? affordance on New Game */
+.help-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--ctl-2);
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  color: var(--ink-2);
+  margin-right: auto;
+}
+.help-mark:hover:not(:disabled) { background: var(--ctl-hover-2); color: var(--ink); }
+/* -------- Scruples header */
+.card-head-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.card-kicker { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--ink-2b); }
+.card-meta { margin-left: auto; font-size: 12px; color: var(--ink-3); }
+.card-head-row .sq-icon { color: var(--icon-2); }
+/* -------- how to play */
+.help-layout { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 14px; align-items: start; }
+.help-topics { display: flex; flex-direction: column; gap: 5px; }
+.help-topic {
+  background: var(--row);
+  box-shadow: inset 0 0 0 1px var(--row-line);
+  border: none;
+  color: var(--ink-2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.help-topic:hover { background: var(--row-hover); color: var(--ink); }
+.help-topic-on { background: var(--accent-weak); box-shadow: inset 0 0 0 1px var(--accent-2); color: var(--ink); font-weight: 600; }
+.help-body {
+  max-height: 52vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  background: var(--field);
+  box-shadow: inset 0 0 0 1px var(--line);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.help-source { position: absolute; top: 18px; right: 22px; display: flex; align-items: center; gap: 8px; }
+.modal-help h3, .modal-help .sub { padding-right: 260px; }
+/* -------- high scores */
+.hs-wrap { display: grid; gap: 18px; }
+.hs-table h4 { margin: 0 0 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--ink-3); }
+.hs-grid { display: grid; grid-template-columns: 42px 1fr auto; gap: 2px 10px; align-items: baseline; font-size: 14px; color: var(--ink-2); }
+.hs-h { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); padding-bottom: 5px; border-bottom: 1px solid var(--rule); }
+.hs-c { padding: 4px 0; }
+.hs-num { text-align: right; font-variant-numeric: tabular-nums; }
+.hs-new { color: var(--accent-2); font-weight: 700; }
+.hs-note { font-size: 11px; color: var(--ink-3); grid-column: 2 / 4; }
+/* -------- stock chart window */
+.chart-big { width: 100%; height: auto; display: block; background: var(--inset); box-shadow: inset 0 0 0 1px var(--inset-line); border-radius: 6px; margin-bottom: 12px; }
+.chart-big path { fill: none; stroke-width: 2; }
+/* -------- illustrations inside dialogs */
+.event-art, .rank-art, .card-art {
+  display: block;
+  margin: 0 auto 12px;
+  max-width: 100%;
+  border-radius: 6px;
+  image-rendering: pixelated;
+}
+.rank-art { width: 150px; height: 150px; }
+.card-art { box-shadow: inset 0 0 0 1px var(--line); }
+.art-smooth .event-art, .art-smooth .rank-art, .art-smooth .card-art { image-rendering: auto; }
+/* -------- office party */
+.party-list { display: flex; flex-direction: column; gap: 10px; }
+.party-row { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 12px; align-items: center; }
+.party-sprite { width: 50px; height: 50px; display: block; image-rendering: pixelated; }
+.art-smooth .party-sprite { image-rendering: auto; }
+.party-who { font-weight: 600; font-size: 14px; }
+.party-text { font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.party-delta { margin-top: 3px; font-size: 13px; }
+.about-credit { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--ink-2); }
+.about-credit a { color: var(--accent-2); text-decoration: none; font-weight: 600; }
+.about-credit a:hover { text-decoration: underline; }

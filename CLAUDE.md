@@ -19,7 +19,14 @@ npm run dev        # Vite dev server
 npm test           # geometry, rules tables, engine invariants, high scores, 75 simulated games
 npm run typecheck  # tsc --noEmit
 npm run build      # typecheck + production bundle
+
+npm run art:manifest  # build the art job list  -> scripts/art-manifest.json
+npm run art:gen       # drive perchance in real Chrome -> art/_raw/
+npm run art:cutout    # cut/resize/place -> public/assets/graphics-gen/
 ```
+
+The art pipeline is documented in `scripts/README-art-pipeline.md`; all three steps are
+resumable and skip existing outputs.
 
 There is no test framework — `test/smoke.test.ts` is one script with a local `test()` helper
 that tallies failures and exits non-zero. For a focused check or a balance experiment, drive
@@ -59,6 +66,21 @@ Every consumer resolves availability once at boot and **degrades silently**:
 
 A fresh clone is fully playable. When adding a feature that uses original material, follow
 this pattern — never make the game depend on assets being present.
+
+### There are three artwork sets, not two
+
+`assets.ts` has a `GraphicsMode` of `original | generated | modern`, and `installedSets()`
+lists whichever image sets are actually on disk:
+
+```
+public/assets/graphics/      extracted from the original    (never committable)
+public/assets/graphics-gen/  produced by the art pipeline   (your own work)
+```
+
+The generated set has a **separate root deliberately**. Pointing the pipeline at the same
+directory made its resume check see the extracted files and skip every job, and it would have
+overwritten them on the way through. Each set carries its own `manifest.txt`; `art:cutout`
+rewrites only the generated one.
 
 ## Architecture
 
@@ -132,6 +154,27 @@ top 226 where the 81px grid wants 228. **Do not tidy these** — a test asserts 
 `Brush.Color`, and grouping by colour gives runs of **2/4/4/3/2**, not three per profile. So
 set-collecting is deliberately asymmetric. Player colours, tile colours, the board background
 and the stat-row geometry are all likewise recovered.
+
+### `style.css` is a token system with two palettes
+
+`:root` defines the whole surface as custom properties; `:root[data-palette="neon"]` redefines
+*only* the colour tokens. `ui.ts` swaps the `data-palette` attribute and `main.ts` applies the
+stored choice at boot. Rules for touching it:
+
+- **No literal hex below the two palette blocks.** Everything downstream reads tokens, so a
+  hard-coded colour silently ignores the palette switch. `grep -E '#[0-9a-fA-F]{3,8}\b'` past
+  the palette blocks should return nothing.
+- **Board text scales with the board**, so board font sizes are `calc(Npx * var(--text-k, 1))`
+  rather than raw pixels — the coefficient shrinks type at large scales.
+- The neon palette keeps each profile's and player's **hue** and raises chroma. It is a reskin,
+  not a recolour: swapping hues would break the recovered identity of a tile.
+- `design/handoff/README.md` is the redesign specification, with per-component specs, state
+  matrices and the token list. Read it before restyling anything.
+
+Two things that look like bugs and are not: owned project names are dark ink rather than the
+owner's colour (the pale player colours measure 2–3:1 on pastel tiles, and the bar already
+carries ownership), and project names wrap to two lines because `names.ts` generates mid-teens
+names that a 73×27 label cannot hold on one.
 
 ### CSS hazard: never set `position` on `.sq` or its descendants
 
@@ -270,6 +313,16 @@ The failures here were all *plausible-looking* results, so:
 `ui.ts` and `main.ts` are now large enough that string-anchored patching is risky — one edit
 here spliced the wrong region and duplicated five methods. Prefer explicit method boundaries,
 and let `npm run typecheck` catch it before anything else.
+
+`board.ts` is **not** a design file. Coordinates, colours, the profile distribution and the
+recovered font sizes are all load-bearing, and a restyle never needs to touch it. Change the
+surface in `style.css` instead.
+
+Replacing a block of `style.css` wholesale leaves **stale duplicates**: a selector list that
+matches only exact selector strings misses variants (`.board-original .center-caption` when the
+list held `.center-caption`), and the survivors sit *above* their replacements where they can
+still win on specificity. After a bulk rewrite, split the file on brace depth and check for
+repeated selectors rather than trusting the removal count.
 
 ## The clean-room boundary
 

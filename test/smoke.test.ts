@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { autoplay } from '../src/autoplay.ts';
+import { CHANCE, SCRUPLES, type ChanceCard, type ScruplesCard } from '../src/cards.ts';
+import { CHANCE_NEON, SCRUPLES_NEON } from '../src/cardsNeon.ts';
 import { PROJECT_PROFILES, PROJECT_COUNT, SQUARES } from '../src/board.ts';
 import { Game } from '../src/engine.ts';
 import { parseMidi } from '../src/midi.ts';
@@ -283,6 +285,86 @@ test('engine tracks the peak share price, not just the final one', () => {
     assert.ok(g.state.stockPeak >= g.state.stock, 'peak must never fall below current');
   }
 });
+
+console.log('\nCard packs');
+
+/*
+ * The two packs written for this port are meant to be interchangeable: same size, same numeric
+ * ranges, so choosing between them changes the voice and not the balance. These checks are what
+ * keeps a new pack from quietly retuning the game — a milder stock spread took the price-zero
+ * ending off the table entirely the first time this one was written.
+ */
+const PACKS: Array<[string, ChanceCard[], ScruplesCard[]]> = [
+  ['new', CHANCE, SCRUPLES],
+  ['neon', CHANCE_NEON, SCRUPLES_NEON],
+];
+
+const stockTotals = (chance: ChanceCard[], scruples: ScruplesCard[]) => {
+  const answers = scruples.flatMap((c) => c.choices);
+  const now = [...chance.map((c) => c.stock), ...answers.map((c) => c.stock)];
+  const later = [...chance.map((c) => c.delayed?.stock), ...answers.map((c) => c.delayed?.stock)];
+  const sum = (xs: Array<number | undefined>) => xs.reduce((a, b) => a + (b ?? 0), 0);
+  return { now: sum(now), later: sum(later) };
+};
+
+for (const [name, chance, scruples] of PACKS) {
+  test(`${name} pack is 30 chance and 12 scruples`, () => {
+    assert.equal(chance.length, 30);
+    assert.equal(scruples.length, 12);
+  });
+
+  test(`${name} pack: every scruples card offers exactly three answers`, () => {
+    for (const c of scruples) assert.equal(c.choices.length, 3, c.situation.slice(0, 40));
+  });
+
+  test(`${name} pack: {rival} and {project} only appear on cards that require them`, () => {
+    for (const c of scruples) {
+      const text = [
+        c.situation,
+        ...c.choices.flatMap((a) => [a.label, a.outcome, a.delayed?.text ?? '']),
+      ].join(' ');
+      if (text.includes('{rival}')) assert.ok(c.needsRival, `needsRival: ${c.situation.slice(0, 40)}`);
+      if (text.includes('{project}')) {
+        assert.ok(c.needsProject, `needsProject: ${c.situation.slice(0, 40)}`);
+      }
+    }
+    // A chance card naming a project must be gated on owning one, or {project} has nothing to
+    // substitute. Both flags gate it: needsProject directly, workSingleProject by implication.
+    for (const c of chance) {
+      if (c.text.includes('{project}')) {
+        assert.ok(
+          c.needsProject || c.workSingleProject,
+          `needsProject: ${c.text.slice(0, 40)}`,
+        );
+      }
+      if (c.text.includes('{rival}')) assert.ok(c.needsRival, `needsRival: ${c.text.slice(0, 40)}`);
+    }
+  });
+
+  test(`${name} pack: effects stay inside the shared ranges`, () => {
+    const answers = scruples.flatMap((c) => c.choices);
+    const within = (v: number | undefined, lo: number, hi: number, what: string) => {
+      if (v === undefined) return;
+      assert.ok(v >= lo && v <= hi, `${what} out of range: ${v}`);
+    };
+    for (const c of [...chance, ...answers]) {
+      within(c.bossRating, -9, 9, 'bossRating');
+      within(c.stock, -10, 10, 'stock');
+      within(c.work, -3, 4, 'work');
+      within(c.delayed?.bossRating, -12, 12, 'delayed bossRating');
+      within(c.delayed?.stock, -10, 10, 'delayed stock');
+    }
+    for (const a of answers) within(a.friendliness, -5, 5, 'friendliness');
+  });
+
+  test(`${name} pack: upside is paid for later`, () => {
+    const { now, later } = stockTotals(chance, scruples);
+    assert.ok(now > 0, `immediate stock should net positive, got ${now}`);
+    // Without a comparable delayed cost the share price only climbs, and the price-zero ending
+    // becomes unreachable.
+    assert.ok(later <= -now * 0.5, `delayed stock ${later} too mild against immediate ${now}`);
+  });
+}
 
 console.log('\nMIDI parser');
 

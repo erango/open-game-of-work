@@ -208,10 +208,14 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     const deckOpts: Array<[DeckMode, string]> = originalAvailable()
       ? [
           ['new', 'Newly written'],
+          ['neon', 'Newly written — cyberpunk'],
           ['original', 'Original 2000 deck'],
-          ['both', 'Both, shuffled together'],
+          ['both', 'All three, shuffled'],
         ]
-      : [['new', 'Newly written']];
+      : [
+          ['new', 'Newly written'],
+          ['neon', 'Newly written — cyberpunk'],
+        ];
     for (const [v, label] of deckOpts) {
       const o = el('option', undefined, label);
       o.value = v;
@@ -224,8 +228,8 @@ async function askNewGame(): Promise<NewGameConfig | null> {
         'div',
         'hint-line',
         originalAvailable()
-          ? 'The original deck uses its own wording and card art. Its numeric effects were compiled into code, so this port infers them.'
-          : 'Run tools/extract-assets.py against your own copy of gamework.exe to play the original deck.',
+          ? 'Two packs are written for this port, in different voices and the same numeric ranges. The original deck brings its own wording and card art; its numeric effects were compiled into code, so this port infers them.'
+          : 'Two packs are written for this port, in different voices and the same numeric ranges. Run tools/extract-assets.py against your own copy of gamework.exe to add the original deck.',
       ),
     );
     topRow.append(deckField);

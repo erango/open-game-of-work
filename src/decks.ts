@@ -1,17 +1,20 @@
 import { CHANCE, SCRUPLES, type ChanceCard, type ScruplesCard } from './cards';
+import { CHANCE_NEON, SCRUPLES_NEON } from './cardsNeon';
 import { loadOriginalDeck } from './originalCards';
 
 /**
  * Which deck the game draws Chance and Scruples cards from.
  *
  * - `new`      the decks written for this port, which is all a clone has.
+ * - `neon`     a second pack of our own, in the cyberpunk register of the reskin.
  * - `original` the decks recovered from a local copy of the binary, with their artwork.
- * - `both`     everything shuffled together.
+ * - `both`     every pack available, shuffled together.
  *
- * `original` and `both` are only selectable on a machine with an extraction installed, since
- * the original text is not distributed with this repo.
+ * `new` and `neon` are the same size and use the same numeric ranges, so choosing between them
+ * changes the voice and not the balance. `original` and `both` are only selectable on a machine
+ * with an extraction installed, since the original text is not distributed with this repo.
  */
-export type DeckMode = 'new' | 'original' | 'both';
+export type DeckMode = 'new' | 'neon' | 'original' | 'both';
 
 export interface Deck {
   chance: ChanceCard[];
@@ -19,6 +22,7 @@ export interface Deck {
 }
 
 const NEW_DECK: Deck = { chance: CHANCE, scruples: SCRUPLES };
+const NEON_DECK: Deck = { chance: CHANCE_NEON, scruples: SCRUPLES_NEON };
 
 let active: Deck = NEW_DECK;
 let mode: DeckMode = 'new';
@@ -35,17 +39,20 @@ export function originalAvailable(): boolean {
 }
 
 export function setDeckMode(next: DeckMode): DeckMode {
-  if (next !== 'new' && !originalLoaded) next = 'new';
+  // Only the original pack can be missing; our own two always ship.
+  if ((next === 'original' || next === 'both') && !originalLoaded) next = 'new';
   mode = next;
-  if (next === 'new' || !originalLoaded) {
-    active = NEW_DECK;
-  } else if (next === 'original') {
+  if (next === 'neon') {
+    active = NEON_DECK;
+  } else if (next === 'original' && originalLoaded) {
     active = originalLoaded;
-  } else {
+  } else if (next === 'both' && originalLoaded) {
     active = {
-      chance: [...NEW_DECK.chance, ...originalLoaded.chance],
-      scruples: [...NEW_DECK.scruples, ...originalLoaded.scruples],
+      chance: [...NEW_DECK.chance, ...NEON_DECK.chance, ...originalLoaded.chance],
+      scruples: [...NEW_DECK.scruples, ...NEON_DECK.scruples, ...originalLoaded.scruples],
     };
+  } else {
+    active = NEW_DECK;
   }
   return mode;
 }

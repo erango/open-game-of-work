@@ -7,6 +7,8 @@ public/assets/
 __pycache__/
 *.pyc
 art/_raw/
+art/_sfx_raw/
 .cache/
 scripts/art-manifest.json
+scripts/sfx-manifest.json
 public/assets/graphics-gen/

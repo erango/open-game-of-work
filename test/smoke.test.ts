@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { autoplay } from '../src/autoplay.ts';
 import { CHANCE, SCRUPLES, type ChanceCard, type ScruplesCard } from '../src/cards.ts';
 import { WORD_POOLS } from '../src/names.ts';
+import { sceneName } from '../src/sceneCues.ts';
 import { CHANCE_NEON, SCRUPLES_NEON } from '../src/cardsNeon.ts';
 import { PROJECT_PROFILES, PROJECT_COUNT, SQUARES } from '../src/board.ts';
 import { Game } from '../src/engine.ts';
@@ -300,6 +301,26 @@ test('every project-name word fits the tile', () => {
       }
     }
   }
+});
+
+test('scene cues map to their recordings, and nothing else does', () => {
+  // The scene set: once-or-twice-a-game moments that want a recording.
+  assert.equal(sceneName('officeParty'), 'officeParty');
+  assert.equal(sceneName('crash'), 'crash');
+  // Promotion is rank-indexed on the wire, one file per rank on disk, clamped to the five that
+  // exist — seven ranks give six possible steps, so an unclamped index would 404 at the top.
+  assert.equal(sceneName('promotion:1'), 'promotion1');
+  assert.equal(sceneName('promotion:5'), 'promotion5');
+  assert.equal(sceneName('promotion:9'), 'promotion5');
+  assert.equal(sceneName('promotion:0'), 'promotion1');
+  // Frequent cues are synthesised and must never probe for a file.
+  assert.equal(sceneName('move'), null);
+  assert.equal(sceneName('roll'), null);
+  assert.equal(sceneName('trade'), null);
+  // Speech is never in this set.
+  assert.equal(sceneName('name:brad'), null);
+  assert.equal(sceneName('slot:2'), null);
+  assert.equal(sceneName('gameStart'), null);
 });
 
 console.log('\nCard packs');

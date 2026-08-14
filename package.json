@@ -15,6 +15,9 @@
     "art:manifest": "node scripts/art-manifest.mjs",
     "art:gen": "node scripts/art-manifest.mjs && node scripts/perchance-gen.mjs",
     "art:cutout": "node scripts/art-manifest.mjs && bash scripts/run-cutout.sh",
+    "sfx:manifest": "node scripts/sfx-manifest.mjs",
+    "sfx:gen": "node scripts/sfx-gen.mjs",
+    "sfx:post": "bash scripts/sfx-post.sh",
     "art:dice": "bash -c '\"${PY:-.cache/venv/bin/python}\" scripts/die-faces.py'"
   },
   "devDependencies": {

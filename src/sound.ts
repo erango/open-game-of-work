@@ -1,4 +1,5 @@
 import { MidiPlayer } from './midiPlayer';
+import { sceneName } from './sceneCues';
 import { Sfx, type Voice } from './sfx';
 import { themeName, type ThemeName } from './theme';
 /**
@@ -140,8 +141,21 @@ const MUSIC_DIR: Record<ThemeName, string> = {
 
 const MUSIC_BASE = 'assets/music/';
 const MUSIC_VOLUME = 0.3;
-/** What the music drops to while a spoken clip plays over it. */
+/** What the music drops to while a spoken clip or an effect plays over it. */
 const MUSIC_DUCKED = 0.1;
+/**
+ * Recorded scene effects, per theme: `assets/sfx/<theme>/<cue>.mp3`.
+ *
+ * Only the once-or-twice-a-game moments live here — a room of people, a siren, applause — which
+ * are texture a synth cannot give. Everything frequent stays synthesised in sfx.ts. Optional as
+ * ever: without them the synth recipe plays instead.
+ */
+const SCENE_BASE = 'assets/sfx/';
+const SCENE_DIR: Record<ThemeName, string> = {
+  original: 'original',
+  openPlan: 'open-plan',
+  cyberpunk: 'cyberpunk',
+};
 
 export class Sound {
   /**
@@ -169,6 +183,10 @@ export class Sound {
   private trackName: MusicTrack | null = null;
   private duckTimer = 0;
   private sfx = new Sfx();
+  /** Probed scene recordings, keyed `<theme>/<cue>`; the promise is cached, as with music. */
+  private sceneCache = new Map<string, Promise<HTMLAudioElement | null>>();
+  /** Settled results of the above, so play() can decide synchronously. */
+  private sceneResolved = new Map<string, boolean>();
   private cache = new Map<Cue, HTMLAudioElement | null>();
   private enabled: boolean;
   /**
@@ -380,9 +398,19 @@ export class Sound {
      * wins for every cue it covers, and only speech falls through to a recording.
      */
     const voice = this.voice();
-    if (themeName() !== 'original' && this.sfx.covers(cue, voice)) {
-      this.sfx.play(cue, voice);
-      return;
+    if (themeName() !== 'original') {
+      const scene = this.sceneReady(cue);
+      if (scene === 'yes') {
+        void this.scene(cue);
+        return;
+      }
+      // 'unknown' starts the probe and lets the synth cover this one instance, so a cue is never
+      // silent while a file is being looked for; every later call uses the recording.
+      if (scene === 'unknown') void this.scene(cue);
+      if (this.sfx.covers(cue, voice)) {
+        this.sfx.play(cue, voice);
+        return;
+      }
     }
     const cached = this.cache.get(cue);
     if (cached === null) {
@@ -399,6 +427,51 @@ export class Sound {
 
   private voice(): Voice {
     return themeName() === 'cyberpunk' ? 'cyber' : 'office';
+  }
+
+  /** Whether a recording for this cue is known present, known absent, or not yet probed. */
+  private sceneReady(cue: Cue): 'yes' | 'no' | 'unknown' {
+    const name = sceneName(cue);
+    if (name === null) return 'no';
+    const known = this.sceneResolved.get(`${SCENE_DIR[themeName()]}/${name}`);
+    return known === undefined ? 'unknown' : known ? 'yes' : 'no';
+  }
+
+  /**
+   * Plays the recorded scene effect for this cue if the theme has one.
+   *
+   * Returns whether it played. The first call for a cue only starts the probe, so the synth
+   * covers that one instance and every later call uses the recording.
+   */
+  private async scene(cue: Cue): Promise<boolean> {
+    const name = sceneName(cue);
+    if (name === null) return false;
+    const key = `${SCENE_DIR[themeName()]}/${name}`;
+    const known = this.sceneCache.get(key);
+    if (known === undefined) {
+      this.sceneCache.set(
+        key,
+        (async () => {
+          try {
+            const res = await fetch(`${SCENE_BASE}${key}.mp3`, { method: 'HEAD' });
+            if (!res.ok) return null;
+            const audio = new Audio(`${SCENE_BASE}${key}.mp3`);
+            audio.preload = 'auto';
+            return audio;
+          } catch {
+            return null;
+          }
+        })().then((audio) => {
+          this.sceneResolved.set(key, audio !== null);
+          return audio;
+        }),
+      );
+      return false;
+    }
+    const audio = await known;
+    if (!audio) return false;
+    void this.fire(audio);
+    return true;
   }
 
   /** Filenames to try for a cue, expanding the parameterised forms. */

@@ -31,6 +31,8 @@ function applySmoothing(): void {
 let stepping = false;
 /** Set when a roll has just happened, so the die tumbles once before the token moves. */
 let pendingTumble = false;
+/** False until a real game exists, so Cancel knows whether there is anything to return to. */
+let hasGame = false;
 
 /** Frames and pacing for the tumble. */
 const TUMBLE_FRAMES = 7;
@@ -321,6 +323,20 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     helpBtn.title = 'How to Play';
     helpBtn.onclick = () => void helpDialog();
     foot.append(helpBtn);
+
+    // Escape cancels, as it would in the original's dialog.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      window.removeEventListener('keydown', onKey);
+      done(null);
+    };
+    window.addEventListener('keydown', onKey);
+
+    const cancel = el('button', 'b', 'Cancel');
+    cancel.onclick = () => {
+      window.removeEventListener('keydown', onKey);
+      done(null);
+    };
     const start = el('button', 'b primary', 'Start game');
     start.onclick = () => {
       const seats: SeatConfig[] = rows.map((r) => ({
@@ -334,9 +350,10 @@ async function askNewGame(): Promise<NewGameConfig | null> {
         return;
       }
       setDeckMode(deckSel.value as DeckMode);
+      window.removeEventListener('keydown', onKey);
       done({ length: lenSel.value as GameLength, seats });
     };
-    foot.append(start);
+    foot.append(cancel, start);
     m.append(foot);
     return m;
   });
@@ -1653,19 +1670,29 @@ function attractGame(): Game {
 }
 
 async function newGame(): Promise<void> {
+  // Hold on to a game in progress: Cancel has to return to it, so it must not be replaced by
+  // the pre-game board before the dialog is answered.
+  const previous = hasGame ? game : null;
   sound.stopMusic();
   announced = '';
-  // Paint the pre-game board first, so the dialog opens over it rather than over nothing.
-  game = attractGame();
-  ui.setAttract(true);
-  ui.render(game);
-  const config = await askNewGame();
-  ui.setAttract(false);
-  if (!config) {
+  if (!previous) {
+    // Nothing to go back to, so paint the pre-game board behind the dialog.
+    game = attractGame();
+    ui.setAttract(true);
     ui.render(game);
+  }
+  const config = await askNewGame();
+  if (!config) {
+    // Back to the game that was running, or to the pre-game board if there wasn't one.
+    if (previous) game = previous;
+    ui.setAttract(!previous);
+    ui.render(game);
+    if (previous) void step();
     return;
   }
+  ui.setAttract(false);
   game = new Game(config);
+  hasGame = true;
   game.state.log.push({
     turn: 1,
     playerId: null,

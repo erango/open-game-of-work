@@ -66,6 +66,9 @@
   --accent-ink: #f4f2ee;
   --accent-soft: rgb(74 92 208 / .16);
   --accent-weak: #232532;
+  /* Accent as *text*: --accent-2 is a ring colour, and at 4.4:1 it misses AA on the menu
+     surface. Same hue, lifted until it clears 4.5:1 on every surface it appears over. */
+  --link: #8494f0;
   --success: #5ec08e;
   --danger: #b0483a;
   --danger-2: #c0503c;
@@ -138,6 +141,7 @@
   --accent-ink: #0a0410;
   --accent-soft: rgb(255 43 214 / .16);
   --accent-weak: #1d0f22;
+  --link: #ff8ae8;
   --success: #2bffb0;
   --danger: #ff3b6b;
   --danger-2: #ff5c7f;
@@ -255,7 +259,7 @@ html, body {
   cursor: pointer;
 }
 .menu-item:hover { background: var(--panel-3); color: var(--ink); }
-.menu-check { color: var(--accent-2); font-weight: 700; }
+.menu-check { color: var(--link); font-weight: 700; }
 .menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
 /* Segmented controls sit at the right-hand end of the bar. */
 .menubar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; padding-right: 4px; }
@@ -367,7 +371,9 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   color: var(--ink-2);
 }
 .log-entry:last-child { border-bottom: none; }
-.log-who { font-weight: 600; }
+.log-who { font-weight: 600; color: var(--ink); }
+/* Whose entry it is, carried as an edge rather than as coloured text. */
+.log-owned { border-left: 3px solid transparent; padding-left: 9px; }
 .log-system { color: var(--ink-3); }
 .log-with-art { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; }
 .log-text { min-width: 0; overflow-wrap: anywhere; }
@@ -530,7 +536,9 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14), 0 4px 14px rgb(0 0 0 / .4);
 }
 .center-roll:hover:not(:disabled) { background: var(--accent-hover); }
-.center-roll:disabled { opacity: .4; }
+/* Colour, not opacity: at .4 the pips disappeared into the accent fill. */
+.center-roll:disabled { background: var(--ctl); box-shadow: inset 0 0 0 1px var(--ctl-line); }
+.center-roll:disabled .pip { background: var(--ink-3); }
 .center-ctl { background: var(--ctl); box-shadow: inset 0 0 0 1px var(--ctl-line); }
 .center-ctl:hover:not(:disabled) { background: var(--ctl-hover); }
 .center-ctl:disabled { color: var(--ink-3); }
@@ -612,6 +620,10 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   overflow: hidden;
 }
 .stat-name.active { color: var(--ink); }
+/* A resigned seat plays on under computer control; dimming the name and badge says the human
+   who was there is gone without hiding the row. */
+.stat-name.resigned { color: var(--ink-3); font-weight: 500; }
+.stat-name.resigned.active { color: var(--ink-2); }
 .stat-portrait {
   border-radius: 2px;
   display: flex;
@@ -644,6 +656,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   color: var(--ink-2b);
 }
 .stat-rankbadge.active { color: var(--caption); }
+.stat-rankbadge.resigned { color: var(--ink-3); }
 /* -------- tokens. A field-coloured ring rather than a black border, so they read on both
    the pastel tiles and the field. */
 .token {
@@ -775,7 +788,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .splash-credit a,
 .splash-kofi,
 .about-credit a {
-  color: var(--accent);
+  color: var(--link);
   text-decoration: none;
   font-weight: 700;
 }
@@ -1026,5 +1039,5 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .party-text { font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .party-delta { margin-top: 3px; font-size: 13px; }
 .about-credit { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--ink-2); }
-.about-credit a { color: var(--accent-2); text-decoration: none; font-weight: 600; }
+.about-credit a { color: var(--link); text-decoration: none; font-weight: 600; }
 .about-credit a:hover { text-decoration: underline; }

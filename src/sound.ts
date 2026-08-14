@@ -286,20 +286,36 @@ export class Sound {
       const node = audio.cloneNode() as HTMLAudioElement;
       node.volume = 0.6;
       let done = false;
+      let timer = 0;
       const finish = () => {
         if (done) return;
         done = true;
+        window.clearTimeout(timer);
         resolve();
+      };
+      const arm = (ms: number) => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(finish, ms);
       };
       node.addEventListener('ended', finish, { once: true });
       node.addEventListener('error', finish, { once: true });
+      /*
+       * The guard is armed BEFORE play(), which is the whole point of it. play() returns a
+       * promise that can stay pending indefinitely — a blocked or stuck decode never settles
+       * it either way — and arming the timeout inside .then() meant that case hung forever.
+       * Since every caller of speech awaits this promise, and the turn loop awaits the
+       * announcement, a hung clip froze the entire game with the die disabled.
+       */
+      arm(6000);
+      const refine = () => {
+        if (Number.isFinite(node.duration) && node.duration > 0) arm(node.duration * 1000 + 400);
+      };
+      node.addEventListener('loadedmetadata', refine, { once: true });
       node
         .play()
         .then(() => {
           this.spokeLast = true;
-          // Guard against a missing 'ended' event so the speech chain cannot stall.
-          const ms = Number.isFinite(node.duration) ? node.duration * 1000 + 250 : 4000;
-          window.setTimeout(finish, ms);
+          refine();
         })
         .catch(() => {
           // Blocked until the first user gesture; give up on this one and keep the chain moving.

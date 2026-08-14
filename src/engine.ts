@@ -807,6 +807,7 @@ export class Game {
     const p = this.player(playerId);
     if (p.kind !== 'human') return;
     p.kind = 'computer';
+    p.resigned = true;
     p.personality = this.resolvePersonality('random');
     for (const q of this.state.players) if (q.id !== p.id) p.friendliness[q.id] = 0;
     this.cue('resign');

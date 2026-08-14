@@ -1601,6 +1601,13 @@ async function step(): Promise<void> {
       if (!game.state.rolled && !game.state.modal && announced !== key) {
         announced = key;
         await sound.announceTurn(p.name, p.id);
+        /*
+         * Re-enter the loop rather than falling through. The clip runs 1.1-1.9s, and a click
+         * on the die during it sets `moving` while this await is parked; the loop then reached
+         * the human branch below and returned, so the roll was swallowed and the turn hung
+         * with the die disabled. `announced` keeps this from re-announcing.
+         */
+        continue;
       }
 
       // The turn ends itself. Every human decision happens before or during the roll —

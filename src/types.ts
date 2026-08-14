@@ -79,6 +79,11 @@ export interface Player {
   friendliness: Record<number, number>;
   /** Set when this player has won. */
   president: boolean;
+  /**
+   * Set when a human resigned this seat and a computer took it over. Display only — no rule
+   * reads it — but the panel has to be able to say the human is gone.
+   */
+  resigned?: boolean;
   /** Pending consequences queued by shoddy projects and scruples answers. */
   karma: KarmaEntry[];
 }

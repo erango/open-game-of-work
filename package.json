@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "tsx test/smoke.test.ts",
+    "check:contrast": "node test/contrast.mjs",
     "art:manifest": "node scripts/art-manifest.mjs",
     "art:gen": "node scripts/art-manifest.mjs && node scripts/perchance-gen.mjs",
     "art:cutout": "node scripts/art-manifest.mjs && bash scripts/run-cutout.sh"

@@ -705,7 +705,11 @@ export class Ui {
         panel.append(band);
       }
 
-      const name = el('div', 'stat-name' + (active ? ' active' : ''), p.name);
+      const name = el(
+        'div',
+        'stat-name' + (active ? ' active' : '') + (p.resigned ? ' resigned' : ''),
+        p.name,
+      );
       name.style.left = `${G.name.left}px`;
       name.style.top = `${G.nameTops[row]}px`;
       name.style.width = `${G.name.width}px`;
@@ -752,7 +756,11 @@ export class Ui {
         `workload ${stress}/${R.STRESS_BAR_MAX} (bottom) — ${RANKS[p.rank]}, ` +
         `${game.projectsOf(p.id).length} project(s)`;
 
-      const rank = el('div', 'stat-rankbadge' + (active ? ' active' : ''), RANK_LETTERS[p.rank]);
+      const rank = el(
+        'div',
+        'stat-rankbadge' + (active ? ' active' : '') + (p.resigned ? ' resigned' : ''),
+        RANK_LETTERS[p.rank],
+      );
       rank.style.left = `${G.rank.left}px`;
       rank.style.top = `${barTop}px`;
       rank.style.width = `${G.portrait.size}px`;
@@ -902,8 +910,15 @@ export class Ui {
       // into the 40px art column.
       const body = el('div', 'log-text');
       if (entry.playerId !== null) {
+        /*
+         * The colour goes on the entry's edge, not on the name. The recovered player colours
+         * are text-hostile on a dark panel — blue measures 3.75:1 and dark green 3.68:1
+         * against the card — the same reason owned project names on the board are dark ink
+         * rather than the owner's colour. A rule is a graphic, so 4.5:1 does not apply to it.
+         */
+        d.classList.add('log-owned');
+        d.style.borderLeftColor = game.player(entry.playerId).color;
         const who = el('b', 'log-who', `${game.player(entry.playerId).name}: `);
-        who.style.color = game.player(entry.playerId).color;
         body.append(who);
       } else {
         d.classList.add('log-system');

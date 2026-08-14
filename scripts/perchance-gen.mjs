@@ -187,7 +187,10 @@ for (const [i, job] of jobs.entries()) {
     await killDialogs();
     await chooseOption("painted anime", "no style"); // keep it pinned
     await setCount(COUNT); // ditto: generating four and keeping one is three wasted images
-    await chooseOption("512x512px|portrait\\(512|landscape", job.shape === "landscape" ? "landscape" : "square");
+    await chooseOption(
+      "512x512px|portrait\\(512|landscape",
+      job.shape === "landscape" ? "landscape" : job.shape === "portrait" ? "portrait" : "square",
+    );
     await setSeed(SEED);
     await typeInto(POS, job.prompt);
     if (job.negative) await typeInto(NEG, job.negative).catch(() => {});

@@ -92,15 +92,18 @@ def center_crop_square(img: "Image.Image") -> "Image.Image":
     return img.crop((left, top, left + side, top + side))
 
 
-def write_variant(img: "Image.Image", out: str, size: int, landscape: bool) -> None:
+def write_variant(img: "Image.Image", out: str, size: int, shape: str) -> None:
+    """Write one output. `size` is the slot's long edge; SCALE is headroom, never upscaling."""
     os.makedirs(os.path.dirname(out), exist_ok=True)
     w, h = img.size
-    # Never upscale: SCALE is a ceiling on how much detail to keep, not a resize target.
-    target = min(size * SCALE, w if landscape else min(w, h))
-    target = max(size, target)
-    if landscape:
+    if shape == "landscape":
+        target = max(size, min(size * SCALE, w))
         img = img.resize((target, max(1, round(h * target / w))), Image.LANCZOS)
+    elif shape == "portrait":
+        target = max(size, min(size * SCALE, h))
+        img = img.resize((max(1, round(w * target / h)), target), Image.LANCZOS)
     else:
+        target = max(size, min(size * SCALE, min(w, h)))
         img = img.resize((target, target), Image.LANCZOS)
     img.save(out)
 
@@ -124,22 +127,29 @@ for job in manifest:
     if os.path.exists(out) and not FORCE:
         skip += 1
         continue
-    landscape = job.get("shape") == "landscape"
+    shape = job.get("shape", "square")
+    keeps_aspect = shape in ("landscape", "portrait")
     try:
         if job.get("cutout"):
             cut = rembg_remove(open(raw, "rb").read())
             img = Image.open(io.BytesIO(cut)).convert("RGBA")
-            if not landscape:
+            if keeps_aspect:
+                # Trim to the subject but keep its proportions: padding a tower to a square
+                # would strand it in empty space.
+                bbox = img.getbbox()
+                if bbox:
+                    img = img.crop(bbox)
+            else:
                 img = square_pad(img, transparent=True)
         else:
             img = Image.open(raw).convert("RGB")
-            if not landscape:
+            if not keeps_aspect:
                 img = center_crop_square(img)
 
-        write_variant(img, out, job["size"], landscape)
+        write_variant(img, out, job["size"], shape)
         # Extra sizes derived from the same image, so variants can never drift apart.
         for extra in job.get("also", []):
-            write_variant(img, os.path.join(ROOT, extra["out"]), extra["size"], landscape)
+            write_variant(img, os.path.join(ROOT, extra["out"]), extra["size"], shape)
 
         print(f"ok   {job['id']} -> {job['out']} ({job['size']}px slot, {SCALE}x source)")
         done += 1

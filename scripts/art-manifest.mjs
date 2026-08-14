@@ -109,10 +109,13 @@ const BOARD = [
     'a corporate arcology tower seen straight on, one lit lobby entrance at street level'],
   ['officeparty', 'officePartyImage', 140,
     'two paper cups touching in a toast, a few streamers behind them',
-    'two glowing drink capsules touching in a toast, light strips trailing behind them'],
+    // 'two capsules touching' produced two unreadable cylinders. A single glass has a
+    // silhouette that survives 140px and cannot be mistaken for anything else.
+    'one single tall champagne flute seen straight on, glowing bubbles rising inside it, nothing else in the frame, dark near-black background'],
   ['meeting', 'meetingImage', 140,
     'a presentation easel holding a chart whose line falls sharply',
-    'a floating holographic chart panel whose line falls sharply'],
+    // A chart *line* is too fine at this size; one bold arrow carries the same meaning.
+    'one single presentation screen on a stand, seen straight on, one bold glowing arrow pointing sharply down on it, nothing else in the frame, dark near-black background'],
   ['businesstrip', 'businessTripImage', 140,
     'a hard-shell suitcase beside a boarding pass with a small aeroplane above',
     // One object, not three. Naming a case *and* a chit *and* an aircraft got all three
@@ -287,11 +290,22 @@ add({
   id: 'splash',
   out: `${G}/forms/TSPLASHFORM/Image1.png`,
   size: 512,
-  shape: 'landscape',
+  // A tower wants height. The flat set keeps its wide establishing shot.
+  shape: STYLE_NAME === 'neon' ? 'portrait' : 'landscape',
+  // Cut out for neon, so the tower stands on the splash's own black rather than inside a
+  // rectangle of someone else's black.
+  cutout: STYLE_NAME === 'neon',
   // The game overlays its own title, so the top of the frame has to stay quiet.
   subject: 'an office block at dusk with a single lit window, wide establishing view, empty sky across the upper third',
+  /*
+   * No lettering in the prompt. Asked for a sign reading "GoW Corp." it produced
+   * "GoW GopaCorp" — a diffusion model cannot spell, and the wordmark is the one thing on the
+   * splash that has to be right. The building is generated; the sign is drawn over it in CSS
+   * (`.splash-sign`), which is legible at any size and picks up the palette.
+   */
   subjectNeon:
-    'an arcology tower at night with a single lit window, wide establishing view, empty dark sky across the upper third',
+    'one single towering corporate skyscraper seen from street level looking up, lit windows ' +
+    'in a grid, glowing, nothing else in the frame, empty dark sky across the upper third',
 });
 add({
   kind: 'chrome',

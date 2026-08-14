@@ -1,4 +1,5 @@
 import { graphicsMode, installedSets, setGraphicsMode, type GraphicsMode, type SetName } from './assets';
+import type { DeckMode } from './decks';
 
 /**
  * A theme is the palette and the artwork chosen together.
@@ -24,6 +25,12 @@ interface Theme {
   blurb: string;
   palette: PaletteName;
   graphics: GraphicsMode;
+  /**
+   * The card pack that goes with the look. Applied on every theme change and then free to
+   * override in New Game — switching theme is a statement about the whole look, but the deck is
+   * also a taste, so it is a default rather than a lock.
+   */
+  deck: DeckMode;
   /** An installed set this theme cannot be offered without. */
   requires?: SetName;
 }
@@ -34,6 +41,7 @@ const THEMES: Record<ThemeName, Theme> = {
     blurb: 'The 2000 artwork, on the surface it was recovered against.',
     palette: 'original',
     graphics: 'original',
+    deck: 'original',
     requires: 'original',
   },
   openPlan: {
@@ -41,12 +49,14 @@ const THEMES: Record<ThemeName, Theme> = {
     blurb: 'This port’s own drawings: marks and colour, no illustrations.',
     palette: 'original',
     graphics: 'modern',
+    deck: 'new',
   },
   cyberpunk: {
     label: 'Cyberpunk',
     blurb: 'Neon surface and the generated illustration set.',
     palette: 'neon',
     graphics: 'generated',
+    deck: 'neon',
   },
 };
 
@@ -109,6 +119,11 @@ export function themeLabel(name: ThemeName): string {
 
 export function themeBlurb(name: ThemeName): string {
   return THEMES[name].blurb;
+}
+
+/** The card pack this theme comes with. `decks.ts` falls back if it is not installed. */
+export function themeDeck(name: ThemeName): DeckMode {
+  return THEMES[name].deck;
 }
 
 /** The themes worth offering: every one whose artwork is actually present. */

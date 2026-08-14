@@ -2,6 +2,7 @@ import { CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, PROJECT_TILE, SQUARES, toke
 import { assetsAvailable, centerImage, cursorUrl, dieFace, eventArt, playerPortrait, playerToken, squareImage } from './assets';
 import { availableThemes, themeLabel, themeName, type ThemeName } from './theme';
 import { RESIGN_ICON, TRADE_ICON, squareIcon } from './icons';
+import { tip } from './tooltip';
 import type { Game } from './engine';
 import * as R from './rules';
 import { RANK_LETTERS, RANKS, type GameState, type Player, type Project, type SquareKind } from './types';
@@ -70,6 +71,22 @@ function pipGrid(n: number): HTMLElement {
   const grid = el('div', 'die-grid');
   const on = new Set(PIPS[n] ?? []);
   for (let i = 0; i < 9; i++) grid.append(el('div', on.has(i) ? 'pip' : 'pip pip-off'));
+  return grid;
+}
+
+/**
+ * What the die shows before it has been rolled this turn.
+ *
+ * `state.die` is cleared at the end of every turn, so the control was simply empty until you
+ * clicked it — in every theme, and most obviously in the illustrated ones, where every other
+ * control carries art. It draws the die with every pip *unlit*, like a display before it comes
+ * on: still a die, but claiming no value. A resting face is not an option, since one pip is
+ * indistinguishable from having rolled a one.
+ */
+function dieRest(): HTMLElement {
+  const grid = el('div', 'die-grid die-rest');
+  for (let i = 0; i < 9; i++) grid.append(el('div', 'pip pip-unlit'));
+  grid.setAttribute('aria-hidden', 'true');
   return grid;
 }
 
@@ -494,6 +511,10 @@ export class Ui {
     const owner = proj.owner === null ? null : game.player(proj.owner);
     node.style.background = `var(--tile-${proj.profile})`;
     if (owner) node.classList.add('proj-owned');
+    // An empty layer the palette can decorate — scanlines and an inner glow under the neon
+    // palette, nothing at all under the original one. First child, so the bar, the name and
+    // the numeral all sit above it.
+    node.append(el('div', 'proj-fx'));
 
     const track = el('div', 'proj-track');
     track.style.left = `${T.bar.left}px`;
@@ -512,6 +533,9 @@ export class Ui {
     fill.style.height = `${Math.round(T.bar.height * ratio)}px`;
     fill.style.bottom = '0';
     fill.style.background = owner ? meterColor(owner.color) : 'var(--tile-ink-dim)';
+    // `color` carries the same value so a palette can bloom the bar with currentColor without
+    // the stylesheet needing to know whose it is.
+    fill.style.color = owner ? meterColor(owner.color) : 'var(--tile-ink-dim)';
 
     const label = this.attract ? 'project Name' : proj.name;
     const [adjective, ...rest] = label.split(' ');
@@ -529,7 +553,7 @@ export class Ui {
     if (proj.shoddy) {
       node.append(el('div', 'proj-shoddy-overlay'));
       const dot = el('div', 'proj-shoddy-dot');
-      dot.title = 'Shoddy — will rebound on whoever ships it';
+      tip(dot, 'Shoddy — will rebound on whoever ships it');
       node.append(dot);
     }
 
@@ -574,11 +598,11 @@ export class Ui {
       img.draggable = false;
       roll.append(img);
     } else {
-      roll.append(pipGrid(shown ?? 0));
+      roll.append(shown ? pipGrid(shown) : dieRest());
     }
     roll.disabled = busy || !game.canRoll() || !isHuman;
     roll.onclick = () => this.handlers.onRoll();
-    roll.title = 'Roll the die (Space)';
+    tip(roll, 'Roll the die (Space)');
 
     const trade = el('button', 'center-btn center-ctl');
     trade.style.left = `${CENTER.makeTrade.left}px`;
@@ -599,7 +623,7 @@ export class Ui {
     }
     trade.disabled = busy || s.rolled || !isHuman;
     trade.onclick = () => this.handlers.onTrade();
-    trade.title = 'Trade projects before rolling (T)';
+    tip(trade, 'Trade projects before rolling (T)');
 
     const resign = el('button', 'center-btn center-ctl');
     resign.style.left = `${CENTER.resign.left}px`;
@@ -620,7 +644,7 @@ export class Ui {
     }
     resign.disabled = busy || s.rolled || !isHuman;
     resign.onclick = () => this.handlers.onResign();
-    resign.title = 'Hand your seat to a computer player (R)';
+    tip(resign, 'Hand your seat to a computer player (R)');
 
     this.board.append(
       roll,
@@ -654,7 +678,7 @@ export class Ui {
     readout.style.height = `${V.height}px`;
     readout.classList.add(delta > 0 ? 'ticker-up' : delta < 0 ? 'ticker-down' : 'ticker-flat');
     readout.textContent = delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${delta}`;
-    readout.title = `Share price ${game.state.stock} — last change ${delta >= 0 ? '+' : ''}${delta}`;
+    tip(readout, `Share price ${game.state.stock} — last change ${delta >= 0 ? '+' : ''}${delta}`);
 
     this.board.append(frame, readout);
   }
@@ -728,7 +752,7 @@ export class Ui {
         portrait.style.color = initialInk(p.color);
         portrait.textContent = p.name.slice(0, 1).toUpperCase();
       }
-      portrait.title = p.kind === 'computer' ? `${p.name} — computer (${p.personality})` : `${p.name} — human`;
+      tip(portrait, p.kind === 'computer' ? `${p.name} — computer (${p.personality})` : `${p.name} — human`);
 
       const track = el('div', 'stat-track');
       track.style.left = `${G.bar.left}px`;
@@ -761,7 +785,7 @@ export class Ui {
       rank.style.width = `${G.portrait.size}px`;
       rank.style.height = `${G.rank.height}px`;
       rank.style.fontSize = `calc(${FONTS.rankBadge}px * var(--text-k, 1))`;
-      rank.title = RANKS[p.rank];
+      tip(rank, RANKS[p.rank]);
 
       panel.append(name, portrait, track, rank);
     });
@@ -792,7 +816,7 @@ export class Ui {
         t.style.color = initialInk(p.color);
         t.textContent = p.name.slice(0, 1).toUpperCase();
       }
-      t.title = `${p.name} — ${RANKS[p.rank]}`;
+      tip(t, `${p.name} — ${RANKS[p.rank]}`);
       this.board.append(t);
     };
 

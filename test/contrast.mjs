@@ -319,6 +319,17 @@ const run = async (browser, palette) => {
     if (await tap('.center-roll:not(:disabled)')) await page.waitForTimeout(900);
     else await page.waitForTimeout(400);
   }
+  // Tooltips are ours now rather than the OS's, so they are text on a panel like anything else.
+  // Hovering one is the only way they exist to be measured.
+  await dismiss(page);
+  for (const sel of ['.center-ctl', '.stat-portrait', '.stat-rankbadge']) {
+    const target = page.locator(sel).first();
+    if (!(await target.count())) continue;
+    await target.hover({ timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(320);
+    if (await page.$('.tip.tip-on')) await audit(page, `tooltip on ${sel}`, palette);
+  }
+
   // The turn loop can stop with a dialog still up.
   if (!(await dismiss(page))) throw new Error(`${palette}: could not clear the open dialog`);
   await audit(page, 'board mid-game', palette);

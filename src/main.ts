@@ -1,7 +1,7 @@
 import * as AI from './ai';
 import { aboutImage, applyFavicon, eventArt, graphicsMode, loadAssets, partySprite, presidentArt, rankArt, resourceImage, seatFace, splashImage, type PartyMood } from './assets';
 import { deckMode, initDecks, originalAvailable, setDeckMode, type DeckMode } from './decks';
-import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeLabel, themeName, type ThemeName } from './theme';
+import { applyPaletteEarly, availableThemes, initTheme, setTheme, themeBlurb, themeDeck, themeLabel, themeName, type ThemeName } from './theme';
 import { loadScores, record, saveScores, TABLE_SIZE, type HighScores } from './highscores';
 import { loadHelp, originalHelpAvailable, topics as helpTopics } from './help';
 import { Game, type NewGameConfig, type SeatConfig } from './engine';
@@ -10,6 +10,7 @@ import * as R from './rules';
 import { squareIcon } from './icons';
 import { PERSONALITIES, RANKS, type GameLength, type Modal, type PersonalityChoice, type Project, type SquareKind } from './types';
 import { Sound, type Cue } from './sound';
+import { initTooltips, tip } from './tooltip';
 import { Ui, el } from './ui';
 
 const SAVE_KEY = 'open-game-of-work:save';
@@ -70,7 +71,10 @@ function themeWipe(): boolean {
  */
 function applyTheme(next: ThemeName, after?: () => void): void {
   const swap = () => {
-    setTheme(next);
+    const applied = setTheme(next);
+    // The pack that goes with the look. setDeckMode falls back on its own when the original
+    // deck is not installed, and New Game can still change it afterwards.
+    setDeckMode(themeDeck(applied));
     applyFavicon();
     applySmoothing();
     void sound.retheme();
@@ -221,7 +225,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     );
     const helpBtn = el('button', 'b help-mark', '?');
     helpBtn.type = 'button';
-    helpBtn.title = 'How to Play';
+    tip(helpBtn, 'How to Play');
     helpBtn.onclick = () => void helpDialog();
     head.append(headText, helpBtn);
     m.append(head);
@@ -304,7 +308,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
       const b = el('button', 'segment', themeLabel(name));
       b.type = 'button';
       b.setAttribute('role', 'radio');
-      b.title = themeBlurb(name);
+      tip(b, themeBlurb(name));
       b.onclick = () => applyTheme(name, syncTheme);
       themeSeg.append(b);
       return [name, b] as const;
@@ -316,6 +320,9 @@ async function askNewGame(): Promise<NewGameConfig | null> {
         b.setAttribute('aria-checked', String(on));
       }
       themeBlurbLine.textContent = themeBlurb(themeName());
+      // A theme brings its own pack, so the select has to show what the theme just chose.
+      // Changing it afterwards still wins — until the theme changes again.
+      deckSel.value = deckMode();
     };
     syncTheme();
     themeField.append(themeSeg, themeBlurbLine);
@@ -378,7 +385,7 @@ async function askNewGame(): Promise<NewGameConfig | null> {
         const b = el('button', 'segment', SEG_LABEL[k]);
         b.type = 'button';
         b.setAttribute('role', 'radio');
-        b.title = WORD[k];
+        tip(b, WORD[k]);
         b.onclick = () => {
           if (kind.value === k) return;
           kind.value = k;
@@ -1380,7 +1387,7 @@ function helpDialog(startKey = 'getStarted') {
       options.forEach(([value, label, hint]) => {
         const b = el('button', 'segment');
         b.textContent = label;
-        b.title = hint;
+        tip(b, hint);
         b.setAttribute('role', 'radio');
         b.onclick = () => {
           if (useOriginal === value) return;
@@ -1827,9 +1834,15 @@ function attractGame(): Game {
   return new Game({
     length: 'long',
     seed: 0,
-    seats: Array.from({ length: 6 }, (_, i) => ({
+    /*
+     * The seats carry the game's own default names rather than 'Player 1'..'Player 6'.
+     * The DFM's design-time captions are what the original's idle board showed, and those
+     * placeholders are what it had — but they read as unfinished next to the six portraits,
+     * and these are the names the game actually assigns the moment a game starts.
+     */
+    seats: DEFAULT_NAMES.map((name) => ({
       kind: 'computer' as const,
-      name: `Player ${i + 1}`,
+      name,
       personality: 'average' as const,
     })),
   });
@@ -1903,11 +1916,24 @@ async function showSplash(): Promise<void> {
     const inner = el('div', 'splash-inner');
 
     if (src) {
+      /*
+       * The generated splash is a tower with a deliberately blank upper area, and the company
+       * sign is drawn here rather than generated: asked for lettering, the model produced
+       * "GoW GopaCorp". Only the generated set gets it — the original's splash is its own
+       * finished artwork and is not ours to write on.
+       */
+      const frame = el('div', 'splash-frame');
       const img = el('img');
       img.src = src;
       img.alt = 'Game of Work';
       img.draggable = false;
-      inner.append(img);
+      frame.append(img);
+      if (graphicsMode() === 'generated') {
+        const sign = el('div', 'splash-sign');
+        sign.append(el('span', 'splash-sign-word', 'GoW'), el('span', 'splash-sign-corp', 'Corp.'));
+        frame.append(sign);
+      }
+      inner.append(frame);
     } else {
       const card = el('div', 'splash-card');
       card.append(
@@ -1972,7 +1998,9 @@ async function boot(): Promise<void> {
   await initDecks();
   await loadHelp();
   initTheme();
-  setDeckMode(deckMode());
+  // The deck follows the theme at launch too, not just on a switch — otherwise starting up in
+  // the Original theme came with this port's own pack, which a theme change would then replace.
+  setDeckMode(themeDeck(themeName()));
   applyFavicon();
   applySmoothing();
   // The original showed a borderless splash (TSPLASHFORM: one full-bleed TImage) at launch,
@@ -1984,6 +2012,7 @@ async function boot(): Promise<void> {
   // than at load, where play() would simply be rejected.
   void sound.playTrack('theme', false);
   ui = new Ui(root, handlers());
+  initTooltips();
   bindKeys();
   void newGame();
 }

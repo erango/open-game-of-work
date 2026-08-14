@@ -1789,7 +1789,18 @@ async function showSplash(): Promise<void> {
   });
 }
 
+/**
+ * Applies the stored palette to <html>. Bare :root is the original warm charcoal; the neon set
+ * comes in under [data-palette="neon"]. The picker itself arrives with the shell.
+ */
+function applyPalette(): void {
+  const stored = localStorage.getItem('ogow:palette');
+  const palette = stored === 'neon' ? 'neon' : 'original';
+  document.documentElement.setAttribute('data-palette', palette);
+}
+
 async function boot(): Promise<void> {
+  applyPalette();
   const root = document.getElementById('app')!;
   // Resolve original-artwork availability before the first render so the board does not
   // flash the SVG fallback and then swap.

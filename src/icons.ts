@@ -72,6 +72,21 @@ const POWER_MONGER = svg(`
   <circle cx="24" cy="26" r="2" fill="currentColor" stroke="none" opacity=".5"/>
 `);
 
+/** Two folders changing hands. */
+export const TRADE_ICON = svg(`
+  <rect x="5" y="14" width="20" height="15" rx="2" transform="rotate(-8 15 21)"/>
+  <rect x="23" y="19" width="20" height="15" rx="2" transform="rotate(8 33 26)"/>
+  <path d="M8 38h10M30 42h10"/>
+`, 34);
+
+/** A packed desk box. */
+export const RESIGN_ICON = svg(`
+  <path d="M8 20h32v20a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2Z"/>
+  <path d="M6 14h36v6H6z"/>
+  <path d="M20 27h8"/>
+  <path d="M24 20V9M24 9l-6 4M24 9l6 4"/>
+`, 22);
+
 const ICONS: Partial<Record<SquareKind, string>> = {
   home: HOME,
   officeParty: OFFICE_PARTY,

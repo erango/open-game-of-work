@@ -1,9 +1,9 @@
-import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, KIND_LABEL, PROFILE_COLORS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
+import { BOARD_COLOR, CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, PROJECT_TILE, SQUARES, STATS_PANEL_COLOR, tokenOffset } from './board';
 import { assetsAvailable, assetsInstalled, centerImage, cursorUrl, dieFace, eventArt, graphicsMode, installedSets, playerPortrait, playerToken, setGraphicsMode, squareImage, type GraphicsMode } from './assets';
-import { squareIcon } from './icons';
+import { RESIGN_ICON, TRADE_ICON, squareIcon } from './icons';
 import type { Game } from './engine';
 import * as R from './rules';
-import { RANK_LETTERS, RANKS, type GameState, type Player, type Project } from './types';
+import { RANK_LETTERS, RANKS, type GameState, type Player, type Project, type SquareKind } from './types';
 
 const el = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -15,6 +15,62 @@ const el = <K extends keyof HTMLElementTagNameMap>(
   if (text !== undefined) n.textContent = text;
   return n;
 };
+
+/**
+ * Corner and special-square wording. The titles the original stored are terse and the corners
+ * gain a sublabel, so the redesign keeps its own copy here rather than editing src/board.ts,
+ * whose constants are geometry and must not change.
+ */
+const SQUARE_TITLE: Partial<Record<SquareKind, string>> = {
+  home: 'Home',
+  officeParty: 'Office Party',
+  meeting: 'Meeting',
+  businessTrip: 'Business Trip',
+  chance: 'Chance',
+  scruples: 'Scruples',
+  powerMonger: 'Power\nMonger',
+};
+
+const SQUARE_SUB: Partial<Record<SquareKind, string>> = {
+  home: 'pass for review',
+  officeParty: 'everyone attends',
+  meeting: 'present your load',
+  businessTrip: '+2 boss rating',
+};
+
+/**
+ * Player colours are the recovered values, with two rendering rules from the design: the dark
+ * green is lightened for meter fills so it reads against the trough, and initials on the two
+ * dark colours are opaque white rather than translucent black.
+ */
+const DARK_GREEN = '#2f7d3f';
+const BLUE = '#4b63e4';
+
+function meterColor(color: string): string {
+  return color === DARK_GREEN ? '#57b06a' : color;
+}
+
+function initialInk(color: string): string {
+  return color === DARK_GREEN || color === BLUE ? '#fff' : 'rgb(0 0 0 / .6)';
+}
+
+/** Die face as a 3x3 pip grid, for when no artwork is installed. */
+const PIPS: Record<number, number[]> = {
+  0: [],
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
+function pipGrid(n: number): HTMLElement {
+  const grid = el('div', 'die-grid');
+  const on = new Set(PIPS[n] ?? []);
+  for (let i = 0; i < 9; i++) grid.append(el('div', on.has(i) ? 'pip' : 'pip pip-off'));
+  return grid;
+}
 
 export interface UiHandlers {
   onGraphicsChanged(): void;
@@ -353,17 +409,26 @@ export class Ui {
       } else {
         const art = squareImage(sq.index);
         if (art) {
-          // Original face fills the tile; the label is redundant since the art carries it.
+          // Installed artwork fills the tile and carries the label itself.
           const img = el('img', 'sq-art');
           img.src = art;
-          img.alt = KIND_LABEL[sq.kind].replace('\n', ' ');
+          img.alt = SQUARE_TITLE[sq.kind] ?? sq.kind;
           img.draggable = false;
           node.append(img);
           node.classList.add('sq-hasart');
         } else {
+          const corner = sq.size === 140;
           const icon = el('div', 'sq-icon');
-          icon.innerHTML = squareIcon(sq.kind, sq.size === 140 ? 48 : 34);
-          node.append(icon, el('div', 'sq-label', KIND_LABEL[sq.kind]));
+          icon.innerHTML = squareIcon(sq.kind, corner ? 44 : 32);
+          node.append(icon);
+          if (corner) {
+            node.append(
+              el('div', 'sq-title', SQUARE_TITLE[sq.kind] ?? ''),
+              el('div', 'sq-sub', SQUARE_SUB[sq.kind] ?? ''),
+            );
+          } else {
+            node.append(el('div', 'sq-label', SQUARE_TITLE[sq.kind] ?? ''));
+          }
         }
       }
       this.board.append(node);
@@ -375,51 +440,52 @@ export class Ui {
   }
 
   /**
-   * A project square, as the original composes it (see PROJECT_TILE): a flat profile-coloured
-   * tile, a vertical bar down the left edge in the owner's colour (black when unowned), a
-   * white shape masking the part of that bar not yet earned, and the name centred clear of
-   * the bar.
+   * A project square: a flat profile-coloured tile, a bar filling upward out of a dark trough,
+   * the name over two lines, and the profile numeral.
    *
-   * The bar is drawn full and masked from the top, not filled from the bottom. Getting that
-   * backwards makes an untouched project look finished, which is what it used to do.
+   * Owned names are dark ink rather than the owner's colour: the pale player colours measure
+   * 2-3:1 against a pastel tile, so the bar carries ownership instead. Two lines because
+   * names.ts pools words up to 9 characters, which will not fit one legible line in a 73px box.
    */
   private paintProject(node: HTMLElement, proj: Project, game: Game): void {
     const T = PROJECT_TILE;
     const owner = proj.owner === null ? null : game.player(proj.owner);
-    node.style.background = PROFILE_COLORS[proj.profile];
+    node.style.background = `var(--tile-${proj.profile})`;
+    if (owner) node.classList.add('proj-owned');
 
-    const bar = el('div', 'proj-bar');
-    bar.style.left = `${T.bar.left}px`;
-    bar.style.top = `${T.bar.top}px`;
-    bar.style.width = `${T.bar.width}px`;
-    bar.style.height = `${T.bar.height}px`;
-    bar.style.background = owner ? owner.color : '#000';
+    const track = el('div', 'proj-track');
+    track.style.left = `${T.bar.left}px`;
+    track.style.top = `${T.bar.top}px`;
+    track.style.width = `${T.bar.width}px`;
+    track.style.height = `${T.bar.height}px`;
 
-    const ratio = Math.max(0, Math.min(1, proj.progress / proj.work));
-    const remaining = this.attract
-      ? T.empty.designHeight
-      : Math.round(T.empty.maxHeight * (1 - ratio));
-    const empty = el('div', 'proj-empty');
-    empty.style.left = `${T.empty.left}px`;
-    empty.style.top = `${T.empty.top}px`;
-    empty.style.width = `${T.empty.width}px`;
-    empty.style.height = `${remaining}px`;
+    // The pre-game board keeps the part-filled bars the original's idle screen showed, which
+    // its design-time mask records as a fraction of the bar rather than a progress value.
+    const ratio = this.attract
+      ? 1 - T.empty.designHeight / T.empty.maxHeight
+      : Math.max(0, Math.min(1, proj.progress / proj.work));
+    const fill = el('div', 'proj-fill');
+    fill.style.left = `${T.bar.left}px`;
+    fill.style.width = `${T.bar.width}px`;
+    fill.style.height = `${Math.round(T.bar.height * ratio)}px`;
+    fill.style.bottom = '0';
+    fill.style.background = owner ? meterColor(owner.color) : 'var(--tile-ink-dim)';
 
     const label = this.attract ? 'project Name' : proj.name;
-    const name = el('div', 'proj-name', label);
-    // Recovered size, stepped down for the rare longest name so nothing ever clips.
-    const nameSize =
-      label.length > 17 ? FONTS.projectName - 2 : label.length > 14 ? FONTS.projectName - 1 : FONTS.projectName;
-    name.style.fontSize = `calc(${nameSize}px * var(--text-k, 1))`;
+    const [adjective, ...rest] = label.split(' ');
+    const noun = rest.join(' ') || adjective;
+    const name = el('div', 'proj-name');
     name.style.left = `${T.name.left}px`;
     name.style.top = `${T.name.top}px`;
     name.style.width = `${T.name.width}px`;
     name.style.height = `${T.name.height}px`;
-    name.style.color = owner ? owner.color : '#000';
+    if (rest.length) name.append(el('div', 'proj-adj', adjective));
+    name.append(el('div', 'proj-noun', noun));
 
-    node.append(bar, empty, name);
+    node.append(track, fill, name, el('div', 'proj-num', String(proj.profile)));
 
     if (proj.shoddy) {
+      node.append(el('div', 'proj-shoddy-overlay'));
       const dot = el('div', 'proj-shoddy-dot');
       dot.title = 'Shoddy — will rebound on whoever ships it';
       node.append(dot);
@@ -436,22 +502,14 @@ export class Ui {
     const busy = !!s.modal || s.phase === 'gameOver';
     const p = game.active;
     const isHuman = p.kind === 'human';
-    const F = CENTER.frames;
     const C = CENTER.captions;
 
-    // Raised frames behind each control, as the original's bsRaised bevels.
-    for (const box of [F.rollDie, F.makeTrade, F.resign]) {
-      const bevel = el('div', 'bevel');
-      bevel.style.left = `${box.left}px`;
-      bevel.style.top = `${box.top}px`;
-      bevel.style.width = `${box.width}px`;
-      bevel.style.height = `${box.height}px`;
-      this.board.append(bevel);
-    }
-
-    const caption = (c: { left: number; top: number; width: number; height: number; text: string }) => {
-      const n = el('div', 'center-caption', c.text);
-      n.style.fontSize = `calc(${FONTS.centerCaption}px * var(--text-k, 1))`;
+    const caption = (
+      c: { left: number; top: number; width: number; height: number },
+      text: string,
+      variant: string,
+    ) => {
+      const n = el('div', `center-caption ${variant}`, text);
       n.style.left = `${c.left}px`;
       n.style.top = `${c.top}px`;
       n.style.width = `${c.width}px`;
@@ -459,7 +517,8 @@ export class Ui {
       return n;
     };
 
-    const roll = el('button', 'center-btn');
+    // The only filled control on the board.
+    const roll = el('button', 'center-btn center-roll');
     roll.style.left = `${CENTER.rollDie.left}px`;
     roll.style.top = `${CENTER.rollDie.top}px`;
     roll.style.width = `${CENTER.rollDie.size}px`;
@@ -467,20 +526,19 @@ export class Ui {
     const shown = this.dieOverride ?? s.die;
     const face = shown ? dieFace(shown) : null;
     if (face) {
-      // The original's die is an image list indexed by the roll, not a static picture.
       const img = el('img', 'btn-art');
       img.src = face;
       img.alt = this.dieOverride ? 'Rolling' : `Rolled ${shown}`;
       img.draggable = false;
       roll.append(img);
     } else {
-      roll.append(el('div', 'die-face', shown ? '⚀⚁⚂⚃⚄⚅'[shown - 1] : '🎲'));
+      roll.append(pipGrid(shown ?? 0));
     }
     roll.disabled = busy || !game.canRoll() || !isHuman;
     roll.onclick = () => this.handlers.onRoll();
     roll.title = 'Roll the die (Space)';
 
-    const trade = el('button', 'center-btn');
+    const trade = el('button', 'center-btn center-ctl');
     trade.style.left = `${CENTER.makeTrade.left}px`;
     trade.style.top = `${CENTER.makeTrade.top}px`;
     trade.style.width = `${CENTER.makeTrade.size}px`;
@@ -489,17 +547,19 @@ export class Ui {
     if (tradeArt) {
       const img = el('img', 'btn-art');
       img.src = tradeArt;
-      img.alt = 'Make Trade';
+      img.alt = 'Trade';
       img.draggable = false;
       trade.append(img);
     } else {
-      trade.append(el('div', 'die-face', '🤝'));
+      const icon = el('div', 'sq-icon');
+      icon.innerHTML = TRADE_ICON;
+      trade.append(icon);
     }
     trade.disabled = busy || s.rolled || !isHuman;
     trade.onclick = () => this.handlers.onTrade();
     trade.title = 'Trade projects before rolling (T)';
 
-    const resign = el('button', 'center-btn');
+    const resign = el('button', 'center-btn center-ctl');
     resign.style.left = `${CENTER.resign.left}px`;
     resign.style.top = `${CENTER.resign.top}px`;
     resign.style.width = `${CENTER.resign.size}px`;
@@ -512,7 +572,9 @@ export class Ui {
       img.draggable = false;
       resign.append(img);
     } else {
-      resign.append(el('div', undefined, '📦'));
+      const icon = el('div', 'sq-icon');
+      icon.innerHTML = RESIGN_ICON;
+      resign.append(icon);
     }
     resign.disabled = busy || s.rolled || !isHuman;
     resign.onclick = () => this.handlers.onResign();
@@ -522,25 +584,21 @@ export class Ui {
       roll,
       trade,
       resign,
-      caption(C.rollDie),
-      caption(C.makeTrade),
-      caption(C.resign),
-      caption(C.ticker),
+      caption(C.rollDie, 'Roll', 'cap-roll'),
+      caption(C.makeTrade, 'Trade', 'cap-trade'),
+      caption(C.resign, 'Resign', 'cap-resign'),
+      caption(C.ticker, 'Stock Ticker', 'cap-ticker'),
     );
 
     this.paintTicker(game);
   }
 
-  /**
-   * The Stock Ticker: a raised frame with an inset black readout showing the most recent
-   * change to the share price. The original drew this in lime (clLime) with a default
-   * caption of '+32', so positive changes are green; negative ones read red here.
-   */
+  /** The Stock Ticker: an inset readout showing the most recent change to the share price. */
   private paintTicker(game: Game): void {
     const F = CENTER.frames.ticker;
     const V = CENTER.tickerValue;
 
-    const frame = el('div', 'bevel');
+    const frame = el('div', 'ticker-frame');
     frame.style.left = `${F.left}px`;
     frame.style.top = `${F.top}px`;
     frame.style.width = `${F.width}px`;
@@ -553,7 +611,6 @@ export class Ui {
     readout.style.width = `${V.width}px`;
     readout.style.height = `${V.height}px`;
     readout.classList.add(delta > 0 ? 'ticker-up' : delta < 0 ? 'ticker-down' : 'ticker-flat');
-    readout.style.fontSize = `calc(${FONTS.tickerValue}px * var(--text-k, 1))`;
     readout.textContent = delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${delta}`;
     readout.title = `Share price ${game.state.stock} — last change ${delta >= 0 ? '+' : ''}${delta}`;
 
@@ -561,12 +618,8 @@ export class Ui {
   }
 
   /**
-   * Player stat rows, laid out on the original's geometry (CENTER.statRows).
-   *
-   * Each player gets ONE bordered track holding TWO meters stacked one above the other:
-   * Boss Rating on top in the player's colour, workload (stress) beneath it in red. The
-   * original used a single 136x16 shape per player, so the two meters are 8px halves inside
-   * it rather than separate side-by-side bars.
+   * Player rows on the transcribed geometry (CENTER.statRows). Nothing else may occupy this
+   * panel: a six-seat game uses every row.
    */
   private paintStats(game: Game): void {
     const G = CENTER.statRows;
@@ -582,12 +635,18 @@ export class Ui {
       const barTop = G.barTops[row];
       const active = p.id === game.state.current;
 
+      // A band rather than a marker glyph, so the whole row reads as current.
+      if (active) {
+        const band = el('div', 'stat-band');
+        band.style.top = `${barTop - 24}px`;
+        panel.append(band);
+      }
+
       const name = el('div', 'stat-name' + (active ? ' active' : ''), p.name);
       name.style.left = `${G.name.left}px`;
       name.style.top = `${G.nameTops[row]}px`;
       name.style.width = `${G.name.width}px`;
       name.style.height = `${G.name.height}px`;
-      name.style.color = p.color;
       name.style.fontSize = `calc(${FONTS.playerName}px * var(--text-k, 1))`;
 
       const portraitArt = playerPortrait(p.id);
@@ -597,7 +656,6 @@ export class Ui {
       portrait.style.width = `${G.portrait.size}px`;
       portrait.style.height = `${G.portrait.size}px`;
       if (portraitArt) {
-        // smallPlayerImage in the original, sourced from playerSmallImageList.
         const img = el('img', 'portrait-art');
         img.src = portraitArt;
         img.alt = p.name;
@@ -605,6 +663,7 @@ export class Ui {
         portrait.append(img);
       } else {
         portrait.style.background = p.color;
+        portrait.style.color = initialInk(p.color);
         portrait.textContent = p.name.slice(0, 1).toUpperCase();
       }
       portrait.title = p.kind === 'computer' ? `${p.name} — computer (${p.personality})` : `${p.name} — human`;
@@ -619,26 +678,23 @@ export class Ui {
       const brPct = Math.max(0, Math.min(100, (p.bossRating / R.PRESIDENT_THRESHOLD) * 100));
       const stressPct = Math.min(100, (stress / R.STRESS_BAR_MAX) * 100);
 
-      const brFill = el('div', 'meter meter-boss');
-      brFill.style.width = `${brPct}%`;
-      brFill.style.background = p.color;
-
-      const stFill = el('div', 'meter meter-stress');
-      stFill.style.width = `${stressPct}%`;
-      stFill.style.background = stress > R.STRESS_SHODDY_THRESHOLD ? '#e0451f' : '#c8342c';
-
-      track.append(brFill, stFill);
+      const boss = el('div', 'meter meter-boss');
+      boss.style.width = `${brPct}%`;
+      boss.style.background = meterColor(p.color);
+      const load = el('div', 'meter meter-load');
+      load.style.width = `${stressPct}%`;
+      track.append(boss, load);
       track.title =
         `${p.name}: Boss Rating ${p.bossRating}/${R.PRESIDENT_THRESHOLD} (top), ` +
-        `workload ${stress} (bottom) — ${RANKS[p.rank]}, ` +
+        `workload ${stress}/${R.STRESS_BAR_MAX} (bottom) — ${RANKS[p.rank]}, ` +
         `${game.projectsOf(p.id).length} project(s)`;
 
-      const rank = el('div', 'stat-rankbadge', RANK_LETTERS[p.rank]);
-      rank.style.fontSize = `calc(${FONTS.rankBadge}px * var(--text-k, 1))`;
+      const rank = el('div', 'stat-rankbadge' + (active ? ' active' : ''), RANK_LETTERS[p.rank]);
       rank.style.left = `${G.rank.left}px`;
-      rank.style.top = `${barTop - 1}px`;
-      rank.style.width = `${G.rank.width}px`;
+      rank.style.top = `${barTop}px`;
+      rank.style.width = `${G.portrait.size}px`;
       rank.style.height = `${G.rank.height}px`;
+      rank.style.fontSize = `calc(${FONTS.rankBadge}px * var(--text-k, 1))`;
       rank.title = RANKS[p.rank];
 
       panel.append(name, portrait, track, rank);
@@ -648,47 +704,17 @@ export class Ui {
   }
 
   private paintTokens(s: GameState): void {
-    if (this.attract) {
-      // Parked in the 3x2 grid the original leaves them in before a game starts.
-      const G = CENTER.tokens;
-      s.players.forEach((p, i) => {
-        const art = playerToken(p.id);
-        const col = i % G.perRow;
-        const row = Math.floor(i / G.perRow);
-        const t = el('div', art ? 'token token-art token-parked' : 'token token-parked');
-        t.style.width = `${G.size}px`;
-        t.style.height = `${G.size}px`;
-        t.style.left = `${G.left + col * G.gapX}px`;
-        t.style.top = `${G.top + row * G.gapY}px`;
-        if (art) {
-          const img = el('img');
-          img.src = art;
-          img.alt = p.name;
-          img.draggable = false;
-          t.append(img);
-        } else {
-          t.style.background = p.color;
-          t.textContent = String(p.id + 1);
-        }
-        t.title = p.name;
-        this.board.append(t);
-      });
-      return;
-    }
-    const perSquare = new Map<number, number>();
-    for (const p of s.players) {
-      const slot = perSquare.get(p.square) ?? 0;
-      perSquare.set(p.square, slot + 1);
-      const sq = SQUARES[p.square];
-      const { dx, dy } = tokenOffset(slot);
+    const place = (p: (typeof s.players)[number], left: number, top: number, parked: boolean) => {
       const art = playerToken(p.id);
-      // player1Image..player6Image are 32x32 TIcons: the actual moving pieces.
       const size = art ? 26 : 22;
-      const t = el('div', art ? 'token token-art' : 'token');
+      const cls = ['token'];
+      if (art) cls.push('token-art');
+      if (parked) cls.push('token-parked');
+      const t = el('div', cls.join(' '));
       t.style.width = `${size}px`;
       t.style.height = `${size}px`;
-      t.style.left = `${sq.left + sq.size / 2 - size / 2 + dx}px`;
-      t.style.top = `${sq.top + sq.size / 2 - size / 2 + dy}px`;
+      t.style.left = `${left - size / 2}px`;
+      t.style.top = `${top - size / 2}px`;
       if (art) {
         const img = el('img');
         img.src = art;
@@ -697,14 +723,34 @@ export class Ui {
         t.append(img);
       } else {
         t.style.background = p.color;
+        t.style.color = initialInk(p.color);
         t.textContent = p.name.slice(0, 1).toUpperCase();
       }
       t.title = `${p.name} — ${RANKS[p.rank]}`;
       this.board.append(t);
+    };
+
+    if (this.attract) {
+      // Parked in the 3x2 grid the original leaves them in before a game starts.
+      const G = CENTER.tokens;
+      s.players.forEach((p, i) => {
+        const col = i % G.perRow;
+        const row = Math.floor(i / G.perRow);
+        place(p, G.left + col * G.gapX + G.size / 2, G.top + row * G.gapY + G.size / 2, true);
+      });
+      return;
+    }
+
+    const perSquare = new Map<number, number>();
+    for (const p of s.players) {
+      const slot = perSquare.get(p.square) ?? 0;
+      perSquare.set(p.square, slot + 1);
+      const sq = SQUARES[p.square];
+      const { dx, dy } = tokenOffset(slot);
+      place(p, sq.left + sq.size / 2 + dx, sq.top + sq.size / 2 + dy, false);
     }
   }
 
-  // ------------------------------------------------------------- sidebar
 
   private renderSide(game: Game): void {
     const s = game.state;

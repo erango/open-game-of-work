@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+  body { margin:0; background:#171a1f; color:#e8eaed; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color:#d8a13c; }
+  a:hover { color:#e8b04c; }
+</style>
+</helmet>
+
+<div style="padding:28px; display:flex; flex-direction:column; gap:28px; background:#171a1f;">
+
+  <div style="font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#9aa2ad;">Recreation of the current interface &mdash; src/ui.ts, src/style.css, src/main.ts &middot; board at 1&times;</div>
+
+  <!-- ===================== app shell ===================== -->
+  <div data-screen-label="App" style="width:1154px; display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; padding:16px; background:#171a1f; align-items:stretch;">
+
+    <div style="display:grid; grid-template-rows:auto minmax(0,1fr); gap:8px; min-width:0;">
+      <!-- menubar -->
+      <div style="display:flex; gap:2px; background:#22262e; border:1px solid #3a4048; border-radius:7px; padding:3px; position:relative; z-index:20;">
+        <button style="background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">Game</button>
+        <button style="background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">Options</button>
+        <button style="background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">How to Play</button>
+        <button style="background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">About</button>
+      </div>
+
+      <!-- board column -->
+      <div style="min-width:0; display:flex; align-items:center; justify-content:center;">
+        <div style="position:relative; width:776px; height:535px; background:#2a4a3a; border:2px solid #1d3529; border-radius:10px; overflow:hidden; box-shadow:0 10px 40px rgb(0 0 0 / 0.45);">
+          <div style="position:absolute; inset:0; width:776px; height:535px; transform-origin:top left;">
+
+            <!-- 0 home -->
+            <div style="position:absolute; left:8px; top:8px; width:140px; height:140px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#4a3a5e; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-weight:700; letter-spacing:.04em; font-size:13px; line-height:1.15; text-align:center; overflow:hidden; white-space:pre-line;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 42V14l16-8 16 8v28"></path><path d="M4 42h40"></path><rect x="20" y="30" width="8" height="12" fill="currentColor" opacity=".35"></rect><rect x="13" y="19" width="6" height="6"></rect><rect x="29" y="19" width="6" height="6"></rect></svg></div>
+              <div style="font-size:11px; font-weight:700; letter-spacing:.07em; white-space:pre-line; margin-top:3px; color:rgb(255 255 255 / .85);">HOME</div>
+            </div>
+
+            <!-- 1 project p0 -->
+            <div style="position:absolute; left:147px; top:8px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#00b7b7; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#97f4ff;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:20px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:10px; color:#97f4ff;">Casual Postcard</div>
+            </div>
+
+            <!-- 2 project p1 -->
+            <div style="position:absolute; left:227px; top:8px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#00b7b7; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#000;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:79px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#000;">Napping Kitten</div>
+            </div>
+
+            <!-- 3 chance -->
+            <div style="position:absolute; left:227px; top:88px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#46424e; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-size:11px; font-weight:700; letter-spacing:.06em; line-height:1.15; text-align:center; overflow:hidden;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="18" width="21" height="21" rx="3.5"></rect><circle cx="11.5" cy="24.5" r="1.7" fill="currentColor" stroke="none"></circle><circle cx="19.5" cy="32.5" r="1.7" fill="currentColor" stroke="none"></circle><rect x="26" y="7" width="19" height="19" rx="3.5" opacity=".75"></rect><circle cx="35.5" cy="16.5" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle><circle cx="31" cy="12" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle><circle cx="40" cy="21" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle></svg></div>
+              <div style="font-size:9px; font-weight:700; letter-spacing:.07em; margin-top:3px; color:rgb(255 255 255 / .7);">CHANCE</div>
+            </div>
+
+            <!-- 4 project p2 -->
+            <div style="position:absolute; left:307px; top:88px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#94bcda; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#7dff9e;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:26px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#7dff9e;">Tepid Toaster</div>
+            </div>
+
+            <!-- 5 project p3 -->
+            <div style="position:absolute; left:387px; top:88px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#94bcda; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#000;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:79px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#000;">Fussy Kazoo</div>
+            </div>
+
+            <!-- 6 scruples -->
+            <div style="position:absolute; left:387px; top:8px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#4e4238; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; line-height:1.15; text-align:center; overflow:hidden;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11a3 3 0 0 1 3-3h28a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H20l-9 8v-8h-1a3 3 0 0 1-3-3Z"></path><path d="M19.5 16.5a4.6 4.6 0 1 1 5.4 4.5v3"></path><circle cx="24.7" cy="27.6" r="1.5" fill="currentColor" stroke="none"></circle></svg></div>
+            </div>
+
+            <!-- 7 project p4 -->
+            <div style="position:absolute; left:467px; top:8px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#94bcda; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#97f4ff;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:13px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#97f4ff;">Perky Gerbil</div>
+            </div>
+
+            <!-- 8 project p5 -->
+            <div style="position:absolute; left:547px; top:8px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#94bcda; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#000;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:79px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#000;">Plain Bicycle</div>
+            </div>
+
+            <!-- 9 officeParty -->
+            <div style="position:absolute; left:627px; top:8px; width:140px; height:140px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#5e4a3a; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-weight:700; letter-spacing:.04em; font-size:13px; line-height:1.15; text-align:center; overflow:hidden; white-space:pre-line;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18h20l-2.5 20a3 3 0 0 1-3 2.6h-9A3 3 0 0 1 16.5 38Z"></path><path d="M11 18h26"></path><circle cx="34" cy="10" r="2.4"></circle><circle cx="27" cy="6" r="1.7"></circle><circle cx="39" cy="16" r="1.4"></circle></svg></div>
+              <div style="font-size:11px; font-weight:700; letter-spacing:.07em; white-space:pre-line; margin-top:3px; color:rgb(255 255 255 / .85);">OFFICE
+PARTY</div>
+            </div>
+
+            <!-- 10 project p6 -->
+            <div style="position:absolute; left:686px; top:147px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#8bb889; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#ffd2fc;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:59px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#ffd2fc;">Knotty Beehive</div>
+            </div>
+
+            <!-- 11 chance -->
+            <div style="position:absolute; left:686px; top:226px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#46424e; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-size:11px; font-weight:700; letter-spacing:.06em; line-height:1.15; text-align:center; overflow:hidden;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="18" width="21" height="21" rx="3.5"></rect><circle cx="11.5" cy="24.5" r="1.7" fill="currentColor" stroke="none"></circle><circle cx="19.5" cy="32.5" r="1.7" fill="currentColor" stroke="none"></circle><rect x="26" y="7" width="19" height="19" rx="3.5" opacity=".75"></rect><circle cx="35.5" cy="16.5" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle><circle cx="31" cy="12" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle><circle cx="40" cy="21" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle></svg></div>
+              <div style="font-size:9px; font-weight:700; letter-spacing:.07em; margin-top:3px; color:rgb(255 255 255 / .7);">CHANCE</div>
+            </div>
+
+            <!-- 12 project p7 -->
+            <div style="position:absolute; left:686px; top:307px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#8bb889; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#000;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:79px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#000;">Cranky Llama</div>
+            </div>
+
+            <!-- 13 meeting -->
+            <div style="position:absolute; left:627px; top:387px; width:140px; height:140px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#3a4a5e; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-weight:700; letter-spacing:.04em; font-size:13px; line-height:1.15; text-align:center; overflow:hidden; white-space:pre-line;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="34" height="24" rx="2"></rect><path d="M13 25l7-7 5 5 8-10"></path><path d="M24 31v10"></path><path d="M16 41h16"></path></svg></div>
+              <div style="font-size:11px; font-weight:700; letter-spacing:.07em; white-space:pre-line; margin-top:3px; color:rgb(255 255 255 / .85);">MEETING</div>
+            </div>
+
+            <!-- 14 scruples -->
+            <div style="position:absolute; left:547px; top:446px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#4e4238; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; line-height:1.15; text-align:center; overflow:hidden;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11a3 3 0 0 1 3-3h28a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H20l-9 8v-8h-1a3 3 0 0 1-3-3Z"></path><path d="M19.5 16.5a4.6 4.6 0 1 1 5.4 4.5v3"></path><circle cx="24.7" cy="27.6" r="1.5" fill="currentColor" stroke="none"></circle></svg></div>
+            </div>
+
+            <!-- 15 project p8 -->
+            <div style="position:absolute; left:467px; top:446px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#8bb889; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#2f7d3f;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:20px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#2f7d3f;">Thorny Ostrich</div>
+            </div>
+
+            <!-- 16 project p9 -->
+            <div style="position:absolute; left:467px; top:366px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#8bb889; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#000;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:79px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#000;">Wobbly Sawmill</div>
+            </div>
+
+            <!-- 17 powerMonger -->
+            <div style="position:absolute; left:387px; top:366px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#5e3a3a; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-size:11px; font-weight:700; line-height:1.15; text-align:center; overflow:hidden; white-space:pre-line;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 34 5 14l10 7 9-12 9 12 10-7-2 20Z"></path><path d="M9 39h30"></path><circle cx="24" cy="26" r="2" fill="currentColor" stroke="none" opacity=".5"></circle></svg></div>
+              <div style="font-size:9px; font-weight:700; letter-spacing:.07em; white-space:pre-line; margin-top:3px; color:rgb(255 255 255 / .7);">POWER
+MONGER</div>
+            </div>
+
+            <!-- 18 project p10 (shoddy) -->
+            <div style="position:absolute; left:307px; top:366px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#debe89; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#7dff9e;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:22px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#7dff9e;">Grim Foundry</div>
+              <div style="position:absolute; right:3px; bottom:3px; width:7px; height:7px; border-radius:50%; background:#e0451f; box-shadow:0 0 0 1px rgb(0 0 0 / .55);"></div>
+            </div>
+
+            <!-- 19 project p11 -->
+            <div style="position:absolute; left:307px; top:446px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#debe89; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#000;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:79px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#000;">Roaring Kraken</div>
+            </div>
+
+            <!-- 20 chance -->
+            <div style="position:absolute; left:227px; top:446px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#46424e; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-size:11px; font-weight:700; letter-spacing:.06em; line-height:1.15; text-align:center; overflow:hidden;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="18" width="21" height="21" rx="3.5"></rect><circle cx="11.5" cy="24.5" r="1.7" fill="currentColor" stroke="none"></circle><circle cx="19.5" cy="32.5" r="1.7" fill="currentColor" stroke="none"></circle><rect x="26" y="7" width="19" height="19" rx="3.5" opacity=".75"></rect><circle cx="35.5" cy="16.5" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle><circle cx="31" cy="12" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle><circle cx="40" cy="21" r="1.6" fill="currentColor" stroke="none" opacity=".75"></circle></svg></div>
+              <div style="font-size:9px; font-weight:700; letter-spacing:.07em; margin-top:3px; color:rgb(255 255 255 / .7);">CHANCE</div>
+            </div>
+
+            <!-- 21 project p12 -->
+            <div style="position:absolute; left:147px; top:446px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#debe89; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#97f4ff;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:57px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#97f4ff;">Bleak Quarry</div>
+            </div>
+
+            <!-- 22 businessTrip -->
+            <div style="position:absolute; left:8px; top:387px; width:140px; height:140px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#3a5e4a; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; font-weight:700; letter-spacing:.04em; font-size:13px; line-height:1.15; text-align:center; overflow:hidden; white-space:pre-line;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="22" rx="3"></rect><path d="M18 16v-4a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v4"></path><path d="M6 26h36"></path><path d="M33 30l7-6-7-6" opacity=".5"></path></svg></div>
+              <div style="font-size:11px; font-weight:700; letter-spacing:.07em; white-space:pre-line; margin-top:3px; color:rgb(255 255 255 / .85);">BUSINESS
+TRIP</div>
+            </div>
+
+            <!-- 23 project p13 -->
+            <div style="position:absolute; left:8px; top:307px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#d88fd6; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#ffd2fc;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:28px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:11px; color:#ffd2fc;">Doomed Obelisk</div>
+            </div>
+
+            <!-- 24 scruples -->
+            <div style="position:absolute; left:8px; top:227px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#4e4238; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; line-height:1.15; text-align:center; overflow:hidden;">
+              <div style="color:rgb(255 255 255 / .82); display:flex; align-items:center; justify-content:center; flex:none;"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11a3 3 0 0 1 3-3h28a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H20l-9 8v-8h-1a3 3 0 0 1-3-3Z"></path><path d="M19.5 16.5a4.6 4.6 0 1 1 5.4 4.5v3"></path><circle cx="24.7" cy="27.6" r="1.5" fill="currentColor" stroke="none"></circle></svg></div>
+            </div>
+
+            <!-- 25 project p14 -->
+            <div style="position:absolute; left:8px; top:147px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:4px; background:#d88fd6; overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; width:7px; height:81px; border:1px solid rgb(0 0 0 / .55); background:#000;"></div>
+              <div style="position:absolute; left:1px; top:1px; width:6px; height:79px; background:#fff;"></div>
+              <div style="position:absolute; left:8px; top:0; width:73px; height:27px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; line-height:1.15; word-break:break-word; overflow:hidden; font-size:10px; color:#000;">Titanic Deathstar</div>
+            </div>
+
+            <!-- bevels: roll die, make trade, resign, ticker -->
+            <div style="position:absolute; left:334px; top:222px; width:86px; height:85px; border-radius:4px; background:rgb(255 255 255 / .06); border-top:2px solid rgb(255 255 255 / .22); border-left:2px solid rgb(255 255 255 / .18); border-right:2px solid rgb(0 0 0 / .35); border-bottom:2px solid rgb(0 0 0 / .4); pointer-events:none;"></div>
+            <div style="position:absolute; left:435px; top:222px; width:86px; height:85px; border-radius:4px; background:rgb(255 255 255 / .06); border-top:2px solid rgb(255 255 255 / .22); border-left:2px solid rgb(255 255 255 / .18); border-right:2px solid rgb(0 0 0 / .35); border-bottom:2px solid rgb(0 0 0 / .4); pointer-events:none;"></div>
+            <div style="position:absolute; left:592px; top:294px; width:55px; height:55px; border-radius:4px; background:rgb(255 255 255 / .06); border-top:2px solid rgb(255 255 255 / .22); border-left:2px solid rgb(255 255 255 / .18); border-right:2px solid rgb(0 0 0 / .35); border-bottom:2px solid rgb(0 0 0 / .4); pointer-events:none;"></div>
+            <div style="position:absolute; left:561px; top:214px; width:106px; height:50px; border-radius:4px; background:rgb(255 255 255 / .06); border-top:2px solid rgb(255 255 255 / .22); border-left:2px solid rgb(255 255 255 / .18); border-right:2px solid rgb(0 0 0 / .35); border-bottom:2px solid rgb(0 0 0 / .4); pointer-events:none;"></div>
+
+            <!-- centre controls -->
+            <button style="position:absolute; left:336px; top:224px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:6px; background:#2b3038; color:#e8eaed; font:inherit; font-size:11px; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; text-align:center;" style-hover="background:#38404a"><div style="font-size:26px;">&#9858;</div></button>
+            <button style="position:absolute; left:437px; top:224px; width:81px; height:81px; border:1px solid rgb(0 0 0 / .5); border-radius:6px; background:#2b3038; color:#e8eaed; font:inherit; font-size:11px; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; text-align:center; opacity:.4;"><div style="font-size:26px;">&#129309;</div></button>
+            <button style="position:absolute; left:594px; top:296px; width:50px; height:50px; border:1px solid rgb(0 0 0 / .5); border-radius:6px; background:#2b3038; color:#e8eaed; font:inherit; font-size:11px; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; text-align:center; opacity:.4;"><div>&#128230;</div></button>
+
+            <!-- captions -->
+            <div style="position:absolute; left:347px; top:312px; width:58px; height:23px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; letter-spacing:.02em; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .55); white-space:nowrap;">Roll Die</div>
+            <div style="position:absolute; left:430px; top:312px; width:94px; height:23px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; letter-spacing:.02em; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .55); white-space:nowrap;">Make Trade</div>
+            <div style="position:absolute; left:595px; top:352px; width:48px; height:23px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; letter-spacing:.02em; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .55); white-space:nowrap;">Resign</div>
+            <div style="position:absolute; left:560px; top:192px; width:106px; height:19px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; letter-spacing:.02em; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .55); white-space:nowrap;">Stock Ticker</div>
+
+            <!-- ticker readout -->
+            <div style="position:absolute; left:567px; top:220px; width:93px; height:37px; display:flex; align-items:center; justify-content:center; background:#05070a; border-radius:3px; box-shadow:inset 0 2px 5px rgb(0 0 0 / .9); font-family:ui-monospace, 'SF Mono', Menlo, monospace; font-weight:700; letter-spacing:.04em; font-size:31px; color:#2bff5a; text-shadow:0 0 9px rgb(43 255 90 / .55);">+4</div>
+
+            <!-- stats panel -->
+            <div style="position:absolute; left:96px; top:172px; width:205px; height:211px; background:rgb(0 0 0 / .35); border:1px solid rgb(0 0 0 / .5); border-radius:6px; padding:6px; overflow:hidden;">
+              <div style="position:absolute; left:10px; top:8px; width:140px; height:17px; font-weight:700; line-height:1; display:flex; align-items:center; text-shadow:0 1px 2px rgb(0 0 0 / .6); white-space:nowrap; overflow:hidden; color:#97f4ff; font-size:15px;">Brad<span style="width:5px; height:5px; border-radius:50%; background:#d8a13c; margin-left:6px; flex:none;"></span></div>
+              <div style="position:absolute; left:16px; top:26px; width:16px; height:16px; border-radius:2px; border:1px solid rgb(0 0 0 / .55); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:rgb(0 0 0 / .7); background:#97f4ff;">B</div>
+              <div style="position:absolute; left:32px; top:26px; width:136px; height:16px; background:#e9f1f8; border:1px solid rgb(0 0 0 / .5); border-radius:2px; overflow:hidden; display:flex; flex-direction:column;">
+                <div style="height:50%; min-height:0; width:46%; background:#97f4ff; border-bottom:1px solid rgb(0 0 0 / .12);"></div>
+                <div style="height:50%; min-height:0; width:41%; background:#c8342c;"></div>
+              </div>
+              <div style="position:absolute; left:176px; top:25px; width:11px; height:16px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .6); font-size:13px;">M</div>
+
+              <div style="position:absolute; left:10px; top:40px; width:140px; height:17px; font-weight:700; line-height:1; display:flex; align-items:center; text-shadow:0 1px 2px rgb(0 0 0 / .6); white-space:nowrap; overflow:hidden; color:#7dff9e; font-size:15px;">Jen</div>
+              <div style="position:absolute; left:16px; top:58px; width:16px; height:16px; border-radius:2px; border:1px solid rgb(0 0 0 / .55); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:rgb(0 0 0 / .7); background:#7dff9e;">J</div>
+              <div style="position:absolute; left:32px; top:58px; width:136px; height:16px; background:#e9f1f8; border:1px solid rgb(0 0 0 / .5); border-radius:2px; overflow:hidden; display:flex; flex-direction:column;">
+                <div style="height:50%; min-height:0; width:38%; background:#7dff9e; border-bottom:1px solid rgb(0 0 0 / .12);"></div>
+                <div style="height:50%; min-height:0; width:55%; background:#c8342c;"></div>
+              </div>
+              <div style="position:absolute; left:176px; top:57px; width:11px; height:16px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .6); font-size:13px;">J</div>
+
+              <div style="position:absolute; left:10px; top:72px; width:140px; height:17px; font-weight:700; line-height:1; display:flex; align-items:center; text-shadow:0 1px 2px rgb(0 0 0 / .6); white-space:nowrap; overflow:hidden; color:#ffd2fc; font-size:15px;">George</div>
+              <div style="position:absolute; left:16px; top:90px; width:16px; height:16px; border-radius:2px; border:1px solid rgb(0 0 0 / .55); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:rgb(0 0 0 / .7); background:#ffd2fc;">G</div>
+              <div style="position:absolute; left:32px; top:90px; width:136px; height:16px; background:#e9f1f8; border:1px solid rgb(0 0 0 / .5); border-radius:2px; overflow:hidden; display:flex; flex-direction:column;">
+                <div style="height:50%; min-height:0; width:61%; background:#ffd2fc; border-bottom:1px solid rgb(0 0 0 / .12);"></div>
+                <div style="height:50%; min-height:0; width:32%; background:#c8342c;"></div>
+              </div>
+              <div style="position:absolute; left:176px; top:89px; width:11px; height:16px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .6); font-size:13px;">S</div>
+
+              <div style="position:absolute; left:10px; top:105px; width:140px; height:17px; font-weight:700; line-height:1; display:flex; align-items:center; text-shadow:0 1px 2px rgb(0 0 0 / .6); white-space:nowrap; overflow:hidden; color:#2f7d3f; font-size:15px;">Spot</div>
+              <div style="position:absolute; left:16px; top:123px; width:16px; height:16px; border-radius:2px; border:1px solid rgb(0 0 0 / .55); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:rgb(0 0 0 / .7); background:#2f7d3f;">S</div>
+              <div style="position:absolute; left:32px; top:123px; width:136px; height:16px; background:#e9f1f8; border:1px solid rgb(0 0 0 / .5); border-radius:2px; overflow:hidden; display:flex; flex-direction:column;">
+                <div style="height:50%; min-height:0; width:24%; background:#2f7d3f; border-bottom:1px solid rgb(0 0 0 / .12);"></div>
+                <div style="height:50%; min-height:0; width:18%; background:#c8342c;"></div>
+              </div>
+              <div style="position:absolute; left:176px; top:122px; width:11px; height:16px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#e8eaed; text-shadow:0 1px 2px rgb(0 0 0 / .6); font-size:13px;">J</div>
+            </div>
+
+            <!-- tokens -->
+            <div style="position:absolute; left:326.5px; top:107.5px; width:22px; height:22px; border-radius:50%; border:2px solid rgb(0 0 0 / .6); box-shadow:0 2px 6px rgb(0 0 0 / .5); z-index:5; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:rgb(0 0 0 / .65); background:#97f4ff;">B</div>
+            <div style="position:absolute; left:705.5px; top:166.5px; width:22px; height:22px; border-radius:50%; border:2px solid rgb(0 0 0 / .6); box-shadow:0 2px 6px rgb(0 0 0 / .5); z-index:5; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:rgb(0 0 0 / .65); background:#7dff9e;">J</div>
+            <div style="position:absolute; left:326.5px; top:385.5px; width:22px; height:22px; border-radius:50%; border:2px solid rgb(0 0 0 / .6); box-shadow:0 2px 6px rgb(0 0 0 / .5); z-index:5; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:rgb(0 0 0 / .65); background:#ffd2fc;">G</div>
+            <div style="position:absolute; left:27.5px; top:326.5px; width:22px; height:22px; border-radius:50%; border:2px solid rgb(0 0 0 / .6); box-shadow:0 2px 6px rgb(0 0 0 / .5); z-index:5; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:rgb(0 0 0 / .65); background:#2f7d3f;">S</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- sidebar -->
+    <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+      <div style="background:#22262e; border:1px solid #3a4048; border-radius:8px; padding:12px;">
+        <h2 style="margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:#9aa2ad;">Turn 24</h2>
+        <div style="font-size:17px; font-weight:700; display:flex; align-items:center; gap:8px;"><span style="width:10px; height:10px; border-radius:50%; flex:none; background:#97f4ff;"></span><span>Brad</span></div>
+        <div style="color:#9aa2ad; font-size:12px;">Middle Manager &middot; Boss Rating 46</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+          <button style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:6px; padding:9px 14px; font:inherit; font-size:14px; cursor:pointer;" style-hover="background:#38404a">New game</button>
+        </div>
+      </div>
+
+      <div style="background:#22262e; border:1px solid #3a4048; border-radius:8px; padding:12px;">
+        <h2 style="margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:#9aa2ad;">Share price</h2>
+        <div style="font-size:26px; font-weight:700; color:#63c47a;">58</div>
+        <svg viewBox="0 0 200 60" preserveAspectRatio="none" style="width:100%; height:60px; display:block; margin-top:6px;"><path d="M0,26.3 L20,29.1 L40,24.8 L60,31.5 L80,22.4 L100,27.9 L120,19.6 L140,23.1 L160,16.8 L180,21.4 L200,14.2" fill="none" stroke="#63c47a" stroke-width="1.5"></path></svg>
+        <div style="color:#9aa2ad; font-size:12px;">Rises when projects ship.</div>
+      </div>
+
+      <div style="background:#22262e; border:1px solid #3a4048; border-radius:8px; padding:12px;">
+        <h2 style="margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:#9aa2ad;">Log</h2>
+        <div style="max-height:260px; overflow-y:auto; font-size:13px; line-height:1.5;">
+          <div style="padding:2px 0; border-bottom:1px solid rgb(255 255 255 / .04);"><b style="font-weight:700; color:#7dff9e;">Jen: </b>ships Grim Foundry. Share price +4.</div>
+          <div style="padding:2px 0; border-bottom:1px solid rgb(255 255 255 / .04);"><b style="font-weight:700; color:#97f4ff;">Brad: </b>rolls 4 and lands on Tepid Toaster, owned by Jen. Forced to contribute 2 work.</div>
+          <div style="padding:2px 0; border-bottom:1px solid rgb(255 255 255 / .04);"><b style="font-weight:700; color:#ffd2fc;">George: </b>draws a chance card.</div>
+          <div style="padding:2px 0; border-bottom:1px solid rgb(255 255 255 / .04);"><b style="font-weight:700; color:#2f7d3f;">Spot: </b>declines Wobbly Sawmill.</div>
+          <div style="padding:2px 0; border-bottom:1px solid rgb(255 255 255 / .04);">Operating costs charged: 9 projects owned.</div>
+          <div style="padding:2px 0; border-bottom:1px solid rgb(255 255 255 / .04);"><b style="font-weight:700; color:#7dff9e;">Jen: </b>Grim Foundry has turned shoddy.</div>
+          <div style="padding:2px 0; border-bottom:1px solid rgb(255 255 255 / .04);"><b style="font-weight:700; color:#97f4ff;">Brad: </b>passes Home. Boss Rating +2.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== component states ===================== -->
+  <div style="display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap;">
+    <div data-screen-label="Menu dropdown" style="display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#9aa2ad;">Game menu, open</div>
+      <div style="display:flex; gap:2px; background:#22262e; border:1px solid #3a4048; border-radius:7px; padding:3px; width:max-content;">
+        <button style="background:#d8a13c; border:none; color:#1a1408; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">Game</button>
+        <button style="background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">Options</button>
+        <button style="background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">How to Play</button>
+        <button style="background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; font-weight:600; padding:7px 12px; border-radius:5px; cursor:pointer;">About</button>
+      </div>
+      <div style="min-width:232px; width:232px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:4px; box-shadow:0 14px 36px rgb(0 0 0 / .55);">
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>New&hellip;</span></button>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>Save&hellip;</span></button>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>Load&hellip;</span></button>
+        <div style="height:1px; background:#3a4048; margin:4px 6px;"></div>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:#3f4854; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>Stock Chart&hellip;</span></button>
+        <div style="height:1px; background:#3a4048; margin:4px 6px;"></div>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>High Scores&hellip;</span></button>
+      </div>
+      <div style="min-width:232px; width:232px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:4px; box-shadow:0 14px 36px rgb(0 0 0 / .55);">
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span style="color:#d8a13c; font-weight:700;">&#10003;</span><span>Sound</span></button>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>AutoClicking&hellip;</span></button>
+        <div style="height:1px; background:#3a4048; margin:4px 6px;"></div>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>Snap board to whole pixels</span></button>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>Smooth artwork</span></button>
+        <button style="display:grid; grid-template-columns:18px 1fr; align-items:center; gap:4px; width:100%; background:none; border:none; color:#e8eaed; font:inherit; font-size:13px; text-align:left; padding:8px 9px; border-radius:5px; cursor:pointer;"><span></span><span>Proportional board text</span></button>
+      </div>
+    </div>
+
+    <div data-screen-label="Log entry with thumbnail" style="display:flex; flex-direction:column; gap:8px; width:306px;">
+      <div style="font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#9aa2ad;">Log entry with event art &mdash; only when an extraction is installed</div>
+      <div style="background:#22262e; border:1px solid #3a4048; border-radius:8px; padding:12px; font-size:13px; line-height:1.5;">
+        <div style="display:grid; grid-template-columns:44px minmax(0,1fr); gap:8px; align-items:start; padding:5px 0; border-bottom:1px solid rgb(255 255 255 / .04);">
+          <div style="width:44px; height:32px; border-radius:3px; background:repeating-linear-gradient(45deg,#2b3038 0 4px,#333944 4px 8px); display:flex; align-items:center; justify-content:center; font-family:ui-monospace,Menlo,monospace; font-size:7px; color:#9aa2ad;">art</div>
+          <div style="min-width:0; overflow-wrap:anywhere;"><b style="font-weight:700; color:#7dff9e;">Jen: </b>ships Grim Foundry. Share price +4.</div>
+        </div>
+        <div style="padding:2px 0;"><b style="font-weight:700; color:#97f4ff;">Brad: </b>passes Home. Boss Rating +2.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== dialogs ===================== -->
+  <div style="display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap;">
+
+    <div data-screen-label="New Game dialog" style="width:660px; background:rgb(0 0 0 / .6); padding:20px; border-radius:12px;">
+      <div style="position:relative; background:#22262e; border:1px solid #3a4048; border-radius:10px; padding:20px; max-width:620px; width:100%; box-shadow:0 20px 60px rgb(0 0 0 / .6);">
+        <h3 style="margin:0 0 6px; font-size:21px;">New Game</h3>
+        <div style="color:#9aa2ad; font-size:14px; margin-bottom:14px;">Work your way up the company ladder. First to President wins &mdash; unless the share price hits zero first, in which case everybody loses.</div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:#9aa2ad; margin-bottom:6px;">Game length</label>
+          <select style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:7px 9px; font:inherit; width:100%;"><option>Long</option></select>
+          <div style="color:#9aa2ad; font-size:12px;">Everyone starts as Entry Level Manager with 0 Boss Rating.</div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:#9aa2ad; margin-bottom:6px;">Chance &amp; Scruples deck</label>
+          <select style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:7px 9px; font:inherit; width:100%;"><option>Newly written (ships with this port)</option></select>
+          <div style="color:#9aa2ad; font-size:12px;">Run tools/extract-assets.py against your own copy of gamework.exe to play the original deck.</div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:#9aa2ad; margin-bottom:6px;">Players (2&ndash;6)</label>
+          <div style="display:grid; grid-template-columns:1fr; gap:8px;">
+
+            <div style="display:grid; grid-template-columns:18px 152px minmax(0,1fr) 140px; gap:8px; align-items:center; padding-left:8px; border-left:4px solid #97f4ff;">
+              <div style="width:18px; height:18px; border-radius:4px; background:#97f4ff;"></div>
+              <button style="display:flex; align-items:center; gap:10px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:5px 10px 5px 5px; color:#e8eaed; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left;"><span style="width:64px; height:64px; flex:none; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; color:#8a9099; font-size:9px; font-family:ui-monospace,Menlo,monospace;">seat art</span><span style="white-space:nowrap;">Human</span></button>
+              <input value="Brad" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;">
+              <select disabled="disabled" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0; opacity:.6;"><option>Random</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:18px 152px minmax(0,1fr) 140px; gap:8px; align-items:center; padding-left:8px; border-left:4px solid #7dff9e;">
+              <div style="width:18px; height:18px; border-radius:4px; background:#7dff9e;"></div>
+              <button style="display:flex; align-items:center; gap:10px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:5px 10px 5px 5px; color:#e8eaed; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left;"><span style="width:64px; height:64px; flex:none; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; color:#8a9099; font-size:9px; font-family:ui-monospace,Menlo,monospace;">seat art</span><span style="white-space:nowrap;">Computer</span></button>
+              <input value="Jen" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;">
+              <select style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;"><option>Random</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:18px 152px minmax(0,1fr) 140px; gap:8px; align-items:center; padding-left:8px; border-left:4px solid #ffa8f9;">
+              <div style="width:18px; height:18px; border-radius:4px; background:#ffd2fc;"></div>
+              <button style="display:flex; align-items:center; gap:10px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:5px 10px 5px 5px; color:#e8eaed; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left;"><span style="width:64px; height:64px; flex:none; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; color:#8a9099; font-size:9px; font-family:ui-monospace,Menlo,monospace;">seat art</span><span style="white-space:nowrap;">Computer</span></button>
+              <input value="George" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;">
+              <select style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;"><option>Evil</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:18px 152px minmax(0,1fr) 140px; gap:8px; align-items:center; padding-left:8px; border-left:4px solid #53bf68;">
+              <div style="width:18px; height:18px; border-radius:4px; background:#2f7d3f;"></div>
+              <button style="display:flex; align-items:center; gap:10px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:5px 10px 5px 5px; color:#e8eaed; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left;"><span style="width:64px; height:64px; flex:none; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; color:#8a9099; font-size:9px; font-family:ui-monospace,Menlo,monospace;">seat art</span><span style="white-space:nowrap;">Computer</span></button>
+              <input value="Spot" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;">
+              <select style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;"><option>Random</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:18px 152px minmax(0,1fr) 140px; gap:8px; align-items:center; padding-left:8px; border-left:4px solid #8292ec; opacity:.45;">
+              <div style="width:18px; height:18px; border-radius:4px; background:#4b63e4;"></div>
+              <button style="display:flex; align-items:center; gap:10px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:5px 10px 5px 5px; color:#e8eaed; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left;"><span style="width:64px; height:64px; flex:none; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; color:#8a9099; font-size:9px; font-family:ui-monospace,Menlo,monospace;">seat art</span><span style="white-space:nowrap;">Off</span></button>
+              <input value="Muriel" disabled="disabled" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;">
+              <select disabled="disabled" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;"><option>Random</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:18px 152px minmax(0,1fr) 140px; gap:8px; align-items:center; padding-left:8px; border-left:4px solid #f4f872; opacity:.45;">
+              <div style="width:18px; height:18px; border-radius:4px; background:#f4f872;"></div>
+              <button style="display:flex; align-items:center; gap:10px; background:#2b3038; border:1px solid #3a4048; border-radius:7px; padding:5px 10px 5px 5px; color:#e8eaed; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left;"><span style="width:64px; height:64px; flex:none; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; color:#8a9099; font-size:9px; font-family:ui-monospace,Menlo,monospace;">seat art</span><span style="white-space:nowrap;">Off</span></button>
+              <input value="Ned" disabled="disabled" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;">
+              <select disabled="disabled" style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:5px; padding:8px 10px; font:inherit; font-size:14px; min-width:0;"><option>Random</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+          <button style="border-radius:50%; width:38px; height:38px; padding:0; font-size:18px; font-weight:700; background:#c8342c; border:1px solid transparent; color:#fff; margin-right:auto; font-family:inherit; cursor:pointer;">?</button>
+          <button style="background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:6px; padding:9px 14px; font:inherit; font-size:14px; cursor:pointer;">Cancel</button>
+          <button style="background:#d8a13c; color:#1a1408; border:1px solid transparent; font-weight:700; border-radius:6px; padding:9px 14px; font-family:inherit; font-size:14px; cursor:pointer;">Start game</button>
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="Scruples dialog" style="width:660px; background:rgb(0 0 0 / .6); padding:20px; border-radius:12px;">
+      <div style="position:relative; background:#22262e; border:1px solid #3a4048; border-radius:10px; padding:20px; max-width:620px; width:100%; box-shadow:0 20px 60px rgb(0 0 0 / .6);">
+        <h3 style="margin:0 0 6px; font-size:21px;">Scruples</h3>
+        <div style="color:#9aa2ad; font-size:14px; margin-bottom:14px;">Pick an answer &mdash; 1, 2 or 3</div>
+        <p style="line-height:1.6; font-size:16px;">Somebody left a fish in the microwave over a long weekend. The whole floor smells of it, and the facilities team wants a name by four o'clock. You know whose fish it was.</p>
+        <button style="display:block; width:100%; text-align:left; background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:8px; padding:11px 13px; margin-bottom:8px; font:inherit; font-size:15px; cursor:pointer; line-height:1.5;" style-hover="background:#38404a; border-color:#5a626c"><b style="color:#d8a13c; margin-right:6px; font-weight:700;">1.</b>Name them, and cc the floor.</button>
+        <button style="display:block; width:100%; text-align:left; background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:8px; padding:11px 13px; margin-bottom:8px; font:inherit; font-size:15px; cursor:pointer; line-height:1.5;" style-hover="background:#38404a; border-color:#5a626c"><b style="color:#d8a13c; margin-right:6px; font-weight:700;">2.</b>Say nothing and quietly clean it yourself.</button>
+        <button style="display:block; width:100%; text-align:left; background:#2b3038; border:1px solid #3a4048; color:#e8eaed; border-radius:8px; padding:11px 13px; margin-bottom:8px; font:inherit; font-size:15px; cursor:pointer; line-height:1.5;" style-hover="background:#38404a; border-color:#5a626c"><b style="color:#d8a13c; margin-right:6px; font-weight:700;">3.</b>Blame the intern, who has already left.</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

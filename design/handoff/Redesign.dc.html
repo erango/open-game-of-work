@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+  body { margin:0; background:#131211; color:#f2efe9; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color:#8b9bf0; text-decoration:none; }
+  a:hover { color:#a7b3f5; text-decoration:underline; }
+</style>
+</helmet>
+
+<section style="padding:32px; display:flex; flex-direction:column; gap:24px; background:#06090f;">
+  <div id="2a" style="display:flex; flex-direction:column; gap:20px;">
+    <div style="display:flex; align-items:baseline; gap:14px;">
+      <span style="font-size:11px; font-weight:700; letter-spacing:.14em; padding:4px 8px; border-radius:3px; background:#ff2bd6; color:#0a0410;">2a</span>
+      <h1 style="margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em; color:#eaf6ff;">Night shift &mdash; neon</h1>
+      <span style="font-size:13px; color:#8fb6d6;">Second palette + type set, switchable from the menu bar. Same geometry, same five profiles pushed to their neon equivalents.</span>
+    </div>
+
+    <!-- neon shell -->
+    <div data-screen-label="Neon board 1x" style="width:1154px; display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; padding:16px; background:#06090f; border-radius:10px; box-shadow:inset 0 0 0 1px #16243a;">
+      <div style="display:grid; grid-template-rows:auto minmax(0,1fr); gap:10px; min-width:0;">
+        <div style="display:flex; align-items:center; gap:2px; height:38px; padding:0 4px; border-radius:6px; background:#0a1220; box-shadow:inset 0 0 0 1px #1b2a3f;">
+          <button style="background:none; border:none; border-bottom:2px solid #ff2bd6; color:#eaf6ff; font:inherit; font-size:13px; font-weight:600; letter-spacing:.06em; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;">GAME</button>
+          <button style="background:none; border:none; border-bottom:2px solid transparent; color:#7fb8de; font:inherit; font-size:13px; font-weight:500; letter-spacing:.06em; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;" style-hover="color:#eaf6ff">OPTIONS</button>
+          <button style="background:none; border:none; border-bottom:2px solid transparent; color:#7fb8de; font:inherit; font-size:13px; font-weight:500; letter-spacing:.06em; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;" style-hover="color:#eaf6ff">HOW TO PLAY</button>
+          <button style="background:none; border:none; border-bottom:2px solid transparent; color:#7fb8de; font:inherit; font-size:13px; font-weight:500; letter-spacing:.06em; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;" style-hover="color:#eaf6ff">ABOUT</button>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:8px; padding-right:10px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#8fb6d6;">Palette
+            <div style="display:inline-flex; padding:2px; border-radius:5px; background:#0e1828; box-shadow:inset 0 0 0 1px #1d3550;">
+              <button style="background:none; border:none; color:#7fb8de; font:inherit; font-size:11px; font-weight:600; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;" style-hover="color:#eaf6ff">Original</button>
+              <button style="background:#ff2bd6; border:none; color:#0a0410; font:inherit; font-size:11px; font-weight:700; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;">Neon</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding-right:6px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#8fb6d6;">Artwork
+            <div style="display:inline-flex; padding:2px; border-radius:5px; background:#0e1828; box-shadow:inset 0 0 0 1px #1d3550;">
+              <button style="background:#2bffb0; border:none; color:#04140d; font:inherit; font-size:11px; font-weight:700; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;">Vector</button>
+              <button style="background:none; border:none; color:#7fb8de; font:inherit; font-size:11px; font-weight:600; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;" style-hover="color:#eaf6ff">Original</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:center; min-width:0; --field:#0b0f18; --sq-corner:#0a0e16; --line-sq:#1c2c42; --sq-chance:#0d1520; --sq-scruples:#0d1520; --sq-power:#1b0e1c; --sq-power-line:#4a1c48; --sq-power-icon:#ff7bf0; --sq-power-label:#ff9ef4; --tile-1:#00e0ff; --tile-2:#6aa8ff; --tile-3:#4bd455; --tile-4:#ffc94d; --tile-5:#ff6ae0; --tile-ink:#050b12; --tile-ink-dim:#123246; --icon:#8fb6d6; --icon-2:#7fa9cc; --ink:#eaf6ff; --ink-2:#9fd6ff; --ink-2b:#7fb8de; --ink-3:#8fb6d6; --accent:#ff2bd6; --accent-ink:#0a0410; --accent-2:#ff5ce0; --accent-soft:rgb(255 43 214 / .16); --ctl:#101827; --ctl-line:#23364f; --ctl-icon:#5b86ad; --caption:#cfefff; --inset:#04070d; --inset-line:#1d3550; --success:#2bffb0; --panel:#0a1018; --panel-line:#1d3550; --trough:#05090f; --danger:#ff3b6b; --danger-2:#ff5c7f; --rule:#17293c; --track-wide:.22em; --track-wide2:.2em; --track-adj:.12em;">
+          <dc-import name="Board" hint-size="776px,535px"></dc-import>
+        </div>
+      </div>
+
+      <!-- neon sidebar -->
+      <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+        <div style="border-radius:8px; background:#0a1220; box-shadow:inset 0 0 0 1px #1b2a3f; padding:14px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:#8fb6d6;">Turn 24</span>
+            <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#ff5ce0;">Your move</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:9px;">
+            <span style="width:10px; height:10px; border-radius:2px; background:#00e0ff; flex:none;"></span>
+            <span style="font-size:19px; font-weight:600; letter-spacing:.01em; color:#eaf6ff;">Brad</span>
+          </div>
+          <div style="margin-top:3px; font-size:13px; color:#7fb8de;">Middle Manager</div>
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#8fb6d6;"><span>Boss rating</span><span style="color:#eaf6ff; font-variant-numeric:tabular-nums;">46 / 100</span></div>
+            <div style="height:6px; border-radius:1px; background:#05090f; box-shadow:inset 0 0 0 1px #1d3550; overflow:hidden;"><div style="width:46%; height:100%; background:#00e0ff;"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#8fb6d6;"><span>Workload</span><span style="color:#eaf6ff; font-variant-numeric:tabular-nums;">9 / 22</span></div>
+            <div style="height:6px; border-radius:1px; background:#05090f; box-shadow:inset 0 0 0 1px #1d3550; overflow:hidden;"><div style="width:41%; height:100%; background:#ff3b6b;"></div></div>
+          </div>
+          <div style="margin-top:14px; display:flex; gap:8px;">
+            <button style="flex:1; background:#ff2bd6; border:none; color:#0a0410; font:inherit; font-size:14px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:10px 14px; border-radius:6px; cursor:pointer;" style-hover="background:#ff5ce0">Roll</button>
+            <button style="background:#101827; border:none; box-shadow:inset 0 0 0 1px #23364f; color:#9fd6ff; font:inherit; font-size:14px; letter-spacing:.08em; text-transform:uppercase; padding:10px 14px; border-radius:6px; cursor:pointer;" style-hover="background:#162134">Trade</button>
+          </div>
+        </div>
+
+        <div style="border-radius:8px; background:#0a1220; box-shadow:inset 0 0 0 1px #1b2a3f; padding:14px;">
+          <div style="font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:#8fb6d6; margin-bottom:8px;">Share price</div>
+          <div style="display:flex; align-items:baseline; gap:10px;">
+            <span style="font-size:30px; font-weight:600; letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:#eaf6ff;">58</span>
+            <span style="font-size:13px; font-weight:700; color:#2bffb0; font-variant-numeric:tabular-nums;">+4</span>
+            <span style="font-size:12px; color:#8fb6d6; margin-left:auto;">peak 61</span>
+          </div>
+          <svg viewBox="0 0 200 56" preserveAspectRatio="none" style="width:100%; height:56px; display:block; margin-top:8px;">
+            <line x1="0" y1="30" x2="200" y2="30" stroke="#17293c" stroke-width="1" stroke-dasharray="3 3"></line>
+            <path d="M0,26 L20,29 L40,25 L60,32 L80,22 L100,28 L120,20 L140,23 L160,17 L180,21 L200,14" fill="none" stroke="#2bffb0" stroke-width="1.5"></path>
+          </svg>
+          <div style="font-size:12px; color:#8fb6d6;">Zero disbands the company.</div>
+        </div>
+
+        <div style="border-radius:8px; background:#0a1220; box-shadow:inset 0 0 0 1px #1b2a3f; padding:14px;">
+          <div style="font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:#8fb6d6; margin-bottom:8px;">Log</div>
+          <div style="display:flex; flex-direction:column; font-size:13px; line-height:1.5; color:#c9e6f8;">
+            <div style="display:grid; grid-template-columns:40px minmax(0,1fr); gap:10px; padding:8px 0; border-bottom:1px solid #142234;">
+              <div style="width:40px; height:30px; border-radius:2px; background:repeating-linear-gradient(45deg,#0f1a2a 0 3px,#152337 3px 7px); display:flex; align-items:center; justify-content:center; font-size:7px; letter-spacing:.08em; color:#8fb6d6;">ART</div>
+              <div style="min-width:0;"><span style="color:#00e0ff; font-weight:600;">Jen</span> ships Grim Foundry. <span style="color:#2bffb0; font-weight:700;">+4</span></div>
+            </div>
+            <div style="padding:8px 0; border-bottom:1px solid #142234;"><span style="color:#4bd455; font-weight:600;">Brad</span> lands on Tepid Toaster and is put on it for 2 work.</div>
+            <div style="padding:8px 0; border-bottom:1px solid #142234;"><span style="color:#ff6ae0; font-weight:600;">George</span> draws a chance card.</div>
+            <div style="padding:8px 0; border-bottom:1px solid #142234; color:#8fb6d6;">Operating costs charged on 9 owned projects.</div>
+            <div style="padding:8px 0;"><span style="color:#00e0ff; font-weight:600;">Jen</span> &mdash; Grim Foundry has turned <span style="color:#ff5c7f; font-weight:700;">shoddy</span>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- neon dialog + palette reference -->
+    <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+      <div data-screen-label="Neon Scruples" style="width:660px; padding:20px; border-radius:12px; background:rgb(2 4 8 / .8);">
+        <div style="border-radius:10px; background:#0a1220; box-shadow:inset 0 0 0 1px #1d3550, 0 24px 60px rgb(0 0 0 / .7); padding:22px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="color:#4c7fa8; display:flex;"><svg viewBox="0 0 48 48" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11a3 3 0 0 1 3-3h28a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H20l-9 8v-8h-1a3 3 0 0 1-3-3Z"></path></svg></span>
+            <span style="font-size:11px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:#ff5ce0;">Scruples</span>
+            <span style="margin-left:auto; font-size:12px; letter-spacing:.08em; color:#8fb6d6;">Brad &middot; turn 24</span>
+          </div>
+          <div style="margin-top:16px; height:120px; border-radius:6px; background:repeating-linear-gradient(45deg,#0f1a2a 0 5px,#152337 5px 10px); box-shadow:inset 0 0 0 1px #1d3550; display:flex; align-items:center; justify-content:center; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#8fb6d6;">card illustration &middot; 200&times;120</div>
+          <p style="margin:16px 0 0; font-size:17px; line-height:1.55; color:#eaf6ff; text-wrap:pretty;">Somebody left a fish in the microwave over a long weekend. The whole floor smells of it, and facilities want a name by four o'clock. You know whose fish it was.</p>
+          <div style="margin-top:18px; display:flex; flex-direction:column; gap:8px;">
+            <button style="display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; background:#0e1828; border:none; box-shadow:inset 0 0 0 1px #1d3550; color:#c9e6f8; border-radius:7px; padding:13px 14px; font:inherit; font-size:15px; line-height:1.45; cursor:pointer;" style-hover="background:#132135; box-shadow:inset 0 0 0 1px #ff2bd6">
+              <span style="flex:none; width:20px; height:20px; border-radius:3px; background:#101c2e; box-shadow:inset 0 0 0 1px #23364f; color:#7fb8de; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">1</span>
+              <span>Name them, and copy in the floor.</span>
+            </button>
+            <button style="display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; background:#1d0f22; border:none; box-shadow:inset 0 0 0 1px #ff2bd6; color:#ffe9fb; border-radius:7px; padding:13px 14px; font:inherit; font-size:15px; line-height:1.45; cursor:pointer;">
+              <span style="flex:none; width:20px; height:20px; border-radius:3px; background:#ff2bd6; color:#0a0410; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">2</span>
+              <span>Say nothing and quietly clean it yourself.</span>
+              <span style="margin-left:auto; flex:none; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#ff5ce0;">Hovered</span>
+            </button>
+            <button style="display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; background:#0e1828; border:none; box-shadow:inset 0 0 0 1px #1d3550; color:#c9e6f8; border-radius:7px; padding:13px 14px; font:inherit; font-size:15px; line-height:1.45; cursor:pointer;" style-hover="background:#132135; box-shadow:inset 0 0 0 1px #ff2bd6">
+              <span style="flex:none; width:20px; height:20px; border-radius:3px; background:#101c2e; box-shadow:inset 0 0 0 1px #23364f; color:#7fb8de; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">3</span>
+              <span>Blame the intern, who has already left.</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:400px; display:flex; flex-direction:column; gap:16px;">
+        <div style="border-radius:10px; background:#0a1220; box-shadow:inset 0 0 0 1px #1b2a3f; padding:16px;">
+          <div style="font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:#8fb6d6; margin-bottom:12px;">Profile colours, both palettes</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:grid; grid-template-columns:16px 1fr 1fr; gap:10px; align-items:center; font-size:11px; letter-spacing:.1em; color:#8fb6d6;"><span></span><span>Recovered</span><span>Neon</span></div>
+            <div style="display:grid; grid-template-columns:16px 1fr 1fr; gap:10px; align-items:center;"><span style="font-size:12px; color:#7fb8de;">1</span><span style="height:26px; border-radius:3px; background:#00b7b7; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#191714;">00b7b7</span><span style="height:26px; border-radius:3px; background:#00e0ff; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#050b12;">00e0ff</span></div>
+            <div style="display:grid; grid-template-columns:16px 1fr 1fr; gap:10px; align-items:center;"><span style="font-size:12px; color:#7fb8de;">2</span><span style="height:26px; border-radius:3px; background:#94bcda; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#191714;">94bcda</span><span style="height:26px; border-radius:3px; background:#6aa8ff; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#050b12;">6aa8ff</span></div>
+            <div style="display:grid; grid-template-columns:16px 1fr 1fr; gap:10px; align-items:center;"><span style="font-size:12px; color:#7fb8de;">3</span><span style="height:26px; border-radius:3px; background:#8bb889; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#191714;">8bb889</span><span style="height:26px; border-radius:3px; background:#4bd455; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#050b12;">4bd455</span></div>
+            <div style="display:grid; grid-template-columns:16px 1fr 1fr; gap:10px; align-items:center;"><span style="font-size:12px; color:#7fb8de;">4</span><span style="height:26px; border-radius:3px; background:#debe89; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#191714;">debe89</span><span style="height:26px; border-radius:3px; background:#ffc94d; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#050b12;">ffc94d</span></div>
+            <div style="display:grid; grid-template-columns:16px 1fr 1fr; gap:10px; align-items:center;"><span style="font-size:12px; color:#7fb8de;">5</span><span style="height:26px; border-radius:3px; background:#d88fd6; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#191714;">d88fd6</span><span style="height:26px; border-radius:3px; background:#ff6ae0; display:flex; align-items:center; padding:0 8px; font-size:10px; color:#050b12;">ff6ae0</span></div>
+          </div>
+          <div style="margin-top:12px; font-size:12px; line-height:1.5; color:#8fb6d6;">Neon keeps each profile's hue so a player who learned the board keeps their reading; chroma and lightness rise together, and tile ink stays near-black, so every pair still clears AA.</div>
+        </div>
+
+        <div style="border-radius:10px; background:#0a1220; box-shadow:inset 0 0 0 1px #1b2a3f; padding:16px;">
+          <div style="font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:#8fb6d6; margin-bottom:12px;">Art slots, native sizes</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:5px;"><div style="width:81px; height:81px; border-radius:3px; background:repeating-linear-gradient(45deg,#0f1a2a 0 4px,#152337 4px 8px); box-shadow:inset 0 0 0 1px #1d3550;"></div><div style="font-size:9px; letter-spacing:.08em; color:#8fb6d6;">TILE 81</div></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><div style="width:140px; height:140px; border-radius:3px; background:repeating-linear-gradient(45deg,#0f1a2a 0 4px,#152337 4px 8px); box-shadow:inset 0 0 0 1px #1d3550;"></div><div style="font-size:9px; letter-spacing:.08em; color:#8fb6d6;">CORNER 140</div></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><div style="width:81px; height:81px; border-radius:5px; background:repeating-linear-gradient(45deg,#0f1a2a 0 4px,#152337 4px 8px); box-shadow:inset 0 0 0 1px #1d3550;"></div><div style="font-size:9px; letter-spacing:.08em; color:#8fb6d6;">DIE 81 &times;6</div></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><div style="width:64px; height:64px; border-radius:3px; background:repeating-linear-gradient(45deg,#0f1a2a 0 4px,#152337 4px 8px); box-shadow:inset 0 0 0 1px #1d3550;"></div><div style="font-size:9px; letter-spacing:.08em; color:#8fb6d6;">SEAT 64</div></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><div style="width:32px; height:32px; border-radius:50%; background:repeating-linear-gradient(45deg,#0f1a2a 0 4px,#152337 4px 8px); box-shadow:inset 0 0 0 1px #1d3550;"></div><div style="font-size:9px; letter-spacing:.08em; color:#8fb6d6;">TOKEN 32</div></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><div style="width:16px; height:16px; border-radius:2px; background:repeating-linear-gradient(45deg,#0f1a2a 0 3px,#152337 3px 6px); box-shadow:inset 0 0 0 1px #1d3550;"></div><div style="font-size:9px; letter-spacing:.08em; color:#8fb6d6;">PORTRAIT 16</div></div>
+          </div>
+          <div style="margin-top:12px; font-size:12px; line-height:1.5; color:#8fb6d6;">Seat art draws at its native 64px and is never resampled. Tiles fill 81&times;81 edge to edge; corners 140&times;140. Board art is scaled by the board transform, so author at 1&times; and expect up to ~2.6&times; on a large display.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding:32px; display:flex; flex-direction:column; gap:24px;">
+
+  <div id="1a" style="display:flex; flex-direction:column; gap:20px;">
+    <div style="display:flex; align-items:baseline; gap:14px;">
+      <span style="font-size:11px; font-weight:700; letter-spacing:.14em; padding:4px 8px; border-radius:3px; background:#4a5cd0; color:#f4f2ee;">1a</span>
+      <h1 style="margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em;">Open plan &mdash; dark</h1>
+      <span style="font-size:13px; color:#8a8379;">Warm charcoal shell, ultramarine for whose turn it is, oxblood for load and danger. Geometry unchanged.</span>
+    </div>
+
+    <!-- ============ app shell, 1x ============ -->
+    <div data-screen-label="Board 1x" style="width:1154px; display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; padding:16px; background:#131211; border-radius:10px; box-shadow:inset 0 0 0 1px #2a2724;">
+
+      <div style="display:grid; grid-template-rows:auto minmax(0,1fr); gap:10px; min-width:0;">
+        <!-- menu bar -->
+        <div style="display:flex; align-items:center; gap:2px; height:38px; padding:0 4px; border-radius:6px; background:#1b1917; box-shadow:inset 0 0 0 1px #2f2c28;">
+          <button style="background:none; border:none; border-bottom:2px solid #6b7fe8; color:#f2efe9; font:inherit; font-size:13px; font-weight:600; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;">Game</button>
+          <button style="background:none; border:none; border-bottom:2px solid transparent; color:#b6afa4; font:inherit; font-size:13px; font-weight:500; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;" style-hover="color:#f2efe9">Options</button>
+          <button style="background:none; border:none; border-bottom:2px solid transparent; color:#b6afa4; font:inherit; font-size:13px; font-weight:500; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;" style-hover="color:#f2efe9">How to Play</button>
+          <button style="background:none; border:none; border-bottom:2px solid transparent; color:#b6afa4; font:inherit; font-size:13px; font-weight:500; padding:9px 12px 7px; cursor:pointer; white-space:nowrap;" style-hover="color:#f2efe9">About</button>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:8px; padding-right:10px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#9a9288;">Palette
+            <div style="display:inline-flex; padding:2px; border-radius:5px; background:#242220; box-shadow:inset 0 0 0 1px #33302b;">
+              <button style="background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:11px; font-weight:600; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;">Original</button>
+              <button style="background:none; border:none; color:#a29a8c; font:inherit; font-size:11px; font-weight:600; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Neon</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding-right:6px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#9a9288;">Artwork
+            <div style="display:inline-flex; padding:2px; border-radius:5px; background:#242220; box-shadow:inset 0 0 0 1px #33302b;">
+              <button style="background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:11px; font-weight:600; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;">Vector</button>
+              <button style="background:none; border:none; color:#a29a8c; font:inherit; font-size:11px; font-weight:600; letter-spacing:.06em; padding:4px 10px; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Original</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:center; min-width:0;">
+          <dc-import name="Board" hint-size="776px,535px"></dc-import>
+        </div>
+      </div>
+
+      <!-- sidebar -->
+      <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+        <div style="border-radius:8px; background:#1b1917; box-shadow:inset 0 0 0 1px #2f2c28; padding:14px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9a9288;">Turn 24</span>
+            <span style="font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#8b9bf0;">Your move</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:9px;">
+            <span style="width:10px; height:10px; border-radius:2px; background:#97f4ff; flex:none;"></span>
+            <span style="font-size:19px; font-weight:600; letter-spacing:-.01em;">Brad</span>
+          </div>
+          <div style="margin-top:3px; font-size:13px; color:#b6afa4;">Middle Manager</div>
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#9a9288;"><span>Boss rating</span><span style="color:#f2efe9; font-variant-numeric:tabular-nums;">46 / 100</span></div>
+            <div style="height:6px; border-radius:1px; background:#100f0e; box-shadow:inset 0 0 0 1px #302d29; overflow:hidden;"><div style="width:46%; height:100%; background:#97f4ff;"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#9a9288;"><span>Workload</span><span style="color:#f2efe9; font-variant-numeric:tabular-nums;">9 / 22</span></div>
+            <div style="height:6px; border-radius:1px; background:#100f0e; box-shadow:inset 0 0 0 1px #302d29; overflow:hidden;"><div style="width:41%; height:100%; background:#b0483a;"></div></div>
+          </div>
+          <div style="margin-top:14px; display:flex; gap:8px;">
+            <button style="flex:1; background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:14px; font-weight:600; padding:10px 14px; border-radius:6px; cursor:pointer;" style-hover="background:#5a6bdd">Roll</button>
+            <button style="background:#242220; border:none; box-shadow:inset 0 0 0 1px #3a3630; color:#e2ddd4; font:inherit; font-size:14px; padding:10px 14px; border-radius:6px; cursor:pointer;" style-hover="background:#2c2926">Trade</button>
+          </div>
+        </div>
+
+        <div style="border-radius:8px; background:#1b1917; box-shadow:inset 0 0 0 1px #2f2c28; padding:14px;">
+          <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9a9288; margin-bottom:8px;">Share price</div>
+          <div style="display:flex; align-items:baseline; gap:10px;">
+            <span style="font-size:30px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums;">58</span>
+            <span style="font-size:13px; font-weight:600; color:#5ec08e; font-variant-numeric:tabular-nums;">+4</span>
+            <span style="font-size:12px; color:#9a9288; margin-left:auto;">peak 61</span>
+          </div>
+          <svg viewBox="0 0 200 56" preserveAspectRatio="none" style="width:100%; height:56px; display:block; margin-top:8px;">
+            <line x1="0" y1="30" x2="200" y2="30" stroke="#332f2a" stroke-width="1" stroke-dasharray="3 3"></line>
+            <path d="M0,26 L20,29 L40,25 L60,32 L80,22 L100,28 L120,20 L140,23 L160,17 L180,21 L200,14" fill="none" stroke="#5ec08e" stroke-width="1.5"></path>
+          </svg>
+          <div style="font-size:12px; color:#9a9288;">Starts at 50. Zero disbands the company.</div>
+        </div>
+
+        <div style="border-radius:8px; background:#1b1917; box-shadow:inset 0 0 0 1px #2f2c28; padding:14px;">
+          <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9a9288; margin-bottom:8px;">Log</div>
+          <div style="display:flex; flex-direction:column; font-size:13px; line-height:1.5; max-height:250px; overflow-y:auto;">
+            <div style="display:grid; grid-template-columns:40px minmax(0,1fr); gap:10px; padding:8px 0; border-bottom:1px solid #262320;">
+              <div style="width:40px; height:30px; border-radius:2px; background:repeating-linear-gradient(45deg,#2a2724 0 3px,#322e2a 3px 7px); display:flex; align-items:center; justify-content:center; font-size:7px; letter-spacing:.08em; color:#9a9288;">ART</div>
+              <div style="min-width:0;"><span style="color:#7dff9e; font-weight:600;">Jen</span> ships Grim Foundry. <span style="color:#5ec08e; font-weight:600;">+4</span></div>
+            </div>
+            <div style="padding:8px 0; border-bottom:1px solid #262320; color:#e2ddd4;"><span style="color:#97f4ff; font-weight:600;">Brad</span> lands on Tepid Toaster and is put on it for 2 work.</div>
+            <div style="padding:8px 0; border-bottom:1px solid #262320; color:#e2ddd4;"><span style="color:#ffd2fc; font-weight:600;">George</span> draws a chance card.</div>
+            <div style="padding:8px 0; border-bottom:1px solid #262320; color:#e2ddd4;"><span style="color:#57b06a; font-weight:600;">Spot</span> declines Wobbly Sawmill.</div>
+            <div style="padding:8px 0; border-bottom:1px solid #262320; color:#8a8379;">Operating costs charged on 9 owned projects.</div>
+            <div style="padding:8px 0; border-bottom:1px solid #262320; color:#e2ddd4;"><span style="color:#7dff9e; font-weight:600;">Jen</span> &mdash; Grim Foundry has turned <span style="color:#d0715e; font-weight:600;">shoddy</span>.</div>
+            <div style="padding:8px 0; color:#e2ddd4;"><span style="color:#97f4ff; font-weight:600;">Brad</span> passes Home. Boss Rating <span style="color:#5ec08e; font-weight:600;">+2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 2x detail ============ -->
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9a9288;">Board at 2&times; &middot; text carries the comfortable multiplier (0.76), so tiles gain size faster than their labels</div>
+      <div data-screen-label="Board 2x" style="width:1130px; height:640px; overflow:hidden; border-radius:8px; box-shadow:inset 0 0 0 1px #2a2724;">
+        <div style="width:565px; height:320px; transform:scale(2); transform-origin:top left; --text-k:.76;">
+          <dc-import name="Board" hint-size="776px,535px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ dialogs ============ -->
+    <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+
+      <div data-screen-label="New Game" style="width:660px; padding:20px; border-radius:12px; background:rgb(10 9 8 / .72);">
+        <div style="border-radius:10px; background:#1b1917; box-shadow:inset 0 0 0 1px #33302b, 0 24px 60px rgb(0 0 0 / .6); padding:22px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+            <div>
+              <h3 style="margin:0; font-size:20px; font-weight:600; letter-spacing:-.01em;">New game</h3>
+              <div style="margin-top:5px; font-size:14px; line-height:1.5; color:#b6afa4; max-width:430px;">First to President wins. If the share price reaches zero the company is disbanded and nobody does.</div>
+            </div>
+            <button style="width:30px; height:30px; flex:none; border-radius:50%; border:none; background:#242220; box-shadow:inset 0 0 0 1px #3a3630; color:#b6afa4; font:inherit; font-size:14px; font-weight:600; cursor:pointer;" style-hover="color:#f2efe9">?</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px;">
+            <div>
+              <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9a9288; margin-bottom:7px;">Length</div>
+              <div style="display:flex; padding:2px; border-radius:6px; background:#242220; box-shadow:inset 0 0 0 1px #33302b;">
+                <button style="flex:1; background:none; border:none; color:#a29a8c; font:inherit; font-size:13px; font-weight:600; padding:7px 0; border-radius:4px; cursor:pointer;" style-hover="color:#f2efe9">Short</button>
+                <button style="flex:1; background:none; border:none; color:#a29a8c; font:inherit; font-size:13px; font-weight:600; padding:7px 0; border-radius:4px; cursor:pointer;" style-hover="color:#f2efe9">Medium</button>
+                <button style="flex:1; background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:13px; font-weight:600; padding:7px 0; border-radius:4px; cursor:pointer;">Long</button>
+              </div>
+              <div style="margin-top:7px; font-size:12px; color:#9a9288;">Everyone starts as Entry Level Manager on 0.</div>
+            </div>
+            <div>
+              <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9a9288; margin-bottom:7px;">Deck</div>
+              <select style="width:100%; background:#242220; border:none; box-shadow:inset 0 0 0 1px #3a3630; color:#e2ddd4; border-radius:6px; padding:9px 10px; font:inherit; font-size:13px;"><option>Newly written</option></select>
+              <div style="margin-top:7px; font-size:12px; color:#9a9288;">The 2000 deck needs a local extraction.</div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; align-items:baseline; justify-content:space-between;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9a9288;">Seats</div>
+            <div style="font-size:12px; color:#9a9288;">4 of 6 filled</div>
+          </div>
+
+          <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+
+            <div style="display:grid; grid-template-columns:80px 132px minmax(0,1fr) 128px; gap:10px; align-items:center; padding:7px 10px 7px 0; border-radius:7px; background:#211f1d; box-shadow:inset 0 0 0 1px #302d29;">
+              <div style="display:flex; align-items:center; gap:0;"><span style="width:4px; height:64px; border-radius:0 2px 2px 0; background:#97f4ff;"></span><span style="width:64px; height:64px; margin-left:8px; border-radius:3px; background:repeating-linear-gradient(45deg,#e9e6e0 0 4px,#dcd8d1 4px 8px); display:flex; align-items:center; justify-content:center; font-size:8px; letter-spacing:.06em; color:#55504a;">64px</span></div>
+              <div style="display:flex; padding:2px; border-radius:5px; background:#191715; box-shadow:inset 0 0 0 1px #302d29;">
+                <button style="flex:1; background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Human</button>
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Cpu</button>
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Off</button>
+              </div>
+              <input value="Brad" style="background:#191715; border:none; box-shadow:inset 0 0 0 1px #33302b; color:#f2efe9; border-radius:5px; padding:8px 10px; font:inherit; font-size:13px; min-width:0;">
+              <div style="font-size:12px; color:#9a9288; text-align:right;">&mdash;</div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:80px 132px minmax(0,1fr) 128px; gap:10px; align-items:center; padding:7px 10px 7px 0; border-radius:7px; background:#211f1d; box-shadow:inset 0 0 0 1px #302d29;">
+              <div style="display:flex; align-items:center; gap:0;"><span style="width:4px; height:64px; border-radius:0 2px 2px 0; background:#7dff9e;"></span><span style="width:64px; height:64px; margin-left:8px; border-radius:3px; background:repeating-linear-gradient(45deg,#e9e6e0 0 4px,#dcd8d1 4px 8px); display:flex; align-items:center; justify-content:center; font-size:8px; letter-spacing:.06em; color:#55504a;">64px</span></div>
+              <div style="display:flex; padding:2px; border-radius:5px; background:#191715; box-shadow:inset 0 0 0 1px #302d29;">
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Human</button>
+                <button style="flex:1; background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Cpu</button>
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Off</button>
+              </div>
+              <input value="Jen" style="background:#191715; border:none; box-shadow:inset 0 0 0 1px #33302b; color:#f2efe9; border-radius:5px; padding:8px 10px; font:inherit; font-size:13px; min-width:0;">
+              <select style="background:#191715; border:none; box-shadow:inset 0 0 0 1px #33302b; color:#e2ddd4; border-radius:5px; padding:8px 10px; font:inherit; font-size:13px; min-width:0;"><option>Random</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:80px 132px minmax(0,1fr) 128px; gap:10px; align-items:center; padding:7px 10px 7px 0; border-radius:7px; background:#211f1d; box-shadow:inset 0 0 0 1px #302d29;">
+              <div style="display:flex; align-items:center; gap:0;"><span style="width:4px; height:64px; border-radius:0 2px 2px 0; background:#ffd2fc;"></span><span style="width:64px; height:64px; margin-left:8px; border-radius:3px; background:repeating-linear-gradient(45deg,#e9e6e0 0 4px,#dcd8d1 4px 8px); display:flex; align-items:center; justify-content:center; font-size:8px; letter-spacing:.06em; color:#55504a;">64px</span></div>
+              <div style="display:flex; padding:2px; border-radius:5px; background:#191715; box-shadow:inset 0 0 0 1px #302d29;">
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Human</button>
+                <button style="flex:1; background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Cpu</button>
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Off</button>
+              </div>
+              <input value="George" style="background:#191715; border:none; box-shadow:inset 0 0 0 1px #33302b; color:#f2efe9; border-radius:5px; padding:8px 10px; font:inherit; font-size:13px; min-width:0;">
+              <select style="background:#191715; border:none; box-shadow:inset 0 0 0 1px #33302b; color:#e2ddd4; border-radius:5px; padding:8px 10px; font:inherit; font-size:13px; min-width:0;"><option>Evil</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:80px 132px minmax(0,1fr) 128px; gap:10px; align-items:center; padding:7px 10px 7px 0; border-radius:7px; background:#211f1d; box-shadow:inset 0 0 0 1px #302d29;">
+              <div style="display:flex; align-items:center; gap:0;"><span style="width:4px; height:64px; border-radius:0 2px 2px 0; background:#57b06a;"></span><span style="width:64px; height:64px; margin-left:8px; border-radius:3px; background:repeating-linear-gradient(45deg,#e9e6e0 0 4px,#dcd8d1 4px 8px); display:flex; align-items:center; justify-content:center; font-size:8px; letter-spacing:.06em; color:#55504a;">64px</span></div>
+              <div style="display:flex; padding:2px; border-radius:5px; background:#191715; box-shadow:inset 0 0 0 1px #302d29;">
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Human</button>
+                <button style="flex:1; background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Cpu</button>
+                <button style="flex:1; background:none; border:none; color:#8a8379; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;" style-hover="color:#f2efe9">Off</button>
+              </div>
+              <input value="Spot" style="background:#191715; border:none; box-shadow:inset 0 0 0 1px #33302b; color:#f2efe9; border-radius:5px; padding:8px 10px; font:inherit; font-size:13px; min-width:0;">
+              <select style="background:#191715; border:none; box-shadow:inset 0 0 0 1px #33302b; color:#e2ddd4; border-radius:5px; padding:8px 10px; font:inherit; font-size:13px; min-width:0;"><option>Goodytwoshoes</option></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:80px 132px minmax(0,1fr) 128px; gap:10px; align-items:center; padding:7px 10px 7px 0; border-radius:7px; background:#1c1a18; box-shadow:inset 0 0 0 1px #2a2724;">
+              <div style="display:flex; align-items:center; gap:0;"><span style="width:4px; height:64px; border-radius:0 2px 2px 0; background:#3d4b62;"></span><span style="width:64px; height:64px; margin-left:8px; border-radius:3px; background:repeating-linear-gradient(45deg,#2a2724 0 4px,#322e2a 4px 8px); display:flex; align-items:center; justify-content:center; font-size:8px; letter-spacing:.06em; color:#9a9288;">64px</span></div>
+              <div style="display:flex; padding:2px; border-radius:5px; background:#191715; box-shadow:inset 0 0 0 1px #2a2724;">
+                <button style="flex:1; background:none; border:none; color:#9a9288; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Human</button>
+                <button style="flex:1; background:none; border:none; color:#9a9288; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Cpu</button>
+                <button style="flex:1; background:#3a3630; border:none; color:#cfc8bd; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Off</button>
+              </div>
+              <div style="font-size:13px; color:#9a9288;">Muriel</div>
+              <div style="font-size:12px; color:#9a9288; text-align:right;">&mdash;</div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:80px 132px minmax(0,1fr) 128px; gap:10px; align-items:center; padding:7px 10px 7px 0; border-radius:7px; background:#1c1a18; box-shadow:inset 0 0 0 1px #2a2724;">
+              <div style="display:flex; align-items:center; gap:0;"><span style="width:4px; height:64px; border-radius:0 2px 2px 0; background:#5b5a37;"></span><span style="width:64px; height:64px; margin-left:8px; border-radius:3px; background:repeating-linear-gradient(45deg,#2a2724 0 4px,#322e2a 4px 8px); display:flex; align-items:center; justify-content:center; font-size:8px; letter-spacing:.06em; color:#9a9288;">64px</span></div>
+              <div style="display:flex; padding:2px; border-radius:5px; background:#191715; box-shadow:inset 0 0 0 1px #2a2724;">
+                <button style="flex:1; background:none; border:none; color:#9a9288; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Human</button>
+                <button style="flex:1; background:none; border:none; color:#9a9288; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Cpu</button>
+                <button style="flex:1; background:#3a3630; border:none; color:#cfc8bd; font:inherit; font-size:12px; font-weight:600; padding:5px 0; border-radius:3px; cursor:pointer;">Off</button>
+              </div>
+              <div style="font-size:13px; color:#9a9288;">Ned</div>
+              <div style="font-size:12px; color:#9a9288; text-align:right;">&mdash;</div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; gap:8px; justify-content:flex-end;">
+            <button style="background:#242220; border:none; box-shadow:inset 0 0 0 1px #3a3630; color:#e2ddd4; font:inherit; font-size:14px; padding:10px 16px; border-radius:6px; cursor:pointer;" style-hover="background:#2c2926">Cancel</button>
+            <button style="background:#4a5cd0; border:none; color:#f4f2ee; font:inherit; font-size:14px; font-weight:600; padding:10px 20px; border-radius:6px; cursor:pointer;" style-hover="background:#5a6bdd">Start</button>
+          </div>
+        </div>
+      </div>
+
+      <div data-screen-label="Scruples" style="width:660px; padding:20px; border-radius:12px; background:rgb(10 9 8 / .72);">
+        <div style="border-radius:10px; background:#1b1917; box-shadow:inset 0 0 0 1px #33302b, 0 24px 60px rgb(0 0 0 / .6); padding:22px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="color:#8b8272; display:flex;"><svg viewBox="0 0 48 48" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11a3 3 0 0 1 3-3h28a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H20l-9 8v-8h-1a3 3 0 0 1-3-3Z"></path></svg></span>
+            <span style="font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:#a29a8c;">Scruples</span>
+            <span style="margin-left:auto; font-size:12px; color:#9a9288;">Brad &middot; turn 24</span>
+          </div>
+
+          <p style="margin:16px 0 0; font-size:17px; line-height:1.55; color:#f2efe9; text-wrap:pretty;">Somebody left a fish in the microwave over a long weekend. The whole floor smells of it, and facilities want a name by four o'clock. You know whose fish it was.</p>
+
+          <div style="margin-top:18px; display:flex; flex-direction:column; gap:8px;">
+            <button style="display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; background:#211f1d; border:none; box-shadow:inset 0 0 0 1px #302d29; color:#e2ddd4; border-radius:7px; padding:13px 14px; font:inherit; font-size:15px; line-height:1.45; cursor:pointer;" style-hover="background:#272522; box-shadow:inset 0 0 0 1px #6b7fe8">
+              <span style="flex:none; width:20px; height:20px; border-radius:3px; background:#2c2926; box-shadow:inset 0 0 0 1px #3d3831; color:#a29a8c; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">1</span>
+              <span>Name them, and copy in the floor.</span>
+            </button>
+            <button style="display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; background:#232532; border:none; box-shadow:inset 0 0 0 1px #6b7fe8; color:#f2efe9; border-radius:7px; padding:13px 14px; font:inherit; font-size:15px; line-height:1.45; cursor:pointer;">
+              <span style="flex:none; width:20px; height:20px; border-radius:3px; background:#4a5cd0; color:#f4f2ee; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">2</span>
+              <span>Say nothing and quietly clean it yourself.</span>
+              <span style="margin-left:auto; flex:none; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#8b9bf0;">Hovered</span>
+            </button>
+            <button style="display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; background:#211f1d; border:none; box-shadow:inset 0 0 0 1px #302d29; color:#e2ddd4; border-radius:7px; padding:13px 14px; font:inherit; font-size:15px; line-height:1.45; cursor:pointer;" style-hover="background:#272522; box-shadow:inset 0 0 0 1px #6b7fe8">
+              <span style="flex:none; width:20px; height:20px; border-radius:3px; background:#2c2926; box-shadow:inset 0 0 0 1px #3d3831; color:#a29a8c; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">3</span>
+              <span>Blame the intern, who has already left.</span>
+            </button>
+          </div>
+
+          <div style="margin-top:16px; font-size:12px; color:#9a9288;">Press 1, 2 or 3.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

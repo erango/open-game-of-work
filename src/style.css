@@ -1,18 +1,168 @@
+/* ---------------------------------------------------------------- design tokens
+ *
+ * Two palettes from design/handoff/README.md: "original" (warm charcoal) is the default on
+ * bare :root, and "neon" (cyberpunk) overrides it under [data-palette="neon"] on <html>.
+ * Both sets were measured for WCAG AA in the design prototypes.
+ *
+ * Rules below this block must read tokens, never literal colour. The palette blocks are the
+ * only place a hex belongs.
+ */
 :root {
-  --bg: #171a1f;
-  --panel: #22262e;
-  --panel-2: #2b3038;
-  --line: #3a4048;
-  --ink: #e8eaed;
-  --ink-dim: #9aa2ad;
-  --felt: #2a4a3a;
-  --felt-line: #1d3529;
-  --accent: #d8a13c;
+  /* surfaces */
+  --bg: #131211;
+  --panel: #1b1917;
+  --panel-2: #242220;
+  --panel-3: #2c2926;
+  --panel-line: #2f2c28;
+  --line: #33302b;
+  --rule: #332f2a;
+  --rule-2: #262320;
+  --field: #221f1c;
+  --field-input: #191715;
+
+  /* board squares */
+  --sq-corner: #1d1b18;
+  --sq-chance: #242119;
+  --sq-scruples: #24201c;
+  --sq-power: #2a1d1c;
+  --sq-power-line: #4e332e;
+  --sq-power-icon: #c98878;
+  --sq-power-label: #d3a294;
+  --line-sq: #3d3831;
+
+  /* ink */
+  --ink: #f2efe9;
+  --ink-2: #b6afa4;
+  --ink-2b: #a29a8c;
+  --ink-3: #9a9288;
+  --icon: #9b9389;
+  --icon-2: #8b8272;
+  --caption: #cfc8bd;
+
+  /* controls */
+  --ctl: #2b2825;
+  --ctl-2: #242220;
+  --ctl-line: #423d36;
+  --ctl-icon: #6f6a62;
+  --ctl-hover: #332f2b;
+  --ctl-hover-2: #2c2926;
+
+  /* rows */
+  --row: #211f1d;
+  --row-line: #302d29;
+  --row-hover: #272522;
+  --row-off: #1c1a18;
+  --row-off-line: #2a2724;
+
+  /* insets */
+  --inset: #151311;
+  --inset-line: #38332c;
+  --trough: #100f0e;
+
+  /* accent and status */
+  --accent: #4a5cd0;
+  --accent-hover: #5a6bdd;
+  --accent-2: #6b7fe8;
+  --accent-ink: #f4f2ee;
+  --accent-soft: rgb(74 92 208 / .16);
+  --accent-weak: #232532;
+  --success: #5ec08e;
+  --danger: #b0483a;
+  --danger-2: #c0503c;
+
+  /* project tiles, one per profile */
+  --tile-1: #00b7b7;
+  --tile-2: #94bcda;
+  --tile-3: #8bb889;
+  --tile-4: #debe89;
+  --tile-5: #d88fd6;
+  --tile-ink: #191714;
+  --tile-ink-dim: #3b332b;
+
+  /* tracking */
+  --track-wide: .16em;
+  --track-wide2: .14em;
+  --track-adj: .06em;
+
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+:root[data-palette="neon"] {
+  --bg: #06090f;
+  --panel: #0a1220;
+  --panel-2: #0e1828;
+  --panel-3: #162134;
+  --panel-line: #1b2a3f;
+  --line: #1d3550;
+  --rule: #17293c;
+  --rule-2: #142234;
+  --field: #0b0f18;
+  --field-input: #0e1828;
 
+  --sq-corner: #0a0e16;
+  --sq-chance: #0d1520;
+  --sq-scruples: #0d1520;
+  --sq-power: #1b0e1c;
+  --sq-power-line: #4a1c48;
+  --sq-power-icon: #ff7bf0;
+  --sq-power-label: #ff9ef4;
+  --line-sq: #1c2c42;
+
+  --ink: #eaf6ff;
+  --ink-2: #9fd6ff;
+  --ink-2b: #7fb8de;
+  --ink-3: #8fb6d6;
+  --icon: #8fb6d6;
+  --icon-2: #7fa9cc;
+  --caption: #cfefff;
+
+  --ctl: #101827;
+  --ctl-2: #0e1828;
+  --ctl-line: #23364f;
+  --ctl-icon: #5b86ad;
+  --ctl-hover: #162134;
+  --ctl-hover-2: #132135;
+
+  --row: #0e1828;
+  --row-line: #1d3550;
+  --row-hover: #132135;
+  --row-off: #0a1018;
+  --row-off-line: #152337;
+
+  --inset: #04070d;
+  --inset-line: #1d3550;
+  --trough: #05090f;
+
+  --accent: #ff2bd6;
+  --accent-hover: #ff5ce0;
+  --accent-2: #ff5ce0;
+  --accent-ink: #0a0410;
+  --accent-soft: rgb(255 43 214 / .16);
+  --accent-weak: #1d0f22;
+  --success: #2bffb0;
+  --danger: #ff3b6b;
+  --danger-2: #ff5c7f;
+
+  /* Each profile keeps its hue and gains chroma, so board reading transfers between palettes. */
+  --tile-1: #00e0ff;
+  --tile-2: #6aa8ff;
+  --tile-3: #4bd455;
+  --tile-4: #ffc94d;
+  --tile-5: #ff6ae0;
+  --tile-ink: #050b12;
+  --tile-ink-dim: #123246;
+
+  --track-wide: .22em;
+  --track-wide2: .2em;
+  --track-adj: .12em;
+}
+/* Aliases for names the current rules still use. These disappear as the board, shell and
+   dialogs are rewritten in the following steps. */
+:root {
+  --ink-dim: var(--ink-3);
+  --felt: var(--bg);
+  --felt-line: var(--panel-line);
+}
 * { box-sizing: border-box; }
-
 html, body {
   margin: 0;
   padding: 0;
@@ -21,47 +171,19 @@ html, body {
   min-height: 100%;
 }
 
-html, body { height: 100%; }
+/* ---------------------------------------------------------------- board
+ *
+ * Geometry (positions, sizes, font sizes) comes from src/board.ts and is applied inline by
+ * ui.ts; everything here is surface. Board text keeps calc(Npx * var(--text-k, 1)) so the
+ * comfortable-text multiplier still works.
+ */
 
-#app {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 16px;
-  padding: 16px;
-  height: 100vh;
-  align-items: stretch;
-}
-
-/* The board column is measured to size the board, so it must never be driven by the
-   board's own dimensions — otherwise resizing feeds back on itself. */
-.board-col {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.side { overflow-y: auto; min-height: 0; }
-
-@media (max-width: 1020px) {
-  #app {
-    grid-template-columns: minmax(0, 1fr);
-    height: auto;
-  }
-  .board-col { height: min(70vh, 80vw); }
-}
-
-/* ---------------------------------------------------------------- board */
-
-/* Size is set in JS to the largest whole fit for the available space. */
 .board-wrap {
   position: relative;
-  background: var(--felt);
-  border: 2px solid var(--felt-line);
-  border-radius: 10px;
+  background: var(--field);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--panel-line), inset 0 40px 90px rgb(0 0 0 / .35);
   overflow: hidden;
-  box-shadow: 0 10px 40px rgb(0 0 0 / 0.45);
 }
 
 /* Everything inside is positioned in the original 776x535 design space. */
@@ -73,57 +195,386 @@ html, body { height: 100%; }
   transform-origin: top left;
 }
 
+/* NB: never set `position` on .sq or any descendant selector — .sq is absolute in the design
+   space and an override scatters the board. A test in test/ parses this file and enforces it. */
 .sq {
   position: absolute;
-  border: 1px solid rgb(0 0 0 / 0.5);
-  border-radius: 4px;
-  background: var(--panel-2);
+  border-radius: 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  font-size: calc(11px * var(--text-k, 1));
-  line-height: 1.15;
-  text-align: center;
   overflow: hidden;
   user-select: none;
+  text-align: center;
 }
 
-.sq-corner {
-  background: #38404a;
+/* -------- project squares. Tile colour is set inline from --tile-1..5. */
+.sq-project { padding: 0; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .28); }
+
+/* Bars fill upward out of a dark trough. The original drew a full bar masked from the top by
+   a white shape; equivalent, minus a white rectangle that read as an object of its own. */
+.proj-track { position: absolute; background: rgb(0 0 0 / .34); }
+.proj-fill { position: absolute; transition: height .25s ease; }
+
+.proj-name {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  overflow: hidden;
+}
+
+/* Two lines, adjective over noun: names.ts pools words up to 9 characters, so one line at a
+   legible size elides most generated names. Owned names are dark ink rather than the owner's
+   colour — the pale player colours measure 2-3:1 on a pastel tile; the bar carries ownership. */
+.proj-adj {
+  font-size: calc(8.5px * var(--text-k, 1));
+  font-weight: 600;
+  letter-spacing: var(--track-adj);
+  text-transform: uppercase;
+  line-height: 11px;
+  color: var(--tile-ink-dim);
+  white-space: nowrap;
+}
+
+.proj-noun {
+  font-size: calc(11.5px * var(--text-k, 1));
+  font-weight: 600;
+  letter-spacing: -.008em;
+  line-height: 14px;
+  color: var(--tile-ink-dim);
+  white-space: nowrap;
+}
+
+.proj-owned .proj-noun { font-weight: 700; color: var(--tile-ink); }
+
+/* New: difficulty survives when illustrated artwork fills the tile. */
+.proj-num {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  font-size: calc(9px * var(--text-k, 1));
   font-weight: 700;
-  letter-spacing: 0.04em;
-  font-size: calc(13px * var(--text-k, 1));
+  color: var(--tile-ink-dim);
+}
+
+.proj-shoddy-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgb(0 0 0 / .10) 0 3px, transparent 3px 8px);
+}
+
+.proj-shoddy-dot {
+  position: absolute;
+  left: 11px;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--danger-2);
+  box-shadow: 0 0 0 1.5px rgb(0 0 0 / .3);
+}
+
+/* -------- special squares */
+.sq-corner {
+  background: var(--sq-corner);
+  box-shadow: inset 0 0 0 1px var(--line-sq);
+  gap: 10px;
+}
+
+.sq-chance { background: var(--sq-chance); box-shadow: inset 0 0 0 1px var(--line-sq); gap: 6px; }
+.sq-scruples { background: var(--sq-scruples); box-shadow: inset 0 0 0 1px var(--line-sq); gap: 6px; }
+
+/* The only special square that carries colour, because it is the only one that lets a player
+   act on someone else's work. */
+.sq-powerMonger {
+  background: var(--sq-power);
+  box-shadow: inset 0 0 0 1px var(--sq-power-line);
+  gap: 6px;
+}
+
+.sq-icon { display: flex; align-items: center; justify-content: center; flex: none; color: var(--icon-2); }
+.sq-icon svg { display: block; }
+.sq-corner .sq-icon { color: var(--icon); }
+.sq-powerMonger .sq-icon { color: var(--sq-power-icon); }
+
+.sq-title {
+  font-size: calc(12px * var(--text-k, 1));
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--ink-2);
   white-space: pre-line;
 }
 
-.sq-home { background: #4a3a5e; }
-.sq-officeParty { background: #5e4a3a; }
-.sq-meeting { background: #3a4a5e; }
-.sq-businessTrip { background: #3a5e4a; }
-.sq-chance { background: #46424e; font-weight: 700; letter-spacing: .06em; }
-.sq-scruples { background: #4e4238; font-size: calc(26px * var(--text-k, 1)); font-weight: 700; }
-.sq-powerMonger { background: #5e3a3a; font-weight: 700; white-space: pre-line; }
+.sq-sub {
+  font-size: calc(9.5px * var(--text-k, 1));
+  font-weight: 400;
+  letter-spacing: .06em;
+  color: var(--ink-3);
+}
 
+.sq-label {
+  font-size: calc(9.5px * var(--text-k, 1));
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--ink-2b);
+  white-space: pre-line;
+}
+
+.sq-powerMonger .sq-label { color: var(--sq-power-label); letter-spacing: .14em; }
+
+/* -------- centre cluster */
+.center-btn {
+  position: absolute;
+  border: none;
+  border-radius: 5px;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ctl-icon);
+}
+
+/* The only filled control on the board. */
+.center-roll {
+  background: var(--accent);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14), 0 4px 14px rgb(0 0 0 / .4);
+}
+
+.center-roll:hover:not(:disabled) { background: var(--accent-hover); }
+.center-roll:disabled { opacity: .4; }
+
+.center-ctl { background: var(--ctl); box-shadow: inset 0 0 0 1px var(--ctl-line); }
+.center-ctl:hover:not(:disabled) { background: var(--ctl-hover); }
+.center-ctl:disabled { color: var(--ink-3); }
+
+/* Die face as a 3x3 pip grid when no artwork is installed. */
+.die-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  padding: 16px;
+  width: 100%;
+  height: 100%;
+}
+
+.pip { border-radius: 50%; background: var(--accent-ink); align-self: center; justify-self: center; width: 9px; height: 9px; }
+.pip-off { visibility: hidden; }
+
+/* Captions sit in their transcribed boxes. "Resign" measures ~50px in a 48px box: a deliberate
+   1px spill per side, left visible, since the geometry is from the original. */
+.center-caption {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--icon);
+}
+
+.cap-roll { font-size: calc(13px * var(--text-k, 1)); letter-spacing: .12em; color: var(--caption); }
+.cap-trade { font-size: calc(13px * var(--text-k, 1)); letter-spacing: .12em; }
+.cap-resign { font-size: calc(12px * var(--text-k, 1)); letter-spacing: .1em; }
+.cap-ticker { font-size: calc(11px * var(--text-k, 1)); letter-spacing: .14em; }
+
+.ticker-frame {
+  position: absolute;
+  background: var(--inset);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--inset-line), inset 0 2px 6px rgb(0 0 0 / .6);
+}
+
+/* Sans with tabular figures is steadier at 29px than a monospace face, and needs no glow. */
+.ticker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(29px * var(--text-k, 1));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+
+.ticker-up { color: var(--success); }
+.ticker-down { color: var(--danger-2); }
+.ticker-flat { color: var(--ink-3); }
+
+/* -------- player panel. Nothing else may occupy it: a six-seat game uses every row. */
+.stats-panel {
+  position: absolute;
+  background: var(--panel);
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  overflow: hidden;
+}
+
+.stats-panel > * { position: absolute; }
+
+/* Replaces the amber dot that used to mark the active row. */
+.stat-band {
+  left: 0;
+  width: 100%;
+  height: 32px;
+  background: var(--accent-soft);
+  border-left: 2px solid var(--accent-2);
+}
+
+.stat-name {
+  display: flex;
+  align-items: center;
+  font-size: calc(14px * var(--text-k, 1));
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.stat-name.active { color: var(--ink); }
+
+.stat-portrait {
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(9px * var(--text-k, 1));
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.stat-track {
+  border-radius: 2px;
+  background: var(--trough);
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  padding: 1px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meter { border-radius: 1px; transition: width .25s ease; }
+.meter-boss { height: 6px; }
+.meter-load { height: 5px; background: var(--danger); }
+
+.stat-rankbadge {
+  border-radius: 2px;
+  background: var(--ctl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(11px * var(--text-k, 1));
+  font-weight: 700;
+  color: var(--ink-2b);
+}
+
+.stat-rankbadge.active { color: var(--caption); }
+
+/* -------- tokens. A field-coloured ring rather than a black border, so they read on both
+   the pastel tiles and the field. */
+.token {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--field), 0 2px 6px rgb(0 0 0 / .55);
+  transition: left .18s ease, top .18s ease;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(11px * var(--text-k, 1));
+  font-weight: 700;
+}
+
+.token-parked { transition: none; }
+.token-art { background: none; box-shadow: none; filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6)); }
+
+/* -------- installed artwork fills its slot; era art stays crisp unless smoothing is on. */
+.sq-art { width: 100%; height: 100%; object-fit: fill; display: block; user-select: none; }
+.sq-hasart { padding: 0; }
+.btn-art { width: 100%; height: 100%; object-fit: contain; display: block; }
+.portrait-art { width: 100%; height: 100%; display: block; }
+.token-art > img { width: 100%; height: 100%; display: block; }
+
+.sq-art, .btn-art, .portrait-art, .token-art > img, .seat-face { image-rendering: pixelated; }
+.art-smooth .sq-art,
+.art-smooth .btn-art,
+.art-smooth .portrait-art,
+.art-smooth .token-art > img,
+.art-smooth .seat-face { image-rendering: auto; }
+
+html, body { height: 100%; }
+#app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 16px;
+  padding: 16px;
+  height: 100vh;
+  align-items: stretch;
+}
+/* The board column is measured to size the board, so it must never be driven by the
+   board's own dimensions — otherwise resizing feeds back on itself. */
+.board-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.side { overflow-y: auto; min-height: 0; }
+@media (max-width: 1020px) {
+  #app {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+  .board-col { height: min(70vh, 80vw); }
+}
+/* ---------------------------------------------------------------- board */
+
+/* Size is set in JS to the largest whole fit for the available space. */
+.board-wrap {
+  position: relative;
+  background: var(--felt);
+  border: 2px solid var(--felt-line);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.45);
+}
+/* Everything inside is positioned in the original 776x535 design space. */
+.board {
+  position: absolute;
+  inset: 0;
+  width: 776px;
+  height: 535px;
+  transform-origin: top left;
+}
 /* Project squares position their parts absolutely in the tile's own 81x81 space, matching
    TMAINFORM. NOTE: never set `position` on .sq-project itself — .sq is already absolute and
    overriding it drops every project square out of the ring. */
 .sq-project { padding: 0; }
-
 /* projectFullBarShape: the bar itself, owner-coloured or black when unowned. */
 .proj-bar {
   position: absolute;
   border: 1px solid rgb(0 0 0 / .55);
 }
-
 /* projectStatusShape: white shape masking the work still outstanding, from the top down. */
 .proj-empty {
   position: absolute;
   background: #fff;
   transition: height .25s ease;
 }
-
 /* projectNameLabel: centred, clear of the bar. Size is set from FONTS in ui.ts. */
 .proj-name {
   position: absolute;
@@ -136,7 +587,6 @@ html, body { height: 100%; }
   word-break: break-word;
   overflow: hidden;
 }
-
 /* Not in the original: a small marker so shoddy work is visible on the board. */
 .proj-shoddy-dot {
   position: absolute;
@@ -148,22 +598,6 @@ html, body { height: 100%; }
   background: #e0451f;
   box-shadow: 0 0 0 1px rgb(0 0 0 / .55);
 }
-
-.token {
-  position: absolute;
-  border-radius: 50%;
-  border: 2px solid rgb(0 0 0 / 0.6);
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.5);
-  transition: left .18s ease, top .18s ease;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(11px * var(--text-k, 1));
-  font-weight: 700;
-  color: rgb(0 0 0 / 0.65);
-}
-
 /* center cluster */
 
 .center-btn {
@@ -184,97 +618,21 @@ html, body { height: 100%; }
   padding: 4px;
   text-align: center;
 }
-
-.center-btn:hover:not(:disabled) { background: #38404a; }
-.center-btn:disabled { opacity: .4; cursor: default; }
-
-.die-face { font-size: 26px; }
-
-.stats-panel {
-  position: absolute;
-  background: rgb(0 0 0 / 0.35);
-  border: 1px solid rgb(0 0 0 / .5);
-  border-radius: 6px;
-  padding: 6px;
-  overflow: hidden;
-}
-
 /* Stat rows are absolutely positioned on the original's geometry. Each player has ONE
    bordered track containing TWO stacked 8px meters: Boss Rating on top in the player's
    colour, workload beneath it in red. */
 
 .stats-panel > * { position: absolute; }
-
-.stat-name {
-  font-weight: 700;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  text-shadow: 0 1px 2px rgb(0 0 0 / .6);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.stat-name.active::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-  margin-left: 6px;
-  flex: none;
-}
-
-.stat-portrait {
-  border-radius: 2px;
-  border: 1px solid rgb(0 0 0 / .55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-  color: rgb(0 0 0 / .7);
-}
-
-.stat-track {
-  background: #e9f1f8;
-  border: 1px solid rgb(0 0 0 / .5);
-  border-radius: 2px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.meter {
-  height: 50%;
-  min-height: 0;
-  transition: width .25s ease;
-}
-
-.meter-boss { border-bottom: 1px solid rgb(0 0 0 / .12); }
-
-.stat-rankbadge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: var(--ink);
-  text-shadow: 0 1px 2px rgb(0 0 0 / .6);
-}
-
 .stat-rank { color: var(--ink-dim); font-size: 12px; }
-
 /* ---------------------------------------------------------------- sidebar */
 
 .side { display: flex; flex-direction: column; gap: 12px; }
-
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
 }
-
 .card h2 {
   margin: 0 0 8px;
   font-size: 13px;
@@ -282,19 +640,14 @@ html, body { height: 100%; }
   letter-spacing: .08em;
   color: var(--ink-dim);
 }
-
 .turn-line { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-
 .stock-num { font-size: 26px; font-weight: 700; }
 .stock-chart { width: 100%; height: 60px; display: block; margin-top: 6px; }
-
 .log { max-height: 260px; overflow-y: auto; font-size: 13px; line-height: 1.5; }
 .log div { padding: 2px 0; border-bottom: 1px solid rgb(255 255 255 / .04); }
 .log b { font-weight: 700; }
-
 .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
-
 button.b {
   background: var(--panel-2);
   border: 1px solid var(--line);
@@ -309,7 +662,6 @@ button.b:hover:not(:disabled) { background: #38404a; }
 button.b:disabled { opacity: .45; cursor: default; }
 button.b.primary { background: var(--accent); color: #1a1408; border-color: transparent; font-weight: 700; }
 button.b.primary:hover:not(:disabled) { background: #e8b04c; }
-
 /* ---------------------------------------------------------------- modal */
 
 .scrim {
@@ -322,7 +674,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   padding: 20px;
   z-index: 100;
 }
-
 .modal {
   position: relative;
   background: var(--panel);
@@ -335,13 +686,11 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   overflow-y: auto;
   box-shadow: 0 20px 60px rgb(0 0 0 / .6);
 }
-
 .modal h3 { margin: 0 0 6px; font-size: 21px; }
 .modal .sub { color: var(--ink-dim); font-size: 14px; margin-bottom: 14px; }
 .modal p { line-height: 1.6; font-size: 16px; }
 .modal ul { padding-left: 20px; line-height: 1.65; font-size: 15px; }
 .modal .foot { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
-
 .choice {
   display: block;
   width: 100%;
@@ -359,10 +708,8 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 }
 .choice:hover { background: #38404a; border-color: #5a626c; }
 .choice b { color: var(--accent); margin-right: 6px; }
-
 .delta-pos { color: #63c47a; font-weight: 700; }
 .delta-neg { color: #e07a6a; font-weight: 700; }
-
 /* setup */
 
 .setup-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
@@ -383,10 +730,8 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   min-width: 0;
 }
 .seat .swatch { width: 18px; height: 18px; border-radius: 4px; }
-
 .field { margin-bottom: 14px; }
 .field > label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-dim); margin-bottom: 6px; }
-
 .trade-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .plist { border: 1px solid var(--line); border-radius: 6px; max-height: 200px; overflow-y: auto; }
 .plist label {
@@ -397,7 +742,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
 .plist label:hover { background: var(--panel-2); }
 .plist input { margin-top: 2px; }
 .empty { padding: 12px; color: var(--ink-dim); font-size: 14px; }
-
 /* ---------------------------------------------------------------- square art */
 
 .sq-icon {
@@ -407,30 +751,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   justify-content: center;
   flex: none;
 }
-
-.sq-icon svg { display: block; }
-
-.sq-label {
-  font-size: calc(9px * var(--text-k, 1));
-  font-weight: 700;
-  letter-spacing: .07em;
-  white-space: pre-line;
-  margin-top: 3px;
-  color: rgb(255 255 255 / 0.7);
-}
-
-.sq-corner .sq-label { font-size: calc(11px * var(--text-k, 1)); color: rgb(255 255 255 / 0.85); }
-
 /* Scruples squares previously rendered a huge glyph; the icon carries it now. */
 .sq-scruples { font-size: inherit; font-weight: inherit; }
-.sq-scruples .sq-label { display: none; }
-
-
 /* ---------------------------------------------------------------- sound toggle */
 
 .sound-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .sound-row .hint { font-size: 12px; color: var(--ink-dim); }
-
 /* AI decisions are shown but not editable: the picked option is highlighted, the rest
    are disabled, and only the confirm button stays live. */
 .choice:disabled { opacity: .55; cursor: default; }
@@ -454,7 +780,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 0 5px 5px 0;
   font-weight: 600;
 }
-
 /* ---------------------------------------------------------------- centre cluster */
 
 /* Raised frames, standing in for the original's bsRaised TBevels. */
@@ -468,7 +793,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-bottom: 2px solid rgb(0 0 0 / 0.4);
   pointer-events: none;
 }
-
 /* Captions sit below each control, as in the original. */
 .center-caption {
   position: absolute;
@@ -482,7 +806,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   pointer-events: none;
   white-space: nowrap;
 }
-
 /* Inset LCD readout for the share-price change. */
 .ticker {
   position: absolute;
@@ -496,11 +819,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   font-weight: 700;
   letter-spacing: .04em;
 }
-
-.ticker-up { color: #2bff5a; text-shadow: 0 0 9px rgb(43 255 90 / .55); }
-.ticker-down { color: #ff4d3d; text-shadow: 0 0 9px rgb(255 77 61 / .55); }
-.ticker-flat { color: #5d6a72; }
-
 /* ---------------------------------------------------------------- original artwork */
 
 /* When the original art is installed, tiles are filled edge to edge by the bitmap and the
@@ -513,34 +831,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   image-rendering: pixelated; /* 1bpp/4bpp era art, keep it crisp rather than blurred */
   user-select: none;
 }
-
-.sq-hasart { padding: 0; border-color: rgb(0 0 0 / .35); }
-
-.btn-art {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-  image-rendering: pixelated;
-}
-
 /* The original board is light, so its captions and project text need dark ink. */
 .board-original .center-caption { color: #10171f; text-shadow: 0 1px 0 rgb(255 255 255 / .45); }
-.board-original .sq-label { color: rgb(0 0 0 / .7); }
-.board-original .bevel {
-  background: rgb(255 255 255 / 0.18);
-  border-top-color: rgb(255 255 255 / 0.75);
-  border-left-color: rgb(255 255 255 / 0.6);
-  border-right-color: rgb(0 0 0 / 0.28);
-  border-bottom-color: rgb(0 0 0 / 0.32);
-}
-.board-original .stat-name { text-shadow: 0 1px 1px rgb(0 0 0 / .35); }
-
 /* Smoothed scaling for the original art, for very large displays where nearest-neighbour
    blocks become distracting. Default is crisp. */
 .art-smooth .sq-art,
 .art-smooth .btn-art { image-rendering: auto; }
-
 /* ---------------------------------------------------------------- extracted sprites */
 
 .portrait-art,
@@ -550,10 +846,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   display: block;
   image-rendering: pixelated;
 }
-
-.art-smooth .portrait-art,
-.art-smooth .token-art > img { image-rendering: auto; }
-
 /* With the original icons the token needs no disc behind it. */
 .token-art {
   background: none;
@@ -561,7 +853,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   box-shadow: none;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6));
 }
-
 /* Rank change artwork (RANKPROMO* / RANKDEMO*). */
 .rank-art {
   display: block;
@@ -571,30 +862,24 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   image-rendering: pixelated;
   border-radius: 6px;
 }
-
 /* Office party: one row per player, sprite plus outcome. */
 .party-list { display: flex; flex-direction: column; gap: 10px; }
-
 .party-row {
   display: grid;
   grid-template-columns: 50px 1fr;
   gap: 12px;
   align-items: center;
 }
-
 .party-sprite {
   width: 50px;
   height: 50px;
   display: block;
   image-rendering: pixelated;
 }
-
 .art-smooth .party-sprite, .art-smooth .rank-art { image-rendering: auto; }
-
 .party-who { font-weight: 700; font-size: 14px; }
 .party-text { font-size: 14px; line-height: 1.45; }
 .party-delta { margin-top: 3px; font-size: 13px; }
-
 /* New Game seat selector: the artwork and its word in one clickable control, cycling
    human / computer / off. Art is drawn at its native 64px so nothing is resampled — at 34px
    the 64px source was downscaled by a non-integer factor and became illegible. */
@@ -603,7 +888,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   align-items: center;
   padding-left: 8px;
 }
-
 .seat-type {
   display: flex;
   align-items: center;
@@ -619,9 +903,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   cursor: pointer;
   text-align: left;
 }
-
 .seat-type:hover { border-color: var(--accent); background: #38404a; }
-
 .seat-face {
   width: 64px;
   height: 64px;
@@ -630,11 +912,8 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   image-rendering: pixelated;
   background: #fff;
 }
-
 .art-smooth .seat-face { image-rendering: auto; }
-
 .seat-word { white-space: nowrap; }
-
 /* Original Chance / Scruples card artwork, shown when playing the original deck. */
 .card-art {
   display: block;
@@ -644,9 +923,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 5px;
   border: 1px solid var(--line);
 }
-
 .art-smooth .card-art { image-rendering: auto; }
-
 /* ---------------------------------------------------------------- event art */
 
 /* The original illustrated several moments (a finished project, a full set, the company
@@ -658,10 +935,8 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   align-items: start;
   padding: 5px 0;
 }
-
 /* Name and message in one item, so the grid always has exactly two children. */
 .log-text { min-width: 0; overflow-wrap: anywhere; }
-
 .log-art {
   width: 44px;
   height: auto;
@@ -669,9 +944,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   image-rendering: pixelated;
   display: block;
 }
-
 .art-smooth .log-art { image-rendering: auto; }
-
 /* Full-size art heading a dialog (meeting outcome, party, endings). */
 .event-art {
   display: block;
@@ -680,9 +953,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   image-rendering: pixelated;
   border-radius: 6px;
 }
-
 .art-smooth .event-art { image-rendering: auto; }
-
 /* Startup splash, shown once while the intro clip plays. */
 .splash {
   position: fixed;
@@ -694,14 +965,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   justify-content: center;
   cursor: pointer;
 }
-
 .splash img {
   max-width: 92vw;
   max-height: 92vh;
   image-rendering: pixelated;
   box-shadow: 0 20px 70px rgb(0 0 0 / .8);
 }
-
 .splash-hint {
   position: absolute;
   bottom: 22px;
@@ -709,18 +978,15 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   font-size: 13px;
   letter-spacing: .05em;
 }
-
 /* ---------------------------------------------------------------- high scores */
 
 .hs-wrap { display: grid; gap: 18px; }
-
 .hs-table h4 {
   margin: 0 0 8px;
   font-size: 14px;
   color: var(--accent);
   letter-spacing: .02em;
 }
-
 .hs-grid {
   display: grid;
   grid-template-columns: 42px 1fr auto;
@@ -728,7 +994,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   align-items: baseline;
   font-size: 14px;
 }
-
 .hs-h {
   font-size: 11px;
   text-transform: uppercase;
@@ -737,12 +1002,10 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   padding-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
-
 .hs-c { padding: 3px 0; }
 .hs-num { text-align: right; font-variant-numeric: tabular-nums; }
 .hs-new { color: var(--accent); font-weight: 700; }
 .hs-note { font-size: 11px; color: var(--ink-dim); grid-column: 2 / 4; }
-
 /* ---------------------------------------------------------------- how to play */
 
 /* THELPFORM: topics down the left, a scrolling body on the right. */
@@ -752,9 +1015,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   gap: 14px;
   align-items: start;
 }
-
 .help-topics { display: flex; flex-direction: column; gap: 5px; }
-
 .help-topic {
   background: var(--panel-2);
   border: 1px solid var(--line);
@@ -766,15 +1027,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   text-align: left;
   cursor: pointer;
 }
-
 .help-topic:hover { background: #38404a; }
-
 .help-topic-on {
   border-color: var(--accent);
   background: #33302a;
   font-weight: 700;
 }
-
 .help-body {
   max-height: 52vh;
   overflow-y: auto;
@@ -786,7 +1044,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 6px;
   padding: 12px 14px;
 }
-
 /* The original puts a round red ? in the corner of its New Game window. */
 .help-mark {
   border-radius: 50%;
@@ -800,9 +1057,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   color: #fff;
   margin-right: auto;
 }
-
 .help-mark:hover { background: #d94a41; }
-
 /* ---------------------------------------------------------------- menu bar */
 
 /* Mirrors TMAINFORM's TMainMenu, and keeps the sidebar from filling up with buttons. */
@@ -813,7 +1068,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   min-width: 0;
   min-height: 0;
 }
-
 .menubar {
   display: flex;
   gap: 2px;
@@ -825,9 +1079,7 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   z-index: 20;
   flex-wrap: wrap;
 }
-
 .menu { position: relative; }
-
 .menu-top {
   background: none;
   border: none;
@@ -841,14 +1093,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 5px;
   cursor: pointer;
 }
-
 /* `.menu-top:hover` outranks `.menu-open` on specificity, so hovering an open menu kept the
    dark hover background while the open state's dark text still applied, and the label all but
    vanished. The hovered case is stated explicitly: dark background, white label. */
 .menu-top:hover { background: var(--panel-2); }
 .menu-open { background: var(--accent); color: #1a1408; }
 .menu-open:hover { background: var(--panel-2); color: #fff; }
-
 .menu-drop {
   position: absolute;
   top: calc(100% + 4px);
@@ -861,7 +1111,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   box-shadow: 0 14px 36px rgb(0 0 0 / .55);
   z-index: 30;
 }
-
 .menu-item {
   display: grid;
   grid-template-columns: 18px 1fr;
@@ -878,11 +1127,9 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 5px;
   cursor: pointer;
 }
-
 .menu-item:hover { background: #3f4854; }
 .menu-check { color: var(--accent); font-weight: 700; }
 .menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
-
 /* Stock Chart window */
 .chart-big {
   width: 100%;
@@ -893,21 +1140,17 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 6px;
   margin-bottom: 12px;
 }
-
 .chart-big path { fill: none; stroke-width: 2; }
 .chart-up { stroke: #63c47a; }
 .chart-down { stroke: #e07a6a; }
 .chart-base { stroke: rgb(255 255 255 / .22); stroke-dasharray: 4 4; stroke-width: 1; }
 .chart-zero { stroke: rgb(224 122 106 / .5); stroke-width: 1; }
-
 /* Avatars parked in their pre-game grid, with no disc behind them. */
 .token-parked { transition: none; }
-
 /* Only the help window reserves room for the switch; every other dialog keeps a full-width
    heading. */
 .modal-help h3,
 .modal-help .sub { padding-right: 246px; }
-
 /* Two named sources, so a segmented switch rather than a relabelling button.
    Sits in the dialog's top-right corner, level with the title. */
 .help-source {
@@ -918,14 +1161,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   align-items: center;
   gap: 8px;
 }
-
 .help-source-label {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .07em;
   color: var(--ink-dim);
 }
-
 .segmented {
   display: inline-flex;
   background: var(--panel-2);
@@ -934,7 +1175,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   padding: 2px;
   gap: 2px;
 }
-
 .segment {
   background: none;
   border: none;
@@ -945,17 +1185,13 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 5px;
   cursor: pointer;
 }
-
 .segment:hover { color: var(--ink); }
-
 .segment-on {
   background: var(--accent);
   color: #1a1408;
   font-weight: 700;
 }
-
 .segment-on:hover { color: #1a1408; }
-
 /* ---------------------------------------------------------------- splash credit */
 
 .splash-inner {
@@ -964,7 +1200,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   align-items: center;
   gap: 14px;
 }
-
 /* Stand-in title card when no original splash image is installed. */
 .splash-card {
   text-align: center;
@@ -973,14 +1208,12 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 12px;
   background: linear-gradient(160deg, #26405c, #16202c);
 }
-
 .splash-title {
   font-size: 40px;
   font-weight: 800;
   letter-spacing: -.01em;
   color: #f2f6fa;
 }
-
 .splash-sub {
   margin-top: 6px;
   font-size: 15px;
@@ -988,12 +1221,10 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   letter-spacing: .06em;
   text-transform: lowercase;
 }
-
 .splash-credit {
   font-size: 15px;
   color: rgb(255 255 255 / .8);
 }
-
 .splash-credit a,
 .splash-kofi,
 .about-credit a {
@@ -1001,11 +1232,9 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   text-decoration: none;
   font-weight: 700;
 }
-
 .splash-credit a:hover,
 .splash-kofi:hover,
 .about-credit a:hover { text-decoration: underline; }
-
 .splash-kofi {
   font-size: 14px;
   padding: 7px 14px;
@@ -1013,7 +1242,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   border-radius: 999px;
   background: rgb(216 161 60 / .1);
 }
-
 .splash-hint {
   position: static;
   margin-top: 2px;
@@ -1021,8 +1249,6 @@ button.b.primary:hover:not(:disabled) { background: #e8b04c; }
   font-size: 13px;
   letter-spacing: .05em;
 }
-
 .about-credit { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
-
 /* The splash waits for a click, so give it an explicit affordance. */
 .splash-go { margin-top: 4px; padding: 10px 26px; font-size: 15px; }

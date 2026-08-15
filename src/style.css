@@ -428,7 +428,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 /* Bars fill upward out of a dark trough. The original drew a full bar masked from the top by
    a white shape; equivalent, minus a white rectangle that read as an object of its own. */
 .proj-track { position: absolute; background: rgb(0 0 0 / .34); }
-.proj-fill { position: absolute; transition: height .25s ease; }
+.proj-fill { position: absolute; transition: height .5s cubic-bezier(.22, 1, .36, 1); }
 .proj-name {
   position: absolute;
   display: flex;
@@ -713,7 +713,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 .meter-row { width: 100%; }
 .meter-row-boss { height: 6px; }
 .meter-row-load { height: 5px; }
-.meter { border-radius: 1px; height: 100%; transition: width .25s ease; }
+.meter { border-radius: 1px; height: 100%; transition: width .5s cubic-bezier(.22, 1, .36, 1); }
 .meter-load { background: var(--danger); }
 .stat-rankbadge {
   border-radius: 2px;
@@ -727,6 +727,27 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 }
 .stat-rankbadge.active { color: var(--caption); }
 .stat-rankbadge.resigned { color: var(--ink-3); }
+/* A bar that has just moved says so: it brightens and throws a short glow in its own colour,
+   decaying as the width settles. Rising and falling differ only in how hard the flash is —
+   losing progress should not feel like a reward. */
+@keyframes meter-rise {
+  0% { filter: brightness(1.9) saturate(1.3); box-shadow: 0 0 0 0 var(--pulse); }
+  35% { box-shadow: 0 0 9px 2px var(--pulse); }
+  100% { filter: none; box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes meter-fall {
+  0% { filter: brightness(1.4); box-shadow: 0 0 0 0 var(--pulse); }
+  35% { box-shadow: 0 0 6px 1px var(--pulse); }
+  100% { filter: none; box-shadow: 0 0 0 0 transparent; }
+}
+.meter-rise { animation: meter-rise .75s ease-out; }
+.meter-fall { animation: meter-fall .6s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .meter,
+  .proj-fill { transition: none; }
+  .meter-rise,
+  .meter-fall { animation: none; }
+}
 /* -------- the current player's ring.
    Draws itself from nothing to a full circle, holds for an instant, decays to nothing, then
    waits before starting again. One animation drives both strokes so the burn cannot drift out

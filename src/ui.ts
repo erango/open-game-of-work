@@ -209,6 +209,15 @@ export class Ui {
   private openMenu: string | null = null;
   private lastGame: Game | null = null;
   /**
+   * The last value each bar was drawn at, so a change can be animated.
+   *
+   * The panel is rebuilt on every render, so a bar is a *new* element each time and starts life
+   * at its final width — a CSS transition on it never had two values to move between. Keeping
+   * the previous value here lets the new element be born at the old width and then moved, which
+   * is the only way to animate something that does not persist.
+   */
+  private barValues = new Map<string, number>();
+  /**
    * Pre-game board, shown behind the New Game window.
    *
    * The original sat on this state at launch, waiting for you to pick New. Its design-time
@@ -229,6 +238,9 @@ export class Ui {
 
   setAttract(on: boolean): void {
     this.attract = on;
+    // The pre-game board draws partial bars (the original's idle look), so carrying its values
+    // into a real game made every tile animate down to zero the moment it started.
+    this.barValues.clear();
   }
 
   constructor(root: HTMLElement, handlers: UiHandlers) {
@@ -458,6 +470,41 @@ export class Ui {
     this.menubar.append(right);
   }
 
+  /**
+   * Draws a bar at `value`, animating from wherever it was last time and flashing if it moved.
+   *
+   * `key` identifies the bar across renders, not the element. Returns nothing: the node is
+   * mutated, since the caller has already positioned it.
+   */
+  private animateBar(key: string, node: HTMLElement, prop: 'width' | 'height', value: number, unit: string, glow: string): void {
+    const previous = this.barValues.get(key);
+    this.barValues.set(key, value);
+    const set = (v: number) => {
+      node.style[prop] = `${v}${unit}`;
+    };
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (previous === undefined || previous === value || reduced) {
+      set(value);
+      return;
+    }
+
+    /*
+     * Born at the old value, then moved — a transition needs two values, and an element created
+     * this frame has only ever had one.
+     *
+     * The move happens after a forced reflow rather than in requestAnimationFrame. The board is
+     * rebuilt on every render, so by the time a rAF callback runs this node has often already
+     * been replaced: the class landed on a detached element and nothing was ever seen. Reading
+     * offsetWidth flushes the first value to style now, in this frame, on this node.
+     */
+    set(previous);
+    node.style.setProperty('--pulse', glow);
+    void node.offsetWidth;
+    set(value);
+    node.classList.add(value > previous ? 'meter-rise' : 'meter-fall');
+  }
+
   /** A labelled segmented control for the menu bar. */
   private segmentedGroup(
     label: string,
@@ -488,6 +535,9 @@ export class Ui {
   }
 
   render(game: Game): void {
+    // A different Game means different bars; nothing about the previous one is worth animating
+    // away from.
+    if (this.lastGame !== game) this.barValues.clear();
     this.lastGame = game;
     this.renderMenu(game);
     this.syncCursors();
@@ -641,8 +691,17 @@ export class Ui {
     const fill = el('div', 'proj-fill');
     fill.style.left = `${T.bar.left}px`;
     fill.style.width = `${T.bar.width}px`;
-    fill.style.height = `${Math.round(T.bar.height * ratio)}px`;
     fill.style.bottom = '0';
+    // The tile bar is a progress bar too, and work landing on a project is exactly the moment
+    // worth seeing. Same treatment as the panel meters.
+    this.animateBar(
+      `proj:${proj.id}`,
+      fill,
+      'height',
+      Math.round(T.bar.height * ratio),
+      'px',
+      owner ? meterColor(owner.color) : 'var(--tile-ink-dim)',
+    );
     fill.style.background = owner ? meterColor(owner.color) : 'var(--tile-ink-dim)';
     // `color` carries the same value so a palette can bloom the bar with currentColor without
     // the stylesheet needing to know whose it is.
@@ -904,8 +963,8 @@ export class Ui {
        */
       const bossRow = el('div', 'meter-row meter-row-boss');
       const boss = el('div', 'meter meter-boss');
-      boss.style.width = `${brPct}%`;
       boss.style.background = meterColor(p.color);
+      this.animateBar(`boss:${p.id}`, boss, 'width', brPct, '%', meterColor(p.color));
       bossRow.append(boss);
       tip(
         bossRow,
@@ -916,7 +975,7 @@ export class Ui {
 
       const loadRow = el('div', 'meter-row meter-row-load');
       const load = el('div', 'meter meter-load');
-      load.style.width = `${stressPct}%`;
+      this.animateBar(`load:${p.id}`, load, 'width', stressPct, '%', 'var(--danger-2)');
       loadRow.append(load);
       const held = game.projectsOf(p.id).length;
       tip(

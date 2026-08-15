@@ -1063,16 +1063,26 @@ export class Ui {
       document.body.append(scrim);
       window.addEventListener('keydown', onKey, true);
       /*
-       * Focus the first control that is actually part of the task. `[autofocus]` wins where a
-       * dialog names one; otherwise the first enabled control that has not opted out with
-       * data-skip-focus — which is how the New Game window keeps the focus ring off its help
-       * button, an affordance in the corner rather than the thing you came to do.
+       * Where the focus ring lands has to agree with what Enter does, or the dialog lies about
+       * itself: a confirm whose ring sits on 'Decline' reads as though Enter will decline.
+       *
+       *   1. `[autofocus]`, where a dialog names its own target.
+       *   2. Nothing, when the dialog offers a numbered list — a ring on the first answer would
+       *      imply it is selected, and Enter would then have to honour that.
+       *   3. The primary button, when the dialog is a plain confirm. This is the case that was
+       *      wrong: the first control in the markup is the secondary one, because 'Decline'
+       *      reads before 'Take it on'.
+       *   4. Otherwise the first enabled control that has not opted out with data-skip-focus,
+       *      so a form starts where you would start filling it in rather than on its buttons.
        */
-      const focus =
-        scrim.querySelector<HTMLElement>('[autofocus]') ??
-        [...scrim.querySelectorAll<HTMLElement>('button, input, select')].find(
-          (n) => n.dataset.skipFocus === undefined && !n.hasAttribute('disabled'),
-        );
+      const controls = [...scrim.querySelectorAll<HTMLElement>('button, input, select')].filter(
+        (n) => n.dataset.skipFocus === undefined && !n.hasAttribute('disabled'),
+      );
+      const named = scrim.querySelector<HTMLElement>('[autofocus]');
+      const hasChoices = scrim.querySelector('.choice');
+      const fields = scrim.querySelector('input, select, .plist');
+      const primary = scrim.querySelector<HTMLButtonElement>('.foot .b.primary:not(:disabled)');
+      const focus = named ?? (hasChoices ? null : !fields && primary ? primary : controls[0]);
       focus?.focus();
     });
   }

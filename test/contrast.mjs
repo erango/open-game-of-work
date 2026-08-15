@@ -322,11 +322,17 @@ const run = async (browser, palette) => {
   // Tooltips are ours now rather than the OS's, so they are text on a panel like anything else.
   // Hovering one is the only way they exist to be measured.
   await dismiss(page);
-  for (const sel of ['.center-ctl', '.stat-portrait', '.stat-rankbadge']) {
+  for (const sel of ['.center-ctl', '.stat-portrait', '.stat-rankbadge', '.sq-project']) {
     const target = page.locator(sel).first();
     if (!(await target.count())) continue;
-    await target.hover({ timeout: 3000 }).catch(() => {});
-    await page.waitForTimeout(320);
+    // Dispatched rather than hovered: several of these sit under the player panel, and a real
+    // pointer would land on whatever covers them.
+    await page
+      .evaluate((s) => {
+        document.querySelector(s)?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+      }, sel)
+      .catch(() => {});
+    await page.waitForTimeout(340);
     if (await page.$('.tip.tip-on')) await audit(page, `tooltip on ${sel}`, palette);
   }
 

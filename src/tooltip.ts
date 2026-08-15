@@ -30,6 +30,25 @@ let installed = false;
  * the control, so no `pointerout` ever arrives.
  */
 let suppressed: HTMLElement | null = null;
+/**
+ * Builders for tooltips that are structured rather than prose.
+ *
+ * A WeakMap keyed on the element, because the board is rebuilt on every render and a registry
+ * keyed any other way would leak a node per square per frame. `data-tip` still carries a plain
+ * summary, which is what assistive tech reads and what the fallback shows.
+ */
+const rich = new WeakMap<HTMLElement, () => Node>();
+
+/**
+ * Marks an element as having a *structured* tooltip.
+ *
+ * `summary` is the plain-text equivalent: it becomes the accessible name and is what shows if
+ * the builder ever fails to produce anything.
+ */
+export function tipRich(node: HTMLElement, summary: string, build: () => Node): void {
+  tip(node, summary);
+  rich.set(node, build);
+}
 
 /** Marks an element as having a tooltip, and keeps it labelled for assistive tech. */
 export function tip(node: HTMLElement, text: string): void {
@@ -57,13 +76,21 @@ function hide(): void {
   if (layer) layer.textContent = '';
   if (layer) {
     layer.hidden = true;
-    layer.classList.remove('tip-on', 'tip-below');
+    layer.classList.remove('tip-on', 'tip-below', 'tip-rich');
   }
 }
 
 function place(target: HTMLElement, text: string): void {
   const el = ensureLayer();
-  el.textContent = text;
+  const build = rich.get(target);
+  if (build) {
+    el.textContent = '';
+    el.append(build());
+    el.classList.add('tip-rich');
+  } else {
+    el.textContent = text;
+    el.classList.remove('tip-rich');
+  }
   el.hidden = false;
   el.classList.remove('tip-below');
   // Measure after the text is in, since the size depends on it.

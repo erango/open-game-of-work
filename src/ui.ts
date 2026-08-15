@@ -2,7 +2,7 @@ import { CENTER, DESIGN_HEIGHT, DESIGN_WIDTH, FONTS, PROJECT_TILE, SQUARES, toke
 import { assetsAvailable, centerImage, cursorUrl, dieFace, eventArt, playerPortrait, playerToken, squareImage } from './assets';
 import { availableThemes, themeLabel, themeName, type ThemeName } from './theme';
 import { RESIGN_ICON, TRADE_ICON, squareIcon } from './icons';
-import { tip } from './tooltip';
+import { tip, tipRich } from './tooltip';
 import type { Game } from './engine';
 import * as R from './rules';
 import { RANK_LETTERS, RANKS, type GameState, type Player, type Project, type SquareKind } from './types';
@@ -568,25 +568,64 @@ export class Ui {
     node.append(el('div', 'proj-fx'));
 
     /*
-     * A project square is the one that repays explaining: what it costs, what it pays, and what
-     * landing on it does to you, which differs depending on whose it is.
+     * A project square is a record, not a story: who holds it, how far along it is, what it
+     * pays, what it costs to carry. Laid out as labelled rows so it can be read at a glance
+     * rather than parsed out of a sentence.
      */
     const work = R.PROJECT_WORK[proj.profile];
     const pays = R.COMPLETION_BOSS_RATING[proj.profile];
     const lifts = R.COMPLETION_STOCK[proj.profile];
-    const ledger =
-      `Profile ${proj.profile}: ${work} work to ship, pays ${pays} Boss Rating and ` +
-      `${lifts > 0 ? '+' : ''}${lifts} to the share price. Holding it adds ${proj.profile} to ` +
-      'your workload.';
-    tip(
-      node,
-      owner === null
-        ? `${proj.name} — unclaimed. Land here to take it on. ${ledger}`
-        : `${proj.name} — ${owner.name}, ${proj.progress}/${proj.work} done${
-            proj.shoddy ? ', and shoddy: it will rebound on whoever ships it' : ''
-          }. ${ledger} Landing on your own project puts ${R.WORK_LANDING_OWN} extra work into ` +
-          `it; landing on someone else’s costs you your own work for the turn.`,
-    );
+    const summary =
+      `${proj.name}, profile ${proj.profile}. ` +
+      (owner ? `Held by ${owner.name}, ${proj.progress} of ${proj.work} done. ` : 'Unclaimed. ') +
+      `Ships for ${pays} Boss Rating and ${lifts} share price, and adds ${proj.profile} to the ` +
+      'holder’s workload.';
+
+    tipRich(node, summary, () => {
+      const card = el('div', 'tipcard');
+
+      const head = el('div', 'tipcard-head');
+      const swatch = el('i', 'tipcard-swatch');
+      swatch.style.background = `var(--tile-${proj.profile})`;
+      head.append(swatch, el('b', 'tipcard-title', proj.name), el('span', 'tipcard-tag', `profile ${proj.profile}`));
+      card.append(head);
+
+      const row = (label: string, value: string | HTMLElement, tone?: 'good' | 'bad') => {
+        const line = el('div', 'tipcard-row');
+        const v = typeof value === 'string' ? el('span', 'tipcard-value', value) : value;
+        if (tone) v.classList.add(`tipcard-${tone}`);
+        line.append(el('span', 'tipcard-label', label), v);
+        card.append(line);
+      };
+
+      row('Held by', owner ? owner.name : 'nobody yet');
+      if (owner) {
+        // The bar and the number say the same thing at different speeds: one is exact, the
+        // other is comparable to the tile you are already looking at.
+        const wrap = el('span', 'tipcard-value');
+        const meter = el('span', 'tipcard-meter');
+        const fill = el('i');
+        fill.style.width = `${Math.min(100, (proj.progress / proj.work) * 100)}%`;
+        fill.style.background = meterColor(owner.color);
+        meter.append(fill);
+        wrap.append(meter, el('span', 'tipcard-num', `${proj.progress}/${proj.work}`));
+        row('Progress', wrap);
+      } else {
+        row('To ship', `${work} work`);
+      }
+      row('Ships for', `+${pays} Boss Rating, ${lifts >= 0 ? '+' : ''}${lifts} share price`, 'good');
+      row('Costs', `+${proj.profile} workload while held`, 'bad');
+      row(
+        'Land here',
+        owner === null
+          ? 'take it on, or decline'
+          : owner.id === game.state.current
+            ? `+${R.WORK_LANDING_OWN} progress`
+            : 'you work on it, and none of your own',
+      );
+      if (proj.shoddy) card.append(el('div', 'tipcard-flag', 'Shoddy — rebounds on whoever ships it'));
+      return card;
+    });
 
     const track = el('div', 'proj-track');
     track.style.left = `${T.bar.left}px`;
@@ -624,15 +663,12 @@ export class Ui {
 
     if (proj.shoddy) {
       node.append(el('div', 'proj-shoddy-overlay'));
+      // No tooltip of its own: it is inside the square, and the square's card already has a
+      // line for it. A nested tooltip would replace the card with one sentence.
       const dot = el('div', 'proj-shoddy-dot');
-      tip(dot, 'Shoddy — will rebound on whoever ships it');
       node.append(dot);
     }
 
-    node.title =
-      `${proj.name} — profile ${proj.profile}, ${proj.progress}/${proj.work} work` +
-      (owner ? `, owned by ${owner.name}` : ', unowned') +
-      (proj.shoddy ? ', SHODDY' : '');
   }
 
   private paintCenter(game: Game): void {
@@ -774,21 +810,6 @@ export class Ui {
     panel.style.width = `${CENTER.stats.width}px`;
     panel.style.height = `${CENTER.stats.height}px`;
 
-    /*
-     * A hairline between rows, at the midpoint of the gap.
-     *
-     * The transcribed rows are 32px apart but 34px tall — a name starts two pixels before the
-     * previous row's meter ends — so nothing can highlight a whole row without touching its
-     * neighbour. Drawing the boundary makes each row read as its own zone regardless, and the
-     * highlight can then live inside the pitch rather than spanning the overlap.
-     */
-    game.state.players.forEach((_p, row) => {
-      if (row === 0 || row >= G.barTops.length) return;
-      const rule = el('div', 'stat-rule');
-      rule.style.top = `${G.nameTops[row] - 5}px`;
-      panel.append(rule);
-    });
-
     game.state.players.forEach((p, row) => {
       if (row >= G.barTops.length) return;
       const barTop = G.barTops[row];
@@ -805,12 +826,21 @@ export class Ui {
       if (active) {
         const band = el('div', 'stat-band');
         /*
-         * Confined to the row's own pitch, ending a clear 3px before the next row begins. It
-         * therefore stops short of the last few pixels of the meter track — which is why the
-         * track carries its own marker below, rather than relying on the wash reaching it.
+         * The zone holds the whole row: its name, its portrait, its meters and its badge.
+         *
+         * There is no gap to sit in. The transcribed rows are 32px apart and 34px tall, so a
+         * row's meter track ends two pixels *after* the next row's name box begins. Confining
+         * the zone to the pitch left the portrait and the bars outside their own highlight —
+         * worse than the overlap, which costs two pixels of the next name box's padding and is
+         * invisible against text that is vertically centred in it.
+         *
+         * Only one row is ever highlighted, so no two zones are on screen to collide.
          */
-        const above = row === 0 ? 0 : G.nameTops[row] - 3;
-        const below = row === G.nameTops.length - 1 ? CENTER.stats.height : G.nameTops[row + 1] - 7;
+        const above = row === 0 ? 0 : G.nameTops[row] - 4;
+        // Two pixels of air under the meters, so the zone does not sit flush against them. It
+        // is spent on the next name box's padding, above where its glyphs start.
+        const below =
+          row === G.nameTops.length - 1 ? CENTER.stats.height : barTop + G.bar.height + 2;
         band.style.top = `${above}px`;
         band.style.height = `${below - above}px`;
         /*

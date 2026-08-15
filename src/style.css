@@ -666,14 +666,6 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 }
 .stats-panel > * { position: absolute; }
 /* Replaces the amber dot that used to mark the active row. */
-/* The boundary between rows, so each highlight reads as its own zone. */
-.stat-rule {
-  left: 6px;
-  right: 6px;
-  width: auto;
-  height: 1px;
-  background: var(--rule);
-}
 .stat-band {
   left: 0;
   width: 100%;
@@ -1057,6 +1049,42 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   bottom: auto;
   top: -4px;
   box-shadow: -1px -1px 0 0 var(--panel-line);
+}
+/* A structured tooltip: a record laid out in labelled rows rather than a sentence. */
+.tip-rich { max-width: 300px; padding: 10px 11px 9px; }
+.tipcard-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.tipcard-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .35); }
+.tipcard-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+.tipcard-tag {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--ink-3);
+}
+.tipcard-row { display: flex; align-items: baseline; gap: 10px; padding: 2px 0; font-size: 12px; }
+.tipcard-label { flex: none; width: 74px; color: var(--ink-3); }
+.tipcard-value { color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
+.tipcard-good { color: var(--success); }
+.tipcard-bad { color: var(--danger-text); }
+.tipcard-num { font-variant-numeric: tabular-nums; }
+.tipcard-meter {
+  width: 54px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--trough);
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  display: inline-block;
+  overflow: hidden;
+}
+.tipcard-meter i { display: block; height: 100%; border-radius: 3px; }
+.tipcard-flag {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid var(--rule);
+  font-size: 11.5px;
+  color: var(--danger-text);
 }
 /* Neon: a lit hairline. No chamfer — clipping the corner cost the arrow (clip-path applies to
    the whole element) and read as a rendering fault rather than as a cut. */

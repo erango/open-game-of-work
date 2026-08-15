@@ -3,12 +3,23 @@ dist/
 *.log
 .DS_Store
 .vite/
-public/assets/
 __pycache__/
 *.pyc
+.cache/
+
+# Raw pipeline output: inputs to the finished assets, never shipped.
 art/_raw/
 art/_sfx_raw/
-.cache/
+art/_music_raw/
 scripts/art-manifest.json
 scripts/sfx-manifest.json
-public/assets/graphics-gen/
+
+# Assets extracted from the original game are the publisher's and are never committed. The
+# pattern excludes the *contents* of public/assets rather than the directory, because git cannot
+# re-include anything inside an excluded directory.
+public/assets/*
+# ...and these three are ours: produced by this project's own pipelines, and what a fresh clone
+# and the deployed build play with.
+!public/assets/graphics-gen/
+!public/assets/music/
+!public/assets/sfx/

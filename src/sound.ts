@@ -124,6 +124,8 @@ const MUSIC = 'assets/sounds/party.mid';
  * Recorded music, three tracks per theme. These are ordinary audio files rather than MIDI, so
  * they cannot go through the parser — this is a second, simpler player alongside it.
  *
+ * Files are `.m4a` (AAC), re-encoded by scripts/audio-encode.sh.
+ *
  * - `theme` once, from the moment the splash is dismissed through the New Game window
  * - `play`  looping under the game
  * - `party` looping for the Office Party scene, then back to `play`
@@ -298,7 +300,8 @@ export class Sound {
     const cached = this.trackCache.get(key);
     if (cached) return cached;
     const probe = (async () => {
-      const url = `${MUSIC_BASE}${key}.mp3`;
+      // AAC in MP4: see scripts/audio-encode.sh for why not Opus.
+      const url = `${MUSIC_BASE}${key}.m4a`;
       try {
         const res = await fetch(url, { method: 'HEAD' });
         if (!isAudio(res)) return null;

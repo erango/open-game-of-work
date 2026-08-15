@@ -1,0 +1,52 @@
+name: Build and deploy
+
+# The point of the deploy is that the game is playable without a toolchain or a copy of the
+# original binary. What ships is only this project's own work: the vector set, the generated
+# Cyberpunk artwork, the music and the sound effects. Nothing extracted from the original is in
+# the repository, so nothing extracted can reach the site.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A deploy in progress is worth finishing; queued ones are not, so only the newest waits.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The suite is DOM-free and runs in about a second, including 75 simulated games. The
+      # contrast audit needs a real browser and is not run here; it is a local check.
+      - run: npm test
+      - run: npm run build
+      # A clean checkout cannot contain extracted material, but the rule is worth enforcing
+      # rather than assuming — and this also catches a build that shipped none of our own art.
+      - run: npm run check:shippable
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

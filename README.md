@@ -8,11 +8,15 @@ installer, and is no longer available anywhere including its publisher.
 This port exists so the design survives on hardware and browsers that will still exist
 next decade.
 
+**▶ Play it: https://erango.github.io/open-game-of-work/** — no install, no original binary
+needed.
+
 ```bash
 npm install
 npm run dev        # play at the printed localhost URL
-npm test           # 80+ checks incl. 75 fully simulated games
+npm test           # 90+ checks incl. 75 fully simulated games
 npm run build      # typecheck + production bundle
+npm run check:contrast   # WCAG AA audit of the running UI, both palettes (needs Chrome)
 ```
 
 Requires Node 20+. No runtime dependencies — the game is plain TypeScript and DOM.
@@ -121,11 +125,52 @@ Current outcome distribution over 75 simulated games (`npm test` prints this):
 Personalities are meaningfully different rather than cosmetic — Ambitious wins most,
 Evil least, with average final Boss Ratings of 115 and 59 respectively.
 
-## Playing with the original's assets
+## Three themes
 
-The port ships no art or audio and needs none. If you have your own extracted copy, its
-`sounds/` and `graphics/` folders match the names the original used, so wiring them up is
-a local change — deliberately not included here, so this repo stays distributable.
+A theme is the palette, the artwork, the music, the sound effects, the card pack and the
+project-name vocabulary, chosen together — switching one is a statement about the whole look,
+so it is a single control (menu bar, Options, or the New Game window).
+
+| | **Original** | **Open Plan** | **Cyberpunk** |
+|---|---|---|---|
+| artwork | the 2000 bitmaps | inline SVG, drawn for this port | generated illustration set |
+| palette | warm charcoal | warm charcoal | neon |
+| effects | the original's WAVs | synthesised | synthesised |
+| cards | the recovered deck | this port's own | a cyberpunk pack |
+| projects | *Casual Postcard* | *Casual Postcard* | *Cached Cronjob* |
+
+**Original only appears if you have your own extraction**, since none of that material is in
+this repository. Without one it falls back to Open Plan, and that fallback is deliberately not
+remembered — install an extraction later and Original is simply there.
+
+### What is shipped, and what is not
+
+Everything in `public/assets/` that this project made is committed and deployed: the generated
+Cyberpunk illustration set, three music tracks per theme, and 24 scene sound effects. Anything
+extracted from `gamework.exe` — 96 bitmaps, 10 cursors, ~95 WAVs, the card text and the help
+text — is gitignored and never leaves your machine. `npm run check:shippable` fails the build if
+any of it reaches `dist/`, and CI runs it before every deploy.
+
+Effects split by how often they fire. `move` plays once per square — hundreds of times a game —
+so the frequent cues are **synthesised** in Web Audio, where a voice built per call never quite
+repeats and a theme's sound design is a handful of numbers rather than a directory of files. The
+twelve once-a-game moments that want texture a synth cannot give — a room of people, a siren,
+applause — are recordings. Speech is never synthesised: the per-name and per-seat clips belong
+to the original.
+
+### Producing the assets
+
+Each pipeline is resumable and documented next to its script:
+
+```bash
+npm run art:manifest && npm run art:gen && npm run art:cutout   # illustration set
+npm run art:dice                                                # die faces, drawn not generated
+ELEVENLABS_API_KEY=... npm run sfx:gen && npm run sfx:post      # scene effects
+npm run audio:encode                                            # music -> AAC for shipping
+```
+
+`design/ART-PROMPTS.md`, `design/MUSIC-PROMPTS.md` and `design/SFX-PROMPTS.md` explain the
+prompts and, more usefully, the failure modes each one is written around.
 
 ## Status
 
@@ -134,8 +179,12 @@ implemented, trading, Power Monger, promotions and demotions, shoddy work with d
 consequences, stock market with the crash ending, save/load, and keyboard shortcuts
 matching the original (`Space` roll, `T` trade, `R` resign, `1`–`3` on Scruples).
 
-Not implemented: high-score tables, the stock chart window as a separate view (the price
-history is charted inline instead), and the original's registration nag screens.
+High-score tables and the stock chart window are implemented. Not implemented: the original's
+registration nag screens.
+
+Open questions are in `SPEC.md`. The largest is the Scruples answer effects: all 108 answers ×
+15 parameters are extracted and their grouping is proven, but which slot means Boss Rating is
+unestablished, so this port infers them rather than shipping a guess.
 
 ## Licence
 

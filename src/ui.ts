@@ -57,6 +57,45 @@ function initialInk(color: string): string {
 }
 
 /** Die face as a 3x3 pip grid, for when no artwork is installed. */
+/**
+ * What a square does, in the player's terms.
+ *
+ * Every number here is read from `rules.ts` rather than written out, so a tooltip cannot drift
+ * away from the rule it describes — which is the usual fate of explanatory text.
+ */
+const SQUARE_TIP: Partial<Record<SquareKind, () => string>> = {
+  home: () =>
+    `Home. Passing or landing here pays ${R.HOME_BOSS_RATING} Boss Rating and triggers a ` +
+    `review: enough Boss Rating and you go up one rank, too little and you go down one. ` +
+    `Reach ${R.PRESIDENT_THRESHOLD} to become President and win.`,
+  officeParty: () =>
+    'Office Party. Everyone attends and every player’s Boss Rating moves. How much work you ' +
+    `are carrying decides which way: at ${R.PARTY_DRUNK_STRESS} workload or more you drink to ` +
+    `forget it, at ${R.PARTY_BORED_STRESS} or less you have nothing to worry about and overdo ` +
+    'it. Somewhere in between is where you want to be.',
+  meeting: () =>
+    'Meeting. You present your workload, and the boss judges the number of projects you hold: ' +
+    `1-2 is ${R.MEETING_BANDS.few > 0 ? '+' : ''}${R.MEETING_BANDS.few}, 3-4 is ` +
+    `${R.MEETING_BANDS.ok > 0 ? '+' : ''}${R.MEETING_BANDS.ok}, 5-6 is ${R.MEETING_BANDS.many}, ` +
+    `7 or more is ${R.MEETING_BANDS.overloaded}. Turning up with none is worst of all at ` +
+    `${R.MEETING_BANDS.none}.`,
+  businessTrip: () =>
+    `Business Trip. ${R.BUSINESS_TRIP_BONUS > 0 ? '+' : ''}${R.BUSINESS_TRIP_BONUS} Boss ` +
+    'Rating for being seen to travel, and nothing else happens to you this turn.',
+  chance: () =>
+    'Chance. Draw a card: something happens to your Boss Rating, the share price or the work ' +
+    'on your desk, with no say in it. A few carry a consequence that arrives several turns later.',
+  scruples: () =>
+    'Scruples. A dilemma with three answers. The rewarding one usually costs you standing with ' +
+    'the other players, or arrives with a delayed consequence — press 1 to 3 to pick, Enter to ' +
+    'commit.',
+  powerMonger: () =>
+    'Power Monger. Act on someone else’s work: cancel a project outright, or reassign one to ' +
+    'any player including yourself. How many actions you get depends on your rank — ' +
+    `${R.POWER_MONGER_ACTIONS[1]} early, ${R.POWER_MONGER_ACTIONS[5]} as Vice President, none ` +
+    'in the Mailroom.',
+};
+
 const PIPS: Record<number, number[]> = {
   0: [],
   1: [4],
@@ -466,6 +505,8 @@ export class Ui {
       if (sq.kind === 'project') {
         this.paintProject(node, s.projects[sq.project!], game);
       } else {
+        const explain = SQUARE_TIP[sq.kind];
+        if (explain) tip(node, explain());
         const art = squareImage(sq.index);
         if (art) {
           // Installed artwork fills the tile and carries the label itself.
@@ -515,6 +556,27 @@ export class Ui {
     // palette, nothing at all under the original one. First child, so the bar, the name and
     // the numeral all sit above it.
     node.append(el('div', 'proj-fx'));
+
+    /*
+     * A project square is the one that repays explaining: what it costs, what it pays, and what
+     * landing on it does to you, which differs depending on whose it is.
+     */
+    const work = R.PROJECT_WORK[proj.profile];
+    const pays = R.COMPLETION_BOSS_RATING[proj.profile];
+    const lifts = R.COMPLETION_STOCK[proj.profile];
+    const ledger =
+      `Profile ${proj.profile}: ${work} work to ship, pays ${pays} Boss Rating and ` +
+      `${lifts > 0 ? '+' : ''}${lifts} to the share price. Holding it adds ${proj.profile} to ` +
+      'your workload.';
+    tip(
+      node,
+      owner === null
+        ? `${proj.name} — unclaimed. Land here to take it on. ${ledger}`
+        : `${proj.name} — ${owner.name}, ${proj.progress}/${proj.work} done${
+            proj.shoddy ? ', and shoddy: it will rebound on whoever ships it' : ''
+          }. ${ledger} Landing on your own project puts ${R.WORK_LANDING_OWN} extra work into ` +
+          `it; landing on someone else’s costs you your own work for the turn.`,
+    );
 
     const track = el('div', 'proj-track');
     track.style.left = `${T.bar.left}px`;
@@ -678,7 +740,14 @@ export class Ui {
     readout.style.height = `${V.height}px`;
     readout.classList.add(delta > 0 ? 'ticker-up' : delta < 0 ? 'ticker-down' : 'ticker-flat');
     readout.textContent = delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${delta}`;
-    tip(readout, `Share price ${game.state.stock} — last change ${delta >= 0 ? '+' : ''}${delta}`);
+    tip(
+      readout,
+      `Share price ${game.state.stock}, last change ${delta >= 0 ? '+' : ''}${delta}. It rises ` +
+        'when a project ships and falls under the running cost of every project the office is ' +
+        `carrying. Above ${R.STOCK_BONUS_THRESHOLD} everyone is paid a bonus every ` +
+        `${R.STOCK_BONUS_EVERY} turns; at ${R.STOCK_MIN} the company folds and every player ` +
+        'loses, President or not.',
+    );
 
     this.board.append(frame, readout);
   }
@@ -770,10 +839,16 @@ export class Ui {
       const load = el('div', 'meter meter-load');
       load.style.width = `${stressPct}%`;
       track.append(boss, load);
-      track.title =
-        `${p.name}: Boss Rating ${p.bossRating}/${R.PRESIDENT_THRESHOLD} (top), ` +
-        `workload ${stress}/${R.STRESS_BAR_MAX} (bottom) — ${RANKS[p.rank]}, ` +
-        `${game.projectsOf(p.id).length} project(s)`;
+    const held = game.projectsOf(p.id).length;
+      tip(
+        track,
+        `${p.name}. Top bar: Boss Rating ${p.bossRating} of ${R.PRESIDENT_THRESHOLD} — reach ` +
+          'the end of it to become President and win. Bottom bar: workload ' +
+          `${stress} of ${R.STRESS_BAR_MAX}, the profiles of the ${held} project` +
+          `${held === 1 ? '' : 's'} being carried added together. Above ` +
+          `${R.STRESS_SHODDY_THRESHOLD} the work starts turning shoddy, and shoddy work ` +
+          'rebounds on whoever ships it.',
+      );
 
       const rank = el(
         'div',
@@ -785,9 +860,48 @@ export class Ui {
       rank.style.width = `${G.portrait.size}px`;
       rank.style.height = `${G.rank.height}px`;
       rank.style.fontSize = `calc(${FONTS.rankBadge}px * var(--text-k, 1))`;
-      tip(rank, RANKS[p.rank]);
+      /*
+       * The badge is a single letter, so it has to explain itself: what the letter is, what it
+       * takes to move, and what the rank is actually worth — which is Power Monger actions.
+       */
+      const next = R.RANK_FLOOR[p.rank + 1];
+      const actions = R.POWER_MONGER_ACTIONS[p.rank];
+      tip(
+        rank,
+        `${RANKS[p.rank]}. ${
+          Number.isFinite(next)
+            ? `${Math.max(0, next - p.bossRating)} more Boss Rating would earn the next rank`
+            : 'The top of the ladder'
+        }, and ranks change only when passing Home — one step at a time, up or down. At this ` +
+          `rank Power Monger gives ${actions} action${actions === 1 ? '' : 's'}.`,
+      );
 
       panel.append(name, portrait, track, rank);
+
+      /*
+       * A ring that draws itself around whoever is up, burns out, and comes back.
+       *
+       * It is a sibling rather than a child of the portrait: that cell clips its overflow so the
+       * artwork cannot spill, and a ring drawn inside it would be clipped to a square. Sized
+       * from the same geometry, so it stays centred whatever the panel is scaled to.
+       */
+      if (active) {
+        const pad = 3;
+        const ring = el('div', 'avatar-ring');
+        ring.style.left = `${G.portrait.left - pad}px`;
+        ring.style.top = `${barTop - pad}px`;
+        ring.style.width = `${G.portrait.size + pad * 2}px`;
+        ring.style.height = `${G.portrait.size + pad * 2}px`;
+        ring.setAttribute('aria-hidden', 'true');
+        // Two strokes: the line itself, and a wider, blurred copy behind it that lingers as the
+        // burn-in. Drawn from twelve o'clock, which is why the group is rotated.
+        ring.innerHTML =
+          '<svg viewBox="0 0 40 40"><g transform="rotate(-90 20 20)">' +
+          '<circle class="ring-burn" cx="20" cy="20" r="18" />' +
+          '<circle class="ring-line" cx="20" cy="20" r="18" />' +
+          '</g></svg>';
+        panel.append(ring);
+      }
     });
 
     this.board.append(panel);

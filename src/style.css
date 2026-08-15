@@ -722,6 +722,54 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 }
 .stat-rankbadge.active { color: var(--caption); }
 .stat-rankbadge.resigned { color: var(--ink-3); }
+/* -------- the current player's ring.
+   Draws itself from nothing to a full circle, holds for an instant, decays to nothing, then
+   waits before starting again. One animation drives both strokes so the burn cannot drift out
+   of step with the line that made it.
+
+   3.6s: 0.9s drawing, 0.7s burning out, 2s dark. */
+.avatar-ring {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+}
+.avatar-ring svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.avatar-ring circle {
+  fill: none;
+  /* 2πr for r=18, so a full offset is an undrawn circle and zero is a closed one. */
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 113.1;
+  stroke-linecap: round;
+  animation: avatar-ring 3.6s linear infinite;
+}
+.ring-line { stroke: var(--accent-2); stroke-width: 2.2; }
+/* The afterglow: wider, softer, and a touch behind the line in its fade. */
+.ring-burn {
+  stroke: var(--accent);
+  stroke-width: 3.4;
+  filter: blur(2.5px);
+  animation-name: avatar-burn;
+}
+@keyframes avatar-ring {
+  0% { stroke-dashoffset: 113.1; opacity: 1; }
+  25% { stroke-dashoffset: 0; opacity: 1; }
+  30% { opacity: 1; }
+  44% { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+/* Same timing, but it lingers a little longer and never quite reaches full strength — which is
+   what makes it read as light left behind rather than a second ring. */
+@keyframes avatar-burn {
+  0% { stroke-dashoffset: 113.1; opacity: .85; }
+  25% { stroke-dashoffset: 0; opacity: .85; }
+  36% { opacity: .5; }
+  52% { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+/* A ring that pulses forever is exactly what reduced motion is about; the marker stays, still. */
+@media (prefers-reduced-motion: reduce) {
+  .avatar-ring circle { animation: none; stroke-dashoffset: 0; opacity: .5; }
+}
 /* -------- tokens. A field-coloured ring rather than a black border, so they read on both
    the pastel tiles and the field. */
 .token {

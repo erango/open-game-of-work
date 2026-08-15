@@ -468,21 +468,10 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     err.style.color = 'var(--danger-2)';
     m.append(err);
 
+    // Enter starts and Escape cancels, from Ui.modal's shared keyboard contract.
     const foot = el('div', 'foot');
-
-    // Escape cancels, as it would in the original's dialog.
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      window.removeEventListener('keydown', onKey);
-      done(null);
-    };
-    window.addEventListener('keydown', onKey);
-
     const cancel = el('button', 'b', 'Cancel');
-    cancel.onclick = () => {
-      window.removeEventListener('keydown', onKey);
-      done(null);
-    };
+    cancel.onclick = () => done(null);
     const start = el('button', 'b primary', 'Start game');
     start.onclick = () => {
       const seats: SeatConfig[] = rows.map((r) => ({
@@ -496,7 +485,6 @@ async function askNewGame(): Promise<NewGameConfig | null> {
         return;
       }
       setDeckMode(deckSel.value as DeckMode);
-      window.removeEventListener('keydown', onKey);
       done({ length: lenSel.value as GameLength, seats });
     };
     foot.append(cancel, start);
@@ -531,12 +519,6 @@ async function askResign(): Promise<void> {
     cancel.onclick = () => done(false);
     const yes = el('button', 'b primary', 'Resign');
     yes.onclick = () => done(true);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      window.removeEventListener('keydown', onKey);
-      done(false);
-    };
-    window.addEventListener('keydown', onKey);
     foot.append(cancel, yes);
     d.append(foot);
     return d;
@@ -864,16 +846,13 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
       d.append(foot);
       cancelAuto = armAutoClose(ok, true, () => done(aiChoice!));
     } else {
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key >= '1' && e.key <= '3') {
-          window.removeEventListener('keydown', onKey);
-          done(Number(e.key) - 1);
-        }
-      };
-      window.addEventListener('keydown', onKey);
-      // The number keys work, so say so rather than leaving them to be discovered.
+      /*
+       * No footer buttons, which is what makes Escape do nothing here: a dilemma has no safe
+       * default, and dismissing it would be answering it. Ui.modal supplies the rest — a number
+       * key selects an answer, Enter commits it, and a click commits directly.
+       */
       const foot = el('div', 'foot');
-      const hint = el('div', 'hint-line', 'Click an answer, or press 1, 2 or 3.');
+      const hint = el('div', 'hint-line', 'Click an answer, or press 1, 2 or 3 and then Enter.');
       hint.style.marginRight = 'auto';
       foot.append(hint);
       d.append(foot);

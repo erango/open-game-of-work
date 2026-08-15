@@ -131,11 +131,15 @@ If the price reaches zero the company is disbanded and everyone loses, regardles
   other: {
     key: 'other',
     title: 'Anything Else?',
-    body: `Shortcuts: Space rolls, T opens trading, R resigns. On the New Game window, click a seat's face to cycle Human, Computer and Off. On a Scruples dilemma, 1 to 3 pick an answer.
+    body: `Shortcuts: Space rolls, T opens trading, R resigns.
+
+Every dialog answers to the keyboard. Enter takes the highlighted answer, or the main button — Take it on, Start game, Continue. Escape takes the other one: Decline, Cancel, Keep playing. On a Scruples dilemma, 1 to 3 pick an answer and Enter commits it; Escape does nothing there, because a dilemma has no safe default and dismissing it would be answering it.
+
+On the New Game window each seat has a Human, Cpu and Off switch, and the theme control changes the artwork, the palette, the music and the card deck together.
 
 High Scores keeps two tables of ten: shortest time to President, and highest share price reached. Short and Medium games have their turn counts scaled so they compare against Long ones.
 
-Options: Sound toggles audio. Auto Click dismisses result dialogs by itself after a set number of seconds, separately for human and computer players. Pixels and Art control how the original artwork is scaled.
+Options: Sound toggles speech and effects, Music toggles the soundtrack separately. Auto Click dismisses result dialogs by itself after a set number of seconds, separately for human and computer players. The remaining options control how the board is scaled and how large its text stays.
 
 This is an independent reimplementation, not the original program. Artwork, audio and text from the original are loaded from your own copy when present and are never distributed with it.`,
   },

@@ -1087,6 +1087,14 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 }
 .choice:hover:not(:disabled) { background: var(--row-hover); box-shadow: inset 0 0 0 1px var(--accent-2); color: var(--ink); }
 .choice:disabled { cursor: default; color: var(--ink-3); }
+/* Picked with a number key and awaiting Enter — distinct from .choice-chosen, which is the
+   answer a computer player has already given. */
+.choice-selected {
+  background: var(--row-hover);
+  box-shadow: inset 0 0 0 2px var(--accent);
+  color: var(--ink);
+}
+.choice-selected .choice-num { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
 .choice-chosen,
 .choice-chosen:disabled {
   background: var(--accent-weak);

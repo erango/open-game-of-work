@@ -985,15 +985,83 @@ export class Ui {
   // ------------------------------------------------------------- modals
 
   /** Shows a modal. Returns a promise resolving to the chosen value. */
+  /**
+   * Shows a dialog and resolves with whatever it decides.
+   *
+   * The keyboard contract is derived from the dialog's own markup rather than wired up dialog by
+   * dialog, so every one of them behaves the same way and a new one needs no extra code:
+   *
+   * - **Enter** takes the selected answer if there is one, else the primary button — 'Take it
+   *   on', 'Start game', 'Continue'.
+   * - **Escape** takes the secondary button: 'Decline', 'Cancel', 'Keep playing'. On a notice
+   *   with a single button it dismisses, since dismissing is the only thing it can mean.
+   * - **1-9** select an answer where the dialog offers a numbered list; Enter then commits it.
+   *   Escape does nothing there — a dilemma has no safe default, and offering one would be
+   *   answering it.
+   *
+   * Digits are ignored while a text field has focus, or naming a player 'Player 1' would pick
+   * an answer.
+   */
   modal<T>(build: (resolve: (v: T) => void) => HTMLElement): Promise<T> {
     return new Promise<T>((resolve) => {
       const scrim = el('div', 'scrim');
       const done = (v: T) => {
+        window.removeEventListener('keydown', onKey, true);
         scrim.remove();
         resolve(v);
       };
+
+      const enabled = (sel: string) => [...scrim.querySelectorAll<HTMLButtonElement>(sel)].filter((b) => !b.disabled);
+      const select = (button: HTMLButtonElement) => {
+        for (const c of scrim.querySelectorAll('.choice-selected')) c.classList.remove('choice-selected');
+        button.classList.add('choice-selected');
+        button.setAttribute('aria-checked', 'true');
+        button.scrollIntoView({ block: 'nearest' });
+      };
+
+      const onKey = (e: KeyboardEvent) => {
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+        const target = e.target as HTMLElement | null;
+        const typing = !!target && /^(input|textarea)$/i.test(target.tagName) && target.getAttribute('type') !== 'checkbox';
+        const choices = enabled('.choice');
+
+        if (/^[1-9]$/.test(e.key) && choices.length && !typing) {
+          const pick = choices[Number(e.key) - 1];
+          if (pick) {
+            select(pick);
+            e.preventDefault();
+          }
+          return;
+        }
+
+        if (e.key === 'Enter') {
+          const chosen = scrim.querySelector<HTMLButtonElement>('.choice-selected');
+          const primary = enabled('.foot .b.primary')[0];
+          const only = enabled('.foot .b');
+          const act = chosen ?? primary ?? (only.length === 1 ? only[0] : undefined);
+          if (act) {
+            e.preventDefault();
+            act.click();
+          }
+          return;
+        }
+
+        if (e.key === 'Escape') {
+          const buttons = enabled('.foot .b');
+          // The secondary button is the one that declines. A lone button is a notice, where
+          // Escape can only mean dismiss.
+          const back = buttons.find((b) => !b.classList.contains('primary') && !b.classList.contains('help-mark'));
+          const act = back ?? (buttons.length === 1 ? buttons[0] : undefined);
+          if (act) {
+            e.preventDefault();
+            act.click();
+          }
+        }
+      };
+
       scrim.append(build(done));
       document.body.append(scrim);
+      window.addEventListener('keydown', onKey, true);
       /*
        * Focus the first control that is actually part of the task. `[autofocus]` wins where a
        * dialog names one; otherwise the first enabled control that has not opted out with

@@ -3,6 +3,11 @@ import type { ChanceCard, ScruplesCard } from './cards';
 /**
  * A third Chance and Scruples pack, in the cyberpunk register the reskin takes.
  *
+ * NOTE ON `work`: it is *progress*, not workload. A positive value pushes a project towards
+ * shipping; a negative one sets it back. Ten cards here were written the other way round — a
+ * crate landing on a prototype granted four progress — which only became visible once the
+ * dialogs started stating each card's effect beside its story.
+ *
  * Additive: `cards.ts` (this port's original writing) and the recovered original deck are both
  * untouched, and all three can be selected or shuffled together — see `decks.ts`.
  *
@@ -27,7 +32,7 @@ export const CHANCE_NEON: ChanceCard[] = [
   {
     text: '{you} accepts the free eye upgrade from the company clinic. The overlay is advertising. It cannot be turned off.',
     bossRating: 3,
-    work: 1,
+    work: -1,
   },
   {
     text: 'Someone pastes a live production token into the all-hands channel. {you} rotates it before anyone else has finished reading.',
@@ -58,14 +63,14 @@ export const CHANCE_NEON: ChanceCard[] = [
   },
   {
     text: 'Cost control cuts the floor’s cooling by nine percent. {you}’s rig throttles and every deadline slips.',
-    work: 3,
+    work: -3,
     bossRating: -3,
     stock: -7,
   },
   {
     text: '{you} finds the bug. The bug is in {you}’s own code from two quarters ago. {you} fixes it quietly and takes the credit for the fix.',
     bossRating: 5,
-    work: -1,
+    work: 1,
   },
   {
     text: 'A neural-link firmware update makes standing meetings feel four times longer. Nobody schedules fewer of them.',
@@ -84,7 +89,7 @@ export const CHANCE_NEON: ChanceCard[] = [
   {
     text: '{you} volunteers for the on-call rotation nobody wants. It is quiet all week. The gratitude is disproportionate.',
     bossRating: 6,
-    work: -1,
+    work: 1,
   },
   {
     text: 'A ransomware crew encrypts the archive nobody has read since the merger. {you} points out the backups exist and are current.',
@@ -102,11 +107,11 @@ export const CHANCE_NEON: ChanceCard[] = [
   {
     text: '{you} automates the weekly report. The automation writes better prose than the humans it replaced, which several of them notice.',
     bossRating: 5,
-    work: -2,
+    work: 2,
   },
   {
     text: 'A drone delivery lands on {project}’s only prototype. The crate is labelled "fragile", which is now ironic.',
-    work: 4,
+    work: -3,
     workSingleProject: true,
     needsProject: true,
     bossRating: -3,
@@ -114,7 +119,7 @@ export const CHANCE_NEON: ChanceCard[] = [
   {
     text: '{you} refuses the productivity implant on principle. The principle is admired and the throughput is not.',
     bossRating: -2,
-    work: 1,
+    work: -1,
   },
   {
     text: 'Legal discovers {you} has been the sole reviewer on every deploy for eleven weeks. This is a finding. It is also a compliment.',
@@ -134,7 +139,7 @@ export const CHANCE_NEON: ChanceCard[] = [
   {
     text: 'The badge system loses {you} entirely. For two days {you} does not exist, and gets more done than in the previous month.',
     bossRating: 3,
-    work: -1,
+    work: 1,
     delayed: {
       turns: 3,
       text: 'Payroll catches up with the badge system. {you} was not paid for those two days, and says so loudly.',
@@ -148,7 +153,7 @@ export const CHANCE_NEON: ChanceCard[] = [
   {
     text: '{you} skips the mandatory resilience workshop to actually be resilient about something. Attendance is tracked.',
     bossRating: -3,
-    work: -1,
+    work: 1,
   },
   {
     text: 'An analyst upgrades the company on the strength of one demo. {you} gave the demo, and knows exactly how much of it was real.',
@@ -168,7 +173,7 @@ export const CHANCE_NEON: ChanceCard[] = [
   {
     text: 'The all-hands is moved to the immersive suite. {you} is sick for forty minutes afterwards, but is filmed nodding.',
     bossRating: 2,
-    work: 1,
+    work: -1,
   },
 ];
 

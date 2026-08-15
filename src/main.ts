@@ -632,6 +632,58 @@ function whoLine(name: string): string {
   return `${name} \u00b7 turn ${game.state.turn}`;
 }
 
+/**
+ * What a card actually does, as a row of chips.
+ *
+ * The text on a card tells a story — someone microwaves fish, an analyst upgrades the company —
+ * and the story does not say what it costs. This states the mechanics next to the prose rather
+ * than leaving them to be inferred from the meters afterwards.
+ *
+ * `work` is *progress*, not workload: a positive value pushes a project towards shipping. Saying
+ * "work" here would read as the opposite of what it does.
+ */
+interface CardEffects {
+  bossRating?: number;
+  stock?: number;
+  work?: number;
+  workSingleProject?: boolean;
+  friendliness?: number;
+  moveTo?: number;
+  delayed?: { turns: number; bossRating?: number; stock?: number };
+}
+
+function effectChips(fx: CardEffects): HTMLElement | null {
+  const row = el('div', 'fx-row');
+  const chip = (text: string, tone: 'up' | 'down' | 'flat') => {
+    row.append(el('span', `fx fx-${tone}`, text));
+  };
+  const signed = (n: number) => `${n > 0 ? '+' : ''}${n}`;
+
+  if (fx.bossRating) chip(`Boss Rating ${signed(fx.bossRating)}`, fx.bossRating > 0 ? 'up' : 'down');
+  if (fx.stock) chip(`Share price ${signed(fx.stock)}`, fx.stock > 0 ? 'up' : 'down');
+  if (fx.work) {
+    const where = fx.workSingleProject ? 'one project' : 'every project';
+    chip(`${signed(fx.work)} progress on ${where}`, fx.work > 0 ? 'up' : 'down');
+  }
+  if (fx.friendliness) {
+    chip(
+      fx.friendliness > 0 ? 'The others think better of you' : 'The others think less of you',
+      fx.friendliness > 0 ? 'up' : 'down',
+    );
+  }
+  if (fx.moveTo !== undefined) chip('You are moved to another square', 'flat');
+  if (fx.delayed) {
+    const parts: string[] = [];
+    if (fx.delayed.bossRating) parts.push(`Boss Rating ${signed(fx.delayed.bossRating)}`);
+    if (fx.delayed.stock) parts.push(`share price ${signed(fx.delayed.stock)}`);
+    const when = `In ${fx.delayed.turns} turn${fx.delayed.turns === 1 ? '' : 's'}`;
+    chip(parts.length ? `${when}: ${parts.join(', ')}` : `${when}, this comes back`, 'down');
+  }
+
+  if (!row.children.length) return null;
+  return row;
+}
+
 /** A numbered answer button. The numeral is a chip, so the keyboard shortcut is visible. */
 function choiceButton(n: number, label: string, extra = ''): HTMLButtonElement {
   const b = el('button', `choice${extra ? ` ${extra}` : ''}`);
@@ -778,6 +830,8 @@ async function handleChance(m: Extract<Modal, { kind: 'chance' }>): Promise<void
       d.append(img);
     }
     d.append(el('p', undefined, text));
+    const fx = effectChips(game.chanceCard(m.cardId));
+    if (fx) d.append(fx);
     const foot = el('div', 'foot');
     const ok = el('button', 'b primary', 'Continue');
     let cancelAuto = () => {};
@@ -867,6 +921,9 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
     const d = Ui.modalShell('Outcome', isAi ? `${p.name}'s decision` : undefined);
     d.prepend(cardHead('scruples', 'Scruples', whoLine(p.name)));
     d.append(el('p', undefined, outcome));
+    // After the answer, not before: the point of a dilemma is choosing without the ledger.
+    const fx = effectChips(card.choices[choice]);
+    if (fx) d.append(fx);
     const foot = el('div', 'foot');
     const ok = el('button', 'b primary', 'Continue');
     let cancelAuto = () => {};

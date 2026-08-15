@@ -666,6 +666,14 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
 }
 .stats-panel > * { position: absolute; }
 /* Replaces the amber dot that used to mark the active row. */
+/* The boundary between rows, so each highlight reads as its own zone. */
+.stat-rule {
+  left: 6px;
+  right: 6px;
+  width: auto;
+  height: 1px;
+  background: var(--rule);
+}
 .stat-band {
   left: 0;
   width: 100%;

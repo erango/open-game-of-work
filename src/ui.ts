@@ -774,6 +774,21 @@ export class Ui {
     panel.style.width = `${CENTER.stats.width}px`;
     panel.style.height = `${CENTER.stats.height}px`;
 
+    /*
+     * A hairline between rows, at the midpoint of the gap.
+     *
+     * The transcribed rows are 32px apart but 34px tall — a name starts two pixels before the
+     * previous row's meter ends — so nothing can highlight a whole row without touching its
+     * neighbour. Drawing the boundary makes each row read as its own zone regardless, and the
+     * highlight can then live inside the pitch rather than spanning the overlap.
+     */
+    game.state.players.forEach((_p, row) => {
+      if (row === 0 || row >= G.barTops.length) return;
+      const rule = el('div', 'stat-rule');
+      rule.style.top = `${G.nameTops[row] - 5}px`;
+      panel.append(rule);
+    });
+
     game.state.players.forEach((p, row) => {
       if (row >= G.barTops.length) return;
       const barTop = G.barTops[row];
@@ -790,16 +805,14 @@ export class Ui {
       if (active) {
         const band = el('div', 'stat-band');
         /*
-         * The transcribed rows overlap: a bar runs to barTop+16, which is 2px past the next
-         * row's nameTop. So the band stops 2px short of its own bar rather than covering the
-         * next name — board.ts is the recovered geometry and does not move to suit a highlight.
+         * Confined to the row's own pitch, ending a clear 3px before the next row begins. It
+         * therefore stops short of the last few pixels of the meter track — which is why the
+         * track carries its own marker below, rather than relying on the wash reaching it.
          */
-        const top = G.nameTops[row] - 4;
-        const bottom = barTop + G.bar.height - 2;
-        const snapTop = top <= 6 ? 0 : top;
-        const snapBottom = bottom >= CENTER.stats.height - 8 ? CENTER.stats.height : bottom;
-        band.style.top = `${snapTop}px`;
-        band.style.height = `${snapBottom - snapTop}px`;
+        const above = row === 0 ? 0 : G.nameTops[row] - 3;
+        const below = row === G.nameTops.length - 1 ? CENTER.stats.height : G.nameTops[row + 1] - 7;
+        band.style.top = `${above}px`;
+        band.style.height = `${below - above}px`;
         /*
          * The player's own colour, not the theme accent. Six seats already have six colours and
          * the panel is where they are read; a single accent said 'active' without saying who.
@@ -841,7 +854,10 @@ export class Ui {
       }
       tip(portrait, p.kind === 'computer' ? `${p.name} — computer (${p.personality})` : `${p.name} — human`);
 
-      const track = el('div', 'stat-track');
+      const track = el('div', `stat-track${active ? ' stat-track-active' : ''}`);
+      // The band cannot reach the bottom of the track without covering the next row, so the
+      // track says 'active' for itself.
+      if (active) track.style.boxShadow = `inset 0 0 0 1px ${playerLight(p.color)}`;
       track.style.left = `${G.bar.left}px`;
       track.style.top = `${barTop}px`;
       track.style.width = `${G.bar.width}px`;

@@ -52,6 +52,16 @@ function meterColor(color: string): string {
   return color === DARK_GREEN ? '#57b06a' : color;
 }
 
+/**
+ * The player's colour as a *light* — for the ring and the active-row band.
+ *
+ * Same lift the meters use for dark green, for the same reason: it is drawn against a dark
+ * surface, and #2f7d3f reads as a smudge there.
+ */
+function playerLight(color: string): string {
+  return meterColor(color);
+}
+
 function initialInk(color: string): string {
   return color === DARK_GREEN || color === BLUE ? '#fff' : 'rgb(0 0 0 / .6)';
 }
@@ -790,6 +800,14 @@ export class Ui {
         const snapBottom = bottom >= CENTER.stats.height - 8 ? CENTER.stats.height : bottom;
         band.style.top = `${snapTop}px`;
         band.style.height = `${snapBottom - snapTop}px`;
+        /*
+         * The player's own colour, not the theme accent. Six seats already have six colours and
+         * the panel is where they are read; a single accent said 'active' without saying who.
+         * The wash is kept faint — the names sit on top of it and have to stay legible.
+         */
+        const light = playerLight(p.color);
+        band.style.borderLeftColor = light;
+        band.style.background = `color-mix(in srgb, ${light} 14%, transparent)`;
         panel.append(band);
       }
 
@@ -942,6 +960,9 @@ export class Ui {
         ring.setAttribute('aria-hidden', 'true');
         // Two strokes: the line itself, and a wider blurred copy that lingers as the burn-in.
         // Drawn from twelve o'clock, which is what the rotation is for.
+        // Drawn in the player's own colour: it marks a person, not a state.
+        const light = playerLight(p.color);
+        ring.style.setProperty('--ring', light);
         ring.innerHTML =
           '<svg viewBox="0 0 40 40"><g transform="rotate(-90 20 20)">' +
           '<circle class="ring-burn" cx="20" cy="20" r="18" />' +

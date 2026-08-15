@@ -670,6 +670,7 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   left: 0;
   width: 100%;
   /* Height is set inline from the row's own extent — see renderStats in ui.ts. */
+  /* Both set inline from the player's colour; these are the fallback. */
   background: var(--accent-soft);
   border-radius: 0 4px 4px 0;
   border-left: 2px solid var(--accent-2);
@@ -748,10 +749,10 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   stroke-linecap: round;
   animation: avatar-ring 3.6s linear infinite;
 }
-.ring-line { stroke: var(--accent-2); stroke-width: 2.2; }
+.ring-line { stroke: var(--ring, var(--accent-2)); stroke-width: 2.2; }
 /* The afterglow: wider, softer, and a touch behind the line in its fade. */
 .ring-burn {
-  stroke: var(--accent);
+  stroke: var(--ring, var(--accent));
   stroke-width: 3.4;
   filter: blur(2.5px);
   animation-name: avatar-burn;

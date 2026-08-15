@@ -85,6 +85,69 @@ def square_pad(img: "Image.Image", transparent: bool) -> "Image.Image":
     return canvas
 
 
+def flood_cutout(img: "Image.Image", tolerance: int = 46) -> "Image.Image":
+    """Remove the background by flooding inward from the edges.
+
+    The neon set is drawn on a flat near-black ground, and so are the subjects: a face is mostly
+    the same darkness as the sky behind it. rembg has to guess which darks are subject and which
+    are background, and it guesses inconsistently — one avatar kept its face, the next had a
+    transparent hole where the face should be, while the chrome dog came out perfectly because
+    nothing about it is dark.
+
+    Flooding from the border cannot make that mistake. Only background *connected to the edge*
+    is removed, so an interior can never be lost however dark it is. It suits flat generated
+    grounds exactly, and unlike a model it gives the same answer every time.
+
+    Returns RGBA, or None-ish (a fully opaque image) if the flood found almost nothing, which is
+    the caller's signal to fall back to rembg.
+    """
+    from PIL import ImageDraw, ImageFilter
+
+    rgb = img.convert("RGB")
+    w, h = rgb.size
+    px = rgb.load()
+
+    # The ground is whatever the corners agree on; the median of the border is robust to a
+    # subject that touches one edge.
+    edge = [px[x, 0] for x in range(0, w, 4)] + [px[x, h - 1] for x in range(0, w, 4)]
+    edge += [px[0, y] for y in range(0, h, 4)] + [px[w - 1, y] for y in range(0, h, 4)]
+    key = tuple(sorted(c[i] for c in edge)[len(edge) // 2] for i in range(3))
+
+    SENTINEL = (1, 254, 3)  # a colour the art will not contain
+    near = lambda c: sum((c[i] - key[i]) ** 2 for i in range(3)) <= tolerance ** 2
+
+    # Seed from every border pixel that still looks like the ground. Stepping by 2 keeps the
+    # cost down without missing a gap.
+    for x in range(0, w, 2):
+        for y in (0, h - 1):
+            if near(px[x, y]):
+                ImageDraw.floodfill(rgb, (x, y), SENTINEL, thresh=tolerance)
+    for y in range(0, h, 2):
+        for x in (0, w - 1):
+            if near(px[x, y]):
+                ImageDraw.floodfill(rgb, (x, y), SENTINEL, thresh=tolerance)
+
+    mask = rgb.point(lambda _: 0)  # placeholder to get a same-size L image
+    mask = Image.new("L", (w, h), 255)
+    mpx = mask.load()
+    removed = 0
+    for y in range(h):
+        for x in range(w):
+            if px[x, y] == SENTINEL:
+                mpx[x, y] = 0
+                removed += 1
+
+    if removed < w * h * 0.08:
+        # Barely anything came away: the ground is not flat, or the subject fills the frame.
+        return None
+
+    # A half-pixel feather, so the edge is not a staircase once it is scaled down.
+    mask = mask.filter(ImageFilter.GaussianBlur(0.6))
+    out = img.convert("RGBA")
+    out.putalpha(mask)
+    return out
+
+
 def unlight(img: "Image.Image") -> "Image.Image":
     """Drain the colour and the glow out of an image.
 
@@ -160,8 +223,12 @@ for job in manifest:
     keeps_aspect = shape in ("landscape", "portrait")
     try:
         if job.get("cutout"):
-            cut = rembg_remove(open(raw, "rb").read())
-            img = Image.open(io.BytesIO(cut)).convert("RGBA")
+            # Flood first: deterministic, and it cannot eat an interior. rembg is the fallback
+            # for anything whose background is not flat enough to flood.
+            img = flood_cutout(Image.open(raw))
+            if img is None:
+                cut = rembg_remove(open(raw, "rb").read())
+                img = Image.open(io.BytesIO(cut)).convert("RGBA")
             if keeps_aspect:
                 # Trim to the subject but keep its proportions: padding a tower to a square
                 # would strand it in empty space.

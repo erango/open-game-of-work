@@ -103,20 +103,42 @@ const SEATS = (
   };
 });
 
+/**
+ * Anything that gets cut out is generated on a *white* ground, whatever the style says.
+ *
+ * The neon style asks for a near-black background, and its subjects are mostly dark too — a face
+ * is the same darkness as the sky behind it, and the two touch. rembg then has to guess which
+ * darks are subject and which are background and guesses differently every time: one avatar kept
+ * its face, the next had a hole where the face should be, and the chrome dog came out perfectly
+ * because nothing about it is dark. Flooding in from the border does no better, since the
+ * subject's dark is *connected* to the ground's.
+ *
+ * A white ground removes the ambiguity rather than trying to resolve it. What is kept is the
+ * subject, so the ground never appears in the game.
+ */
+const CUTOUT_GROUND = 'plain flat pure white background, no scenery, no floor, no shadow';
+const CUTOUT_NEGATIVE = 'dark background, black background, night, vignette, gradient background';
+
 const jobs = [];
 const add = (j) => {
   const { subject, subjectNeon, ...rest } = j;
   // A subject may name a period-specific thing (a mid-century office block, a boxy desktop).
   // Where the register matters, the neon set supplies its own.
   const chosen = STYLE_NAME === 'neon' && subjectNeon ? subjectNeon : subject;
+  const cut = rest.cutout === true;
+  // The subject keeps the house style; only the ground changes, and only when it is coming out.
+  const style = cut
+    ? STYLE.replace(/near-black slate background|plain off-white background/, CUTOUT_GROUND)
+    : STYLE;
+  const chosenSubject = cut ? chosen.replace(/, dark near-black background/, '') : chosen;
   jobs.push({
-    negative: NEG,
+    negative: cut ? `${NEG}, ${CUTOUT_NEGATIVE}` : NEG,
     shape: 'square',
     cutout: false,
     ...rest,
-    subject: chosen,
+    subject: chosenSubject,
     raw: `art/_raw/${STYLE_NAME}/${j.id}.png`,
-    prompt: `${chosen}, ${STYLE}`,
+    prompt: `${chosenSubject}, ${style}`,
   });
 };
 

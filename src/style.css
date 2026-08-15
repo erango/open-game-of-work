@@ -1443,12 +1443,44 @@ button.b.help-mark:hover:not(:disabled) { background: var(--ctl-hover-2); color:
 /* Flex, not grid: the sprite column only exists when there is a sprite. As a grid the text
    dropped into the empty 50px artwork column whenever a theme had no party art, and wrapped one
    word per line. Same failure the log entries had, for the same reason. */
-.party-row { display: flex; gap: 12px; align-items: center; }
+.party-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule-2);
+}
+.party-row:last-child { border-bottom: none; }
 .party-sprite { width: 50px; height: 50px; flex: none; display: block; }
 .art-crisp .party-sprite { image-rendering: pixelated; }
-.party-who { font-weight: 600; font-size: 14px; }
+/* The seat's own colour as a rule rather than as the name's colour: the pale player colours
+   measure 2-3:1 as text, which is the finding that moved log ownership to an edge too. */
+.party-rule { width: 3px; align-self: stretch; border-radius: 2px; flex: none; }
+.party-head {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--ink-3);
+}
+/* No fixed width: the label is wider than the column it heads, and space-between already lands
+   it on the same right edge as the numbers. */
+.party-head-num { white-space: nowrap; }
+.party-who { font-weight: 600; font-size: 14px; color: var(--ink); }
+.party-line { color: var(--ink-2); }
 .party-text { min-width: 0; flex: 1; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
-.party-delta { margin-top: 3px; font-size: 13px; }
+/* Fixed width and right-aligned, so every row's number lands on the same edge. */
+.party-delta {
+  flex: none;
+  width: 84px;
+  text-align: right;
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .about-credit { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--ink-2); }
 .about-credit a { color: var(--link); text-decoration: none; font-weight: 600; }
 .about-credit a:hover { text-decoration: underline; }

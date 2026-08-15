@@ -1040,6 +1040,15 @@ async function handleOfficeParty(m: Extract<Modal, { kind: 'officeParty' }>): Pr
       // Each player gets their sprite from the set matching their outcome, animated by
       // alternating frames — the original drove this scene from the only TTimer it had.
       const sprites: Array<{ img: HTMLImageElement; mood: PartyMood; slot: number }> = [];
+      /*
+       * A table, not a paragraph each: name and line on the left, the Boss Rating change in a
+       * column of its own so the six numbers can be compared at a glance — which is the only
+       * question this dialog is asking.
+       */
+      const head = el('div', 'party-head');
+      head.append(el('span', undefined, 'Who'), el('span', 'party-head-num', 'Boss Rating'));
+      d.append(head);
+
       const list = el('div', 'party-list');
       for (const entry of m.entries) {
         const p = game.player(entry.playerId);
@@ -1053,16 +1062,23 @@ async function handleOfficeParty(m: Extract<Modal, { kind: 'officeParty' }>): Pr
           img.draggable = false;
           row.append(img);
           sprites.push({ img, mood: entry.mood, slot: p.id });
+        } else {
+          // No sprite in this theme, so the seat colour arrives as a rule down the edge — the
+          // same reason log entries carry it that way rather than as coloured text.
+          const rule = el('div', 'party-rule');
+          rule.style.background = p.color;
+          row.append(rule);
         }
 
         const body = el('div', 'party-text');
         const who = el('div', 'party-who', p.name);
-        who.style.color = p.color;
-        const line = el('div', undefined, entry.text);
-        const delta = el('div', 'party-delta');
-        delta.append(document.createTextNode('Boss Rating '), Ui.delta(entry.delta));
-        body.append(who, line, delta);
-        row.append(body);
+        const line = el('div', 'party-line', entry.text);
+        body.append(who, line);
+
+        const delta = el('div', `party-delta ${entry.delta >= 0 ? 'delta-pos' : 'delta-neg'}`);
+        delta.textContent = `${entry.delta >= 0 ? '+' : ''}${entry.delta}`;
+
+        row.append(body, delta);
         list.append(row);
       }
       d.append(list);

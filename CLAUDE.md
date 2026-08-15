@@ -258,6 +258,17 @@ Relatedly, `Sound.fire()` arms its stall guard *before* calling `play()`. A `pla
 stay pending indefinitely, and arming the timeout inside `.then()` meant that case hung the
 speech chain — and therefore the turn loop — permanently.
 
+### CSS hazard: a layout that reserves a column for optional artwork
+
+Artwork is optional in this game — three themes, one of which has no illustrations at all — so
+any row that *might* carry an image must not reserve space for one with `grid-template-columns`.
+The text lands in the empty artwork column and wraps one word per line. This has happened twice:
+log entries (`.log-with-art`, fixed by applying the grid class only when there is art) and the
+office party rows (`.party-row`, fixed by using flex, where an absent child costs nothing).
+
+Prefer flex with `flex: none` on the image and `min-width: 0; flex: 1` on the text. Check any new
+row in the theme that has no artwork, not just the one you are looking at.
+
 ### CSS hazard: never set `position` on `.sq` or its descendants
 
 `.sq` is absolutely positioned in the design space, and project tiles position their parts

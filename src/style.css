@@ -1440,11 +1440,14 @@ button.b.help-mark:hover:not(:disabled) { background: var(--ctl-hover-2); color:
 .art-crisp .event-art, .art-crisp .rank-art, .art-crisp .card-art { image-rendering: pixelated; }
 /* -------- office party */
 .party-list { display: flex; flex-direction: column; gap: 10px; }
-.party-row { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 12px; align-items: center; }
-.party-sprite { width: 50px; height: 50px; display: block; }
+/* Flex, not grid: the sprite column only exists when there is a sprite. As a grid the text
+   dropped into the empty 50px artwork column whenever a theme had no party art, and wrapped one
+   word per line. Same failure the log entries had, for the same reason. */
+.party-row { display: flex; gap: 12px; align-items: center; }
+.party-sprite { width: 50px; height: 50px; flex: none; display: block; }
 .art-crisp .party-sprite { image-rendering: pixelated; }
 .party-who { font-weight: 600; font-size: 14px; }
-.party-text { font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.party-text { min-width: 0; flex: 1; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .party-delta { margin-top: 3px; font-size: 13px; }
 .about-credit { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--ink-2); }
 .about-credit a { color: var(--link); text-decoration: none; font-weight: 600; }

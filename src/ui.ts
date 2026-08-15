@@ -877,31 +877,6 @@ export class Ui {
       );
 
       panel.append(name, portrait, track, rank);
-
-      /*
-       * A ring that draws itself around whoever is up, burns out, and comes back.
-       *
-       * It is a sibling rather than a child of the portrait: that cell clips its overflow so the
-       * artwork cannot spill, and a ring drawn inside it would be clipped to a square. Sized
-       * from the same geometry, so it stays centred whatever the panel is scaled to.
-       */
-      if (active) {
-        const pad = 3;
-        const ring = el('div', 'avatar-ring');
-        ring.style.left = `${G.portrait.left - pad}px`;
-        ring.style.top = `${barTop - pad}px`;
-        ring.style.width = `${G.portrait.size + pad * 2}px`;
-        ring.style.height = `${G.portrait.size + pad * 2}px`;
-        ring.setAttribute('aria-hidden', 'true');
-        // Two strokes: the line itself, and a wider, blurred copy behind it that lingers as the
-        // burn-in. Drawn from twelve o'clock, which is why the group is rotated.
-        ring.innerHTML =
-          '<svg viewBox="0 0 40 40"><g transform="rotate(-90 20 20)">' +
-          '<circle class="ring-burn" cx="20" cy="20" r="18" />' +
-          '<circle class="ring-line" cx="20" cy="20" r="18" />' +
-          '</g></svg>';
-        panel.append(ring);
-      }
     });
 
     this.board.append(panel);
@@ -931,6 +906,27 @@ export class Ui {
         t.textContent = p.name.slice(0, 1).toUpperCase();
       }
       tip(t, `${p.name} — ${RANKS[p.rank]}`);
+
+      /*
+       * A ring that draws itself around whoever is up, burns out, and comes back.
+       *
+       * A child of the token rather than a sibling, so it inherits the token's left/top
+       * transition and stays on it while it walks the board — a separate element would have to
+       * chase it, and would lag by exactly one transition.
+       */
+      if (!parked && p.id === s.current && s.phase !== 'gameOver') {
+        const ring = el('div', 'avatar-ring');
+        ring.setAttribute('aria-hidden', 'true');
+        // Two strokes: the line itself, and a wider blurred copy that lingers as the burn-in.
+        // Drawn from twelve o'clock, which is what the rotation is for.
+        ring.innerHTML =
+          '<svg viewBox="0 0 40 40"><g transform="rotate(-90 20 20)">' +
+          '<circle class="ring-burn" cx="20" cy="20" r="18" />' +
+          '<circle class="ring-line" cx="20" cy="20" r="18" />' +
+          '</g></svg>';
+        t.append(ring);
+      }
+
       this.board.append(t);
     };
 

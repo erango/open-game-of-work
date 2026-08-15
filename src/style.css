@@ -730,6 +730,8 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
    3.6s: 0.9s drawing, 0.7s burning out, 2s dark. */
 .avatar-ring {
   position: absolute;
+  /* Outside the token, so the ring reads as around it rather than drawn on it. */
+  inset: -4px;
   pointer-events: none;
   overflow: visible;
 }

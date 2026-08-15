@@ -116,8 +116,15 @@ const SEATS = (
  * A white ground removes the ambiguity rather than trying to resolve it. What is kept is the
  * subject, so the ground never appears in the game.
  */
-const CUTOUT_GROUND = 'plain flat pure white background, no scenery, no floor, no shadow';
-const CUTOUT_NEGATIVE = 'dark background, black background, night, vignette, gradient background';
+const CUTOUT_GROUND =
+  'one isolated subject on a plain flat pure white background, no scenery, no room, no floor, ' +
+  'no shadow, nothing else in the frame';
+// 'scene' and 'crowd' earn their place here: a party sprite asked for a figure "at an office
+// party" came back as a nightclub full of silhouettes, and a cut-out of a scene is a cut-out of
+// a crowd.
+const CUTOUT_NEGATIVE =
+  'dark background, black background, night, vignette, gradient background, scene, room, ' +
+  'interior, background objects, other people, crowd, silhouettes, desk, table, chair, furniture';
 
 const jobs = [];
 const add = (j) => {

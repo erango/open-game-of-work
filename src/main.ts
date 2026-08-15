@@ -756,20 +756,81 @@ async function handleTakeProject(m: Extract<Modal, { kind: 'takeProject' }>): Pr
         : `${proj.name} — profile ${proj.profile}, ${proj.work} work to ship`,
     );
     d.prepend(cardHead('project', 'Unclaimed project', whoLine(p.name)));
-    d.append(
-      el(
-        'p',
-        undefined,
-        `Nobody owns ${proj.name} (profile ${proj.profile}). Taking it adds ${proj.profile} to stress and pays ${R.COMPLETION_BOSS_RATING[proj.profile]} Boss Rating when it ships.`,
+
+    /*
+     * The decision is 'can I carry this?', and that was three sentences of arithmetic. It is a
+     * quantity, so it is drawn: what is already on the desk, what this project adds, and where
+     * the line into shoddy work falls — which is the only number that actually matters here.
+     */
+    const now = game.stress(m.playerId);
+    const after = now + proj.profile;
+    const scale = Math.max(R.STRESS_BAR_MAX, after);
+    const pct = (v: number) => `${(Math.min(v, scale) / scale) * 100}%`;
+
+    const gauge = el('div', 'gauge');
+    const held = el('div', 'gauge-held');
+    held.style.width = pct(now);
+    held.style.background = R.PLAYER_COLORS[p.id] ?? 'var(--accent)';
+    const added = el('div', 'gauge-added');
+    added.style.left = pct(now);
+    added.style.width = pct(after) === pct(now) ? '0' : `${((after - now) / scale) * 100}%`;
+    // The threshold, drawn where it falls rather than described.
+    const line = el('div', 'gauge-line');
+    line.style.left = pct(R.STRESS_SHODDY_THRESHOLD);
+    const flag = el('div', 'gauge-flag', String(R.STRESS_SHODDY_THRESHOLD));
+    flag.style.left = pct(R.STRESS_SHODDY_THRESHOLD);
+    gauge.append(held, added, line, flag);
+
+    const legend = el('div', 'gauge-legend');
+    const swatch = (cls: string, text: string, colour?: string) => {
+      const item = el('span', 'gauge-key');
+      const mark = el('i', cls);
+      // The key has to be the colour of the bar it explains, and that bar is the player's own.
+      if (colour) mark.style.background = colour;
+      item.append(mark, document.createTextNode(text));
+      return item;
+    };
+    legend.append(
+      swatch('key-held', `carrying ${now}`, R.PLAYER_COLORS[p.id]),
+      swatch('key-added', `${proj.name} adds ${proj.profile}`),
+      swatch('key-line', `shoddy above ${R.STRESS_SHODDY_THRESHOLD}`),
+    );
+
+    const verdict = el('p', 'gauge-verdict');
+    const overBefore = now > R.STRESS_SHODDY_THRESHOLD;
+    const overAfter = after > R.STRESS_SHODDY_THRESHOLD;
+    // The term is always present, whichever side of the line you are on: the explanation is
+    // most useful *before* you cross it.
+    const term = el('b', 'term', 'shoddy work');
+    tip(
+      term,
+      'Shoddy work: past this workload, every project you carry can quietly turn shoddy on any ' +
+        `turn — about ${Math.round(R.SHODDY_CHANCE_PER_POINT * 100)}% per point you are over. A ` +
+        'shoddy project still ships and still pays, and then ' +
+        `${R.SHODDY_PENALTY_DELAY} turns later it rebounds on whoever shipped it: ` +
+        `${R.SHODDY_PENALTY_BOSS_RATING} Boss Rating and ${R.SHODDY_PENALTY_STOCK} to the ` +
+        'share price.',
+    );
+    verdict.append(document.createTextNode(`Workload ${now} → ${after}. `));
+    verdict.append(
+      document.createTextNode(
+        overAfter
+          ? overBefore
+            ? 'Already past the line, so this is more '
+            : 'That crosses the line into '
+          : `Still clear of the line at ${R.STRESS_SHODDY_THRESHOLD}, where the desk starts producing `,
       ),
     );
-    d.append(
-      el(
-        'p',
-        undefined,
-        `${isAi ? p.name : 'You'} currently hold ${game.projectsOf(m.playerId).length} project(s) at stress ${game.stress(m.playerId)}. Shoddy work starts above stress ${R.STRESS_SHODDY_THRESHOLD}.`,
-      ),
-    );
+    verdict.append(term, document.createTextNode('.'));
+
+    const pays = el('p', 'gauge-pays');
+    pays.textContent =
+      `${proj.work} work to ship. Pays ${R.COMPLETION_BOSS_RATING[proj.profile]} Boss Rating ` +
+      `and ${R.COMPLETION_STOCK[proj.profile] >= 0 ? '+' : ''}` +
+      `${R.COMPLETION_STOCK[proj.profile]} to the share price.`;
+
+    d.append(gauge, legend, verdict, pays);
+
     if (isAi) {
       d.append(
         el('p', 'ai-verdict', `${p.name} decides to ${aiChoice ? 'take it on' : 'decline'}.`),

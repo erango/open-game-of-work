@@ -1832,6 +1832,12 @@ function handlers() {
     onRoll() {
       if (!game.canRoll()) return;
       game.roll();
+      /*
+       * Repaint before stepping. step() can be parked on the turn announcement — a clip runs
+       * 1-2 seconds — and until it resumes nothing else redraws, so the board sat showing a
+       * live Roll button and the ring around a player who had already rolled.
+       */
+      ui.render(game);
       pendingTumble = true;
       void step();
     },

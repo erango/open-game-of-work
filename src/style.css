@@ -707,9 +707,13 @@ button.b.primary:disabled { background: var(--ctl); color: var(--ink-3); }
   flex-direction: column;
   gap: 2px;
 }
-.meter { border-radius: 1px; transition: width .25s ease; }
-.meter-boss { height: 6px; }
-.meter-load { height: 5px; background: var(--danger); }
+/* A full-width lane per bar, so each one can be pointed at and explained on its own — the
+   fill's width is the value, and a bar at 4% would otherwise be almost impossible to hover. */
+.meter-row { width: 100%; }
+.meter-row-boss { height: 6px; }
+.meter-row-load { height: 5px; }
+.meter { border-radius: 1px; height: 100%; transition: width .25s ease; }
+.meter-load { background: var(--danger); }
 .stat-rankbadge {
   border-radius: 2px;
   background: var(--ctl);

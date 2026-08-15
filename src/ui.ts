@@ -833,22 +833,40 @@ export class Ui {
       const brPct = Math.max(0, Math.min(100, (p.bossRating / R.PRESIDENT_THRESHOLD) * 100));
       const stressPct = Math.min(100, (stress / R.STRESS_BAR_MAX) * 100);
 
+      /*
+       * Each bar carries its own tooltip, in a full-width row behind it. The fill's width is
+       * the value, so hovering the fill alone would mean the explanation was only available
+       * when the bar was long — and the two together made one paragraph nobody would read.
+       */
+      const bossRow = el('div', 'meter-row meter-row-boss');
       const boss = el('div', 'meter meter-boss');
       boss.style.width = `${brPct}%`;
       boss.style.background = meterColor(p.color);
+      bossRow.append(boss);
+      tip(
+        bossRow,
+        `${p.name}: Boss Rating ${p.bossRating} of ${R.PRESIDENT_THRESHOLD}. Reach the end and ` +
+          'you are President and the game is over. It rises with projects shipped, reviews ' +
+          'passed at Home and the luck of the cards.',
+      );
+
+      const loadRow = el('div', 'meter-row meter-row-load');
       const load = el('div', 'meter meter-load');
       load.style.width = `${stressPct}%`;
-      track.append(boss, load);
-    const held = game.projectsOf(p.id).length;
+      loadRow.append(load);
+      const held = game.projectsOf(p.id).length;
       tip(
-        track,
-        `${p.name}. Top bar: Boss Rating ${p.bossRating} of ${R.PRESIDENT_THRESHOLD} — reach ` +
-          'the end of it to become President and win. Bottom bar: workload ' +
-          `${stress} of ${R.STRESS_BAR_MAX}, the profiles of the ${held} project` +
-          `${held === 1 ? '' : 's'} being carried added together. Above ` +
-          `${R.STRESS_SHODDY_THRESHOLD} the work starts turning shoddy, and shoddy work ` +
-          'rebounds on whoever ships it.',
+        loadRow,
+        `${p.name}: workload ${stress} of ${R.STRESS_BAR_MAX} — ` +
+          (held === 0
+            ? 'nothing on the desk yet. It counts the profiles of the projects being carried, '
+            : `the profiles of the ${held} project${held === 1 ? '' : 's'} being carried, ` +
+              'added together. ') +
+          `Above ${R.STRESS_SHODDY_THRESHOLD} the work can turn shoddy each turn, and shoddy ` +
+          'work rebounds on whoever ships it.',
       );
+
+      track.append(bossRow, loadRow);
 
       const rank = el(
         'div',
@@ -908,13 +926,18 @@ export class Ui {
       tip(t, `${p.name} — ${RANKS[p.rank]}`);
 
       /*
-       * A ring that draws itself around whoever is up, burns out, and comes back.
+       * A ring that draws itself around whoever the game is waiting on, burns out, and comes
+       * back. A child of the token rather than a sibling, so it rides the token's left/top
+       * transition instead of chasing it.
        *
-       * A child of the token rather than a sibling, so it inherits the token's left/top
-       * transition and stays on it while it walks the board — a separate element would have to
-       * chase it, and would lag by exactly one transition.
+       * Only while the turn is genuinely waiting for a person: idle, not yet rolled, human.
+       * Once the die is rolled the token is redrawn on every square it steps through, and a CSS
+       * animation restarts with the element — so the ring stuttered its way around the board.
+       * It has also done its job by then; what is left to communicate is the movement itself.
        */
-      if (!parked && p.id === s.current && s.phase !== 'gameOver') {
+      const waitingOnThem =
+        p.id === s.current && p.kind === 'human' && s.phase === 'idle' && !s.rolled;
+      if (!parked && waitingOnThem) {
         const ring = el('div', 'avatar-ring');
         ring.setAttribute('aria-hidden', 'true');
         // Two strokes: the line itself, and a wider blurred copy that lingers as the burn-in.

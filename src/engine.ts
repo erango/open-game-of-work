@@ -173,18 +173,34 @@ export class Game {
     if (this.state.log.length > 400) this.state.log.shift();
   }
 
+  private castCache: { key: string; cast: { rival: string; proj: string; rivalProj: string } } | null = null;
+
+  /**
+   * Who and what the placeholders resolve to, fixed for one player's turn.
+   *
+   * Every string on a card goes through fill() separately — the situation, each answer, the
+   * outcome, the delayed consequence — and this used to draw a fresh rival each time, so a card
+   * could ask about Jen and report back about George. The choice is made once per turn and
+   * reused, which is the only reading that makes sense of a card naming someone twice.
+   */
+  private cast(playerId: number): { rival: string; proj: string; rivalProj: string } {
+    const key = `${this.state.turn}:${playerId}`;
+    if (this.castCache?.key === key) return this.castCache.cast;
+    const rivals = this.state.players.filter((q) => q.id !== playerId);
+    const own = this.projectsOf(playerId);
+    const rivalOwned = this.state.projects.filter((q) => q.owner !== null && q.owner !== playerId);
+    const cast = {
+      rival: rivals.length ? this.rng.pick(rivals).name : 'a colleague',
+      proj: own.length ? this.rng.pick(own).name : 'an unnamed initiative',
+      rivalProj: rivalOwned.length ? this.rng.pick(rivalOwned).name : 'one of their projects',
+    };
+    this.castCache = { key, cast };
+    return cast;
+  }
+
   private fill(text: string, playerId: number): string {
     const p = this.player(playerId);
-    const rivals = this.state.players.filter((q) => q.id !== playerId);
-    const rival = rivals.length ? this.rng.pick(rivals).name : 'a colleague';
-    const own = this.projectsOf(playerId);
-    const proj = own.length ? this.rng.pick(own).name : 'an unnamed initiative';
-    const rivalOwned = this.state.projects.filter(
-      (q) => q.owner !== null && q.owner !== playerId,
-    );
-    const rivalProj = rivalOwned.length
-      ? this.rng.pick(rivalOwned).name
-      : 'one of their projects';
+    const { rival, proj, rivalProj } = this.cast(playerId);
     return text
       .replace(/\{you\}/g, p.name)
       .replace(/\{rival\}/g, rival)
@@ -573,6 +589,17 @@ export class Game {
 
   scruplesText(cardId: number, playerId: number): string {
     return this.fill(deck().scruples[cardId].situation, playerId);
+  }
+
+  /**
+   * The three answers, with names substituted.
+   *
+   * Answers went to the screen raw: fill() was applied to the situation, the outcome and the
+   * delayed text but never to the labels, so a card offering 'Tell {rival} about the request.'
+   * printed exactly that.
+   */
+  scruplesLabels(cardId: number, playerId: number): string[] {
+    return deck().scruples[cardId].choices.map((c) => this.fill(c.label, playerId));
   }
 
   /** Applies a chance card and ends the square resolution. */

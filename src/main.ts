@@ -232,6 +232,8 @@ async function askNewGame(): Promise<NewGameConfig | null> {
     );
     const helpBtn = el('button', 'b help-mark', '?');
     helpBtn.type = 'button';
+    // Present, reachable by Tab, but not what the window opens on.
+    helpBtn.dataset.skipFocus = '';
     tip(helpBtn, 'How to Play');
     helpBtn.onclick = () => void helpDialog();
     head.append(headText, helpBtn);
@@ -836,8 +838,10 @@ async function handleScruples(m: Extract<Modal, { kind: 'scruples' }>): Promise<
     }
     d.append(el('p', undefined, situation));
 
+    const labels = game.scruplesLabels(m.cardId, m.playerId);
     card.choices.forEach((c, i) => {
-      const b = choiceButton(i + 1, c.label, isAi && i === aiChoice ? 'choice-chosen' : '');
+      void c;
+      const b = choiceButton(i + 1, labels[i], isAi && i === aiChoice ? 'choice-chosen' : '');
       if (isAi) {
         // Every option is shown, but none is clickable — the decision is already made.
         b.disabled = true;

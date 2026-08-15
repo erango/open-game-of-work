@@ -21,6 +21,15 @@ let layer: HTMLElement | null = null;
 let showTimer = 0;
 let current: HTMLElement | null = null;
 let installed = false;
+/**
+ * The element whose tooltip must not come back until the pointer leaves it.
+ *
+ * Clicking a control hides its tooltip, but the click usually re-renders that control — and a
+ * fresh element under a stationary cursor makes the browser fire `pointerover` again, so the
+ * tooltip reappeared immediately. It then had no way out: the dialog the click opened covers
+ * the control, so no `pointerout` ever arrives.
+ */
+let suppressed: HTMLElement | null = null;
 
 /** Marks an element as having a tooltip, and keeps it labelled for assistive tech. */
 export function tip(node: HTMLElement, text: string): void {
@@ -45,6 +54,7 @@ function ensureLayer(): HTMLElement {
 function hide(): void {
   window.clearTimeout(showTimer);
   current = null;
+  if (layer) layer.textContent = '';
   if (layer) {
     layer.hidden = true;
     layer.classList.remove('tip-on', 'tip-below');
@@ -91,6 +101,10 @@ export function initTooltips(): void {
   const open = (e: Event, instant = false) => {
     const node = find(e.target);
     if (!node || node === current) return;
+    // A dialog is up: its own controls carry tooltips, but anything behind the scrim is not
+    // being pointed at, it is merely underneath the pointer.
+    if (document.querySelector('.scrim') && !node.closest('.scrim')) return;
+    if (node === suppressed || (suppressed && node.dataset.tip === suppressed.dataset.tip)) return;
     window.clearTimeout(showTimer);
     current = node;
     const text = node.dataset.tip!;
@@ -111,7 +125,30 @@ export function initTooltips(): void {
   document.addEventListener('focusout', hide, true);
   // Any interaction dismisses it: a tooltip left over a control that has just been clicked
   // obscures whatever the click produced.
-  document.addEventListener('pointerdown', hide, true);
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      suppressed = find(e.target);
+      hide();
+    },
+    true,
+  );
+  // The pointer moving anywhere that is not the clicked control ends the suppression, which
+  // covers the case where the control vanished and no pointerout was ever delivered.
+  document.addEventListener('pointermove', (e) => {
+    if (suppressed && find(e.target) !== suppressed) suppressed = null;
+  });
+  /*
+   * A tooltip can outlive what it describes: the control is re-rendered or covered by a dialog
+   * while the pointer sits still, so neither pointerout nor pointerdown arrives. Watching the
+   * DOM is the only signal in that case.
+   */
+  new MutationObserver(() => {
+    if (!current) return;
+    if (!current.isConnected || (document.querySelector('.scrim') && !current.closest('.scrim'))) {
+      hide();
+    }
+  }).observe(document.body, { childList: true, subtree: true });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hide();
   });

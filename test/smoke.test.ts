@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { autoplay } from '../src/autoplay.ts';
 import { CHANCE, SCRUPLES, type ChanceCard, type ScruplesCard } from '../src/cards.ts';
 import { WORD_POOLS } from '../src/names.ts';
+import { deck, setDeckMode } from '../src/decks.ts';
 import { sceneName } from '../src/sceneCues.ts';
 import { CHANCE_NEON, SCRUPLES_NEON } from '../src/cardsNeon.ts';
 import { PROJECT_PROFILES, PROJECT_COUNT, SQUARES } from '../src/board.ts';
@@ -321,6 +322,44 @@ test('scene cues map to their recordings, and nothing else does', () => {
   assert.equal(sceneName('name:brad'), null);
   assert.equal(sceneName('slot:2'), null);
   assert.equal(sceneName('gameStart'), null);
+});
+
+test('no card renders an unresolved placeholder', () => {
+  /*
+   * A leak here is invisible to type checking and obvious to a player: an answer read
+   * 'Tell {rival} about the request.' because fill() was applied to the situation, the outcome
+   * and the delayed text but never to the answer labels. This walks every card of both packs
+   * through the real rendering path.
+   */
+  for (const mode of ['new', 'neon'] as const) {
+    setDeckMode(mode);
+    const g = new Game(config('long', 4, 4242));
+    // Own a project each, so {project} has something to resolve to.
+    g.state.projects.slice(0, 4).forEach((p, i) => g.takeProject(p.id, i));
+    const braces = (s: string, where: string) => {
+      assert.ok(!/[{}]/.test(s), `${mode}: unresolved placeholder in ${where}: ${s}`);
+    };
+    deck().chance.forEach((_, id) => braces(g.chanceText(id, 0), `chance ${id}`));
+    deck().scruples.forEach((_, id) => {
+      braces(g.scruplesText(id, 0), `scruples ${id} situation`);
+      g.scruplesLabels(id, 0).forEach((l, i) => braces(l, `scruples ${id} answer ${i + 1}`));
+    });
+  }
+  setDeckMode('new');
+});
+
+test('one card names the same rival throughout', () => {
+  // fill() drew a fresh rival per call, so a card could ask about Jen and report about George.
+  setDeckMode('new');
+  const g = new Game(config('long', 4, 99));
+  const withRival = deck().scruples.findIndex((c) => c.needsRival);
+  assert.ok(withRival >= 0, 'expected a scruples card that names a rival');
+  const seen = new Set<string>();
+  const names = g.state.players.map((p) => p.name);
+  for (const text of [g.scruplesText(withRival, 0), ...g.scruplesLabels(withRival, 0)]) {
+    for (const n of names) if (text.includes(n) && n !== g.player(0).name) seen.add(n);
+  }
+  assert.ok(seen.size <= 1, `card named more than one rival: ${[...seen].join(', ')}`);
 });
 
 console.log('\nCard packs');

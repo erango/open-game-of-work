@@ -994,8 +994,18 @@ export class Ui {
       };
       scrim.append(build(done));
       document.body.append(scrim);
-      const first = scrim.querySelector<HTMLElement>('button, input, select');
-      first?.focus();
+      /*
+       * Focus the first control that is actually part of the task. `[autofocus]` wins where a
+       * dialog names one; otherwise the first enabled control that has not opted out with
+       * data-skip-focus — which is how the New Game window keeps the focus ring off its help
+       * button, an affordance in the corner rather than the thing you came to do.
+       */
+      const focus =
+        scrim.querySelector<HTMLElement>('[autofocus]') ??
+        [...scrim.querySelectorAll<HTMLElement>('button, input, select')].find(
+          (n) => n.dataset.skipFocus === undefined && !n.hasAttribute('disabled'),
+        );
+      focus?.focus();
     });
   }
 

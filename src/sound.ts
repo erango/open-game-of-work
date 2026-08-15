@@ -196,6 +196,9 @@ export class Sound {
   /** What should be playing, so a theme change can restart the same track from the new set. */
   private trackName: MusicTrack | null = null;
   private duckTimer = 0;
+  /** rAF handle for the ducking ramp, and the level it is currently at. */
+  private musicRamp = 0;
+  private musicLevel = MUSIC_VOLUME;
   private sfx = new Sfx();
   /** Probed scene recordings, keyed `<theme>/<cue>`; the promise is cached, as with music. */
   private sceneCache = new Map<string, Promise<HTMLAudioElement | null>>();
@@ -283,7 +286,9 @@ export class Sound {
     this.stopMusic();
     this.track = audio;
     audio.loop = loop;
-    audio.volume = MUSIC_VOLUME;
+    // The level, not the nominal one: starting a track mid-duck must not punch through the clip
+    // that is ducking it.
+    audio.volume = Math.min(1, this.musicLevel);
     audio.currentTime = 0;
     // Blocked until the first gesture, or the file went away between the probe and now.
     await audio.play().catch(() => {});
@@ -333,24 +338,56 @@ export class Sound {
   }
 
   /**
-   * Ducks the music while a one-shot cue plays over it. Both players, and on a timer that
-   * restarts rather than stacking: several cues in a row used to each schedule their own
-   * restore, so the first one to fire brought the level back up mid-clip.
+   * Ducks the music while a one-shot cue plays over it, and brings it back on a curve.
+   *
+   * Both edges were instant volume steps, and the return was the audible one: the bed
+   * reappearing at full level in a single sample reads as a fault rather than as a mix. It
+   * ramps now — fast down (90ms, so the cue is never masked) and slower up (420ms), on an
+   * ease-out.
+   *
+   * The interpolation is exponential rather than linear because loudness is perceived that way:
+   * a linear ramp from .1 to .3 does most of its *audible* work in the first third and then
+   * appears to stall.
    */
   private duck(): void {
     const midi = this.music.playing;
     const rec = this.track !== null && !this.track.paused;
     if (!midi && !rec) return;
-    if (midi) this.music.setVolume(MUSIC_DUCKED);
-    if (rec) this.track!.volume = MUSIC_DUCKED;
+    this.rampMusic(MUSIC_DUCKED, 90);
     window.clearTimeout(this.duckTimer);
-    this.duckTimer = window.setTimeout(() => {
-      if (this.music.playing) this.music.setVolume(0.32);
-      if (this.track) this.track.volume = MUSIC_VOLUME;
-    }, 900);
+    this.duckTimer = window.setTimeout(() => this.rampMusic(MUSIC_VOLUME, 420), 900);
   }
 
-/**
+  /**
+   * Moves both players' music level to `target` over `ms`.
+   *
+   * `HTMLAudioElement.volume` has no scheduling API — unlike a Web Audio gain node — so it has
+   * to be animated. One rAF loop drives both, so the recorded track and the parsed .mid never
+   * drift apart mid-ramp.
+   */
+  private rampMusic(target: number, ms: number): void {
+    if (this.musicRamp) cancelAnimationFrame(this.musicRamp);
+    const from = Math.max(0.0001, this.musicLevel);
+    const to = Math.max(0.0001, target);
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / ms);
+      // Ease-out: most of the movement early, settling gently rather than arriving hard.
+      const eased = 1 - (1 - t) * (1 - t);
+      const level = from * Math.pow(to / from, eased);
+      this.musicLevel = level;
+      if (this.music.playing) this.music.setVolume(level);
+      if (this.track) this.track.volume = Math.min(1, level);
+      if (t < 1) this.musicRamp = requestAnimationFrame(step);
+      else {
+        this.musicRamp = 0;
+        this.musicLevel = target;
+      }
+    };
+    this.musicRamp = requestAnimationFrame(step);
+  }
+
+  /**
    * Queues a spoken cue behind any speech already playing. Resolves once it has finished,
    * so callers can sequence further speech after it.
    */
